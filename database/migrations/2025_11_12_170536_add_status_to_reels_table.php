@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -13,9 +14,17 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('reels', function (Blueprint $table) {
-            $table->enum('status', ['in_stock', 'issued', 'returned'])->default('in_stock');
-        });
+        $newStatuses = ['in_stock', 'partially_used', 'fully_used', 'issued', 'returned'];
+
+        if (!Schema::hasColumn('reels', 'status')) {
+            Schema::table('reels', function (Blueprint $table) use ($newStatuses) {
+                $table->enum('status', $newStatuses)->default('in_stock');
+            });
+            return;
+        }
+
+        $statusList = "'" . implode("','", $newStatuses) . "'";
+        DB::statement("ALTER TABLE reels MODIFY COLUMN status ENUM({$statusList}) NOT NULL DEFAULT 'in_stock'");
     }
 
     /**
@@ -25,8 +34,12 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::table('reels', function (Blueprint $table) {
-            $table->dropColumn('status');
-        });
+        if (!Schema::hasColumn('reels', 'status')) {
+            return;
+        }
+
+        $originalStatuses = ['in_stock', 'partially_used', 'fully_used'];
+        $statusList = "'" . implode("','", $originalStatuses) . "'";
+        DB::statement("ALTER TABLE reels MODIFY COLUMN status ENUM({$statusList}) NOT NULL DEFAULT 'in_stock'");
     }
 };
