@@ -4,8 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Quality Cartons - ReelStock Inventory</title>
+    <link rel="icon" type="image/svg+xml" href="/images/quality-cartons-logo.svg">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         /* CSS Custom Properties for Themes */
         :root {
@@ -143,6 +145,11 @@
             z-index: 1000;
             background-color: var(--navbar-bg);
         }
+
+        .btn {
+            font-size: 12px !important;
+            white-space: nowrap !important;
+        }
     </style>
     @vite(['resources/js/app.js'])
 </head>
@@ -163,13 +170,13 @@
                     </button>
                     <div class="collapse navbar-collapse" id="topNavbar">
                         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                            <li class="nav-item">
-                                <button class="nav-link btn btn-link" :class="{ active: currentView === 'dashboard' }" @click="currentView = 'dashboard'">
+                            <li class="nav-item" v-if="!permissionsLoaded || canView('dashboard')">
+                                <button class="nav-link btn btn-link" :class="{ active: currentView === 'dashboard' }" @click="setView('dashboard')">
                                     Dashboard
                                 </button>
                             </li>
-                            <li class="nav-item">
-                                <button class="nav-link btn btn-link" :class="{ active: currentView === 'suppliers' }" @click="currentView = 'suppliers'">
+                            <li class="nav-item" v-if="!permissionsLoaded || canView('suppliers')">
+                                <button class="nav-link btn btn-link" :class="{ active: currentView === 'suppliers' }" @click="setView('suppliers')">
                                     Suppliers
                                 </button>
                             </li>
@@ -178,10 +185,9 @@
                                     Paper
                                 </button>
                                 <ul class="dropdown-menu" aria-labelledby="paperDropdown">
-                                    <li><button class="dropdown-item" @click="currentView = 'qualities'">Paper Qualities</button></li>
-                                    <li><button class="dropdown-item" @click="currentView = 'receipts'">Receipts</button></li>
-                                    <li><button class="dropdown-item" @click="currentView = 'issues'">Issues</button></li>
-                                    <li><button class="dropdown-item" @click="currentView = 'returns'">Returns</button></li>
+                                    <li><button class="dropdown-item" @click="setView('qualities')">Paper Qualities</button></li>
+                                    <li v-if="!permissionsLoaded || canView('receipts')"><button class="dropdown-item" @click="setView('receipts')">Receipts</button></li>
+                                    <li v-if="!permissionsLoaded || canView('issues')"><button class="dropdown-item" @click="setView('issues')">Issues</button></li>
                                 </ul>
                             </li>
                             <li class="nav-item dropdown">
@@ -189,15 +195,41 @@
                                     Reports
                                 </button>
                                 <ul class="dropdown-menu" aria-labelledby="reportsDropdown">
-                                    <li><button class="dropdown-item" @click="currentView = 'monthly-consumption'">Monthly Consumption</button></li>
-                                    <li><button class="dropdown-item" @click="currentView = 'reel-stock'">Reel Stock</button></li>
-                                    <li><button class="dropdown-item" @click="currentView = 'reel-receipt'">Reel Receipt</button></li>
-                                    <li><button class="dropdown-item" @click="currentView = 'monthly-closing'">Monthly Closing Stock</button></li>
+                                    <li v-if="!permissionsLoaded || canView('monthly-consumption')"><button class="dropdown-item" @click="setView('monthly-consumption')">Monthly Consumption</button></li>
+                                    <li v-if="!permissionsLoaded || canView('reel-stock')"><button class="dropdown-item" @click="setView('reel-stock')">Reel Stock</button></li>
+                                    <li v-if="!permissionsLoaded || canView('reel-receipt')"><button class="dropdown-item" @click="setView('reel-receipt')">Reel Received Report</button></li>
+                                    <li v-if="!permissionsLoaded || canView('monthly-closing')"><button class="dropdown-item" @click="setView('monthly-closing')">Monthly Closing Stock</button></li>
                                 </ul>
                             </li>
-                            <li class="nav-item" v-if="user.role.name === 'Admin'">
-                                <button class="nav-link btn btn-link" :class="{ active: currentView === 'users' }" @click="currentView = 'users'">
+                            <li class="nav-item dropdown" v-if="!permissionsLoaded || canView('cartons')">
+                                <button class="nav-link btn btn-link dropdown-toggle" id="cartonsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Cartons
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="cartonsDropdown">
+                                    <li><button class="dropdown-item" @click="setView('customers')">Customers</button></li>
+                                    <li><button class="dropdown-item" @click="setView('sketch-generator')">Sketch Generator</button></li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown" v-if="user.role.name === 'Admin' || user.email === 'superadmin@qc.com'">
+                                <button class="nav-link btn btn-link dropdown-toggle" id="usersDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                                     Users
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="usersDropdown">
+                                    <li>
+                                        <button class="dropdown-item" :class="{ active: currentView === 'users' }" @click="setView('users')">
+                                            Manage Users
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button class="dropdown-item" :class="{ active: currentView === 'user-rights' }" @click="setView('user-rights')">
+                                            User Rights
+                                        </button>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="nav-item" v-if="user.role.name === 'Admin' || user.email === 'superadmin@qc.com'">
+                                <button class="nav-link btn btn-link" :class="{ active: currentView === 'setup' }" @click="setView('setup')">
+                                    Setup
                                 </button>
                             </li>
                         </ul>
@@ -218,18 +250,22 @@
 
             <!-- Main Content -->
             <div class="main-content">
-                <dashboard-component v-if="currentView === 'dashboard'" :user="user"></dashboard-component>
+                <dashboard-component v-if="currentView === 'dashboard'" :user="user" :can-view-dashboard="canView('dashboard')" :can-see-amounts="canSeeAmounts('dashboard')"></dashboard-component>
                 <supplier-component v-else-if="currentView === 'suppliers'" :user="user"></supplier-component>
                 <paper-quality-component v-else-if="currentView === 'qualities'" :user="user"></paper-quality-component>
                 <reel-receipt-component v-else-if="currentView === 'receipts'" :user="user"></reel-receipt-component>
                 <reel-issue-component v-else-if="currentView === 'issues'" :user="user"></reel-issue-component>
-                <reel-return-component v-else-if="currentView === 'returns'" :user="user"></reel-return-component>
-                <monthly-consumption-report-component v-else-if="currentView === 'monthly-consumption'" :user="user"></monthly-consumption-report-component>
-                <reel-stock-report-component v-else-if="currentView === 'reel-stock'" :user="user"></reel-stock-report-component>
-                <reel-receipt-report-component v-else-if="currentView === 'reel-receipt'" :user="user"></reel-receipt-report-component>
-                <monthly-closing-report-component v-else-if="currentView === 'monthly-closing'" :user="user"></monthly-closing-report-component>
+                <monthly-consumption-report-component v-else-if="currentView === 'monthly-consumption'" :user="user" :can-see-amounts="canSeeAmounts('monthly-consumption')"></monthly-consumption-report-component>
+                <reel-stock-report-component v-else-if="currentView === 'reel-stock'" :user="user" :can-see-amounts="canSeeAmounts('reel-stock')"></reel-stock-report-component>
+                <reel-receipt-report-component v-else-if="currentView === 'reel-receipt'" :user="user" :can-see-amounts="canSeeAmounts('reel-receipt')"></reel-receipt-report-component>
+                <monthly-closing-report-component v-else-if="currentView === 'monthly-closing'" :user="user" :can-see-amounts="canSeeAmounts('monthly-closing')"></monthly-closing-report-component>
+                <cartons-component v-else-if="currentView === 'cartons'" :user="user"></cartons-component>
+                <customer-component v-else-if="currentView === 'customers'" :user="user"></customer-component>
+                <sketch-generator-component v-else-if="currentView === 'sketch-generator'" :user="user"></sketch-generator-component>
                 <reports-component v-else-if="currentView === 'reports'" :user="user"></reports-component>
                 <user-component v-else-if="currentView === 'users'" :user="user"></user-component>
+                <user-rights-component v-else-if="currentView === 'user-rights'" :user="user"></user-rights-component>
+                <setup-component v-else-if="currentView === 'setup'" :user="user"></setup-component>
                 <!-- Add other components here -->
                 <div v-else>
                     <h2>@{{ currentView.charAt(0).toUpperCase() + currentView.slice(1) }} Management</h2>
@@ -238,10 +274,11 @@
                 </div>
             </div>
         </div>
+        <scroll-to-top-component></scroll-to-top-component>
     </div>
     <footer class="bg-dark text-white text-center py-3 mt-5">
         <div class="container">
-            <p class="mb-0">&copy; 2026 Sachaan Techsol. All rights reserved. | Contact: 0092 3002566358</p>
+            <p class="mb-0">This software is developed by DILSHAD KB &copy; 2026 SACHAAN TECHSOL. All rights reserved. | Contact: 0300-2566358</p>
         </div>
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

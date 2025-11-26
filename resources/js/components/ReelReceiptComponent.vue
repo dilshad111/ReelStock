@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h2>Paper Reel Receipt</h2>
+      <h2><i class="bi bi-plus-circle"></i> Paper Reel Receipt</h2>
       <div class="d-flex gap-2">
         <button v-if="selectedReceipts.length > 0" @click="printBulkLabels" class="btn btn-success">
           <i class="bi bi-printer"></i> Print Selected Labels ({{ selectedReceipts.length }})
@@ -17,7 +17,7 @@
     <div v-if="showForm" class="card mb-3">
       <div class="card-body">
         <h5>{{ isBulk ? 'Bulk Add' : (editing ? 'Edit' : 'Add') }} Receipt{{ isBulk ? 's' : '' }}</h5>
-        <form @submit.prevent="isBulk ? saveBulkReceipt() : saveReceipt()">
+        <form @submit.prevent="isBulk ? saveBulkReceipt() : saveReceipt()" novalidate>
           <template v-if="isBulk">
             <!-- Bulk Entry Form -->
             <div class="row mb-3">
@@ -40,6 +40,10 @@
                 <div class="mb-3">
                   <label>Receiving Date</label>
                   <input v-model="bulkData.common.receiving_date" type="date" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                  <label>Reel received by</label>
+                  <input v-model="bulkData.common.received_by" type="text" class="form-control" required>
                 </div>
               </div>
               <div class="col-md-6">
@@ -137,6 +141,10 @@
                       <label>Receiving Date</label>
                       <input v-model="receipt.receiving_date" type="date" class="form-control" required>
                     </div>
+                    <div class="mb-3">
+                      <label>Reel received by</label>
+                      <input v-model="receipt.received_by" type="text" class="form-control" required>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -174,24 +182,31 @@
               </div>
             </div>
           </template>
-          <button type="submit" class="btn btn-success mt-3">{{ isBulk ? 'Save Bulk' : (editing ? 'Update' : 'Save') }}</button>
-          <button @click="cancel" class="btn btn-secondary ms-2">Cancel</button>
+          <div class="d-flex align-items-center gap-2 mt-3">
+            <button type="submit" class="btn btn-success">{{ isBulk ? 'Save Bulk' : (editing ? 'Update' : 'Save') }}</button>
+            <button @click="cancel" type="button" class="btn btn-secondary">Cancel</button>
+          </div>
         </form>
       </div>
     </div>
 
-    <table class="table table-striped">
+    <div class="row mb-3 g-3">
+      <div class="col-md-4">
+        <input v-model="reelSearch" type="text" class="form-control" placeholder="Search Reel No. (without RL)">
+      </div>
+    </div>
+    <table class="table table-striped table-sticky-header">
       <thead>
         <tr>
           <th width="50"><input type="checkbox" @change="toggleSelectAll" :checked="allSelected"></th>
           <th>ID</th>
           <th>Reel No.</th>
           <th>Date</th>
-          <th>Supplier</th>
-          <th>Paper Quality</th>
+          <th class="text-start">Supplier</th>
+          <th class="text-start">Paper Quality</th>
           <th>Size</th>
-          <th>Weight</th>
-          <th>Rate/Kg</th>
+          <th>Weight Kg</th>
+          <th>Rate/Kg PKR</th>
           <th>QC Status</th>
           <th>Actions</th>
         </tr>
@@ -201,13 +216,18 @@
           <tr>
             <td><input type="checkbox" :value="r.id" v-model="selectedReceipts"></td>
             <td>{{ r.id }}</td>
-            <td>{{ r.reel.reel_no }}</td>
+            <td class="text-center">
+              <a href="#" @click.prevent="showHistory(r.reel.reel_no)" class="d-block text-decoration-none">
+                <div>{{ getReelPrefix(r.reel.reel_no) }}</div>
+                <div>{{ getReelSerial(r.reel.reel_no) }}</div>
+              </a>
+            </td>
             <td>{{ formatDate(r.receiving_date) }}</td>
-            <td>{{ r.reel.supplier ? r.reel.supplier.name : 'N/A' }}</td>
-            <td>{{ getQuality(r) }}</td>
-            <td>{{ r.reel.reel_size || 'N/A' }}</td>
-            <td>{{ r.reel.original_weight || 'N/A' }}</td>
-            <td>{{ formatRate(r.rate_per_kg) }}</td>
+            <td class="text-start">{{ r.reel.supplier ? r.reel.supplier.name : 'N/A' }}</td>
+            <td class="text-start">{{ r.reel.paper_quality_display }}</td>
+            <td>{{ formatReelSize(r.reel.reel_size) }}</td>
+            <td class="text-center">{{ formatWeightKg(r.reel.original_weight) }}</td>
+            <td class="text-center">{{ formatRate(r.rate_per_kg) }}</td>
             <td>{{ r.qc_status }}</td>
             <td style="min-width: 170px;">
               <button @click="editReceipt(r)" class="btn btn-sm btn-warning me-1">Edit</button>
@@ -217,7 +237,30 @@
         </template>
       </tbody>
     </table>
+
+    <div class="d-flex justify-content-center mt-3" v-if="pagination.last_page > 1">
+      <nav aria-label="Page navigation">
+        <ul class="pagination">
+          <li class="page-item" :class="{ disabled: pagination.current_page == 1 }">
+            <a class="page-link" href="#" @click.prevent="goToPage(1)">First</a>
+          </li>
+          <li class="page-item" :class="{ disabled: pagination.current_page == 1 }">
+            <a class="page-link" href="#" @click.prevent="goToPage(pagination.current_page - 1)">Previous</a>
+          </li>
+          <li v-for="page in pages" :key="page" class="page-item" :class="{ active: page == pagination.current_page }">
+            <a class="page-link" href="#" @click.prevent="goToPage(page)">{{ page }}</a>
+          </li>
+          <li class="page-item" :class="{ disabled: pagination.current_page == pagination.last_page }">
+            <a class="page-link" href="#" @click.prevent="goToPage(pagination.current_page + 1)">Next</a>
+          </li>
+          <li class="page-item" :class="{ disabled: pagination.current_page == pagination.last_page }">
+            <a class="page-link" href="#" @click.prevent="goToPage(pagination.last_page)">Last</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
   </div>
+
 </template>
 
 <script>
@@ -225,6 +268,12 @@ import axios from 'axios';
 import { reactive } from 'vue';
 
 export default {
+  props: {
+    user: {
+      type: Object,
+      default: null
+    }
+  },
   data() {
     return {
       receipts: reactive([]),
@@ -239,6 +288,7 @@ export default {
         reel_size: '',
         reel_weight: '',
         receiving_date: new Date().toISOString().substr(0,10),
+        received_by: 'Afzal',
         gsm: '',
         bursting_strength: '',
         rate_per_kg: '',
@@ -250,6 +300,7 @@ export default {
           paper_quality_id: '',
           supplier_id: '',
           receiving_date: new Date().toISOString().substr(0,10),
+          received_by: 'Afzal',
           gsm: '',
           bursting_strength: '',
           rate_per_kg: '',
@@ -260,26 +311,134 @@ export default {
       },
       showForm: false,
       editing: false,
-      isBulk: false
+      isBulk: false,
+      selectedReel: null,
+      history: [],
+      reelSearch: '',
+      reelPrefix: 'RL111',
+      reelPadding: 3,
+      reelNextNumber: 1,
+      pendingNextNumber: null,
+      pagination: {
+        current_page: 1,
+        last_page: 1,
+        per_page: 50,
+        total: 0
+      }
     };
   },
   computed: {
     receiptList() {
-      return [...this.receipts];
+      return this.receipts;
     },
     allSelected() {
       return this.receipts.length > 0 && this.selectedReceipts.length === this.receipts.length;
+    },
+    pages() {
+      const current = this.pagination.current_page;
+      const last = this.pagination.last_page;
+      let start = Math.max(1, current - 2);
+      let end = Math.min(last, current + 2);
+      let pages = [];
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      return pages;
+    }
+  },
+  watch: {
+    reelSearch() {
+      this.fetchReceipts({ reel_no: this.reelSearch || undefined });
     }
   },
   mounted() {
     if (localStorage.getItem('token')) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
     }
-    this.fetchReceipts();
+    this.fetchReelSettings().then(() => {
+      this.fetchReceipts();
+    });
     this.fetchSuppliers();
     this.fetchQualities();
   },
   methods: {
+    fetchReelSettings() {
+      return axios.get('/api/setup/settings').then(response => {
+        const settings = response.data || {};
+        if (settings.reel_no_prefix) {
+          this.reelPrefix = settings.reel_no_prefix;
+        }
+        if (settings.reel_padding) {
+          const padding = parseInt(settings.reel_padding, 10);
+          if (!Number.isNaN(padding) && padding > 0) {
+            this.reelPadding = padding;
+          }
+        }
+        if (settings.reel_next_number) {
+          const nextNum = parseInt(settings.reel_next_number, 10);
+          if (!Number.isNaN(nextNum) && nextNum > 0) {
+            this.reelNextNumber = nextNum;
+          }
+        }
+        this.pendingNextNumber = this.reelNextNumber;
+      }).catch(() => {
+        this.pendingNextNumber = this.reelNextNumber;
+      });
+    },
+    formatDate(dateString) {
+      if (!dateString) return '-';
+      const date = new Date(dateString);
+      if (Number.isNaN(date.getTime())) return '-';
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    },
+    formatRate(rate) {
+      if (rate === null || rate === undefined || rate === '') {
+        return '-';
+      }
+      const numericRate = Number(rate);
+      if (Number.isNaN(numericRate)) {
+        return '-';
+      }
+      return numericRate.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    },
+    getReelPrefix(reelNo) {
+      if (!reelNo) {
+        return '';
+      }
+      return reelNo.length > 6 ? reelNo.substring(0, 6) : reelNo;
+    },
+    getReelSerial(reelNo) {
+      if (!reelNo || reelNo.length <= 6) {
+        return '';
+      }
+      return reelNo.substring(6);
+    },
+    formatReelSize(size) {
+      if (size === null || size === undefined || size === '') {
+        return 'N/A';
+      }
+      const numericSize = Number(size);
+      if (Number.isNaN(numericSize)) {
+        return `${size}"`;
+      }
+      return `${Math.round(numericSize)}"`;
+    },
+    formatWeightKg(weight) {
+      if (weight === null || weight === undefined || weight === '') {
+        return 'N/A';
+      }
+      const numericWeight = Number(weight);
+      if (Number.isNaN(numericWeight)) {
+        return weight;
+      }
+      return Math.round(numericWeight).toLocaleString('en-US');
+    },
     toggleSelectAll() {
       if (this.allSelected) {
         this.selectedReceipts = [];
@@ -300,28 +459,21 @@ export default {
       labelWindow.print();
     },
     generateBulkLabelHTML(selectedReels) {
-      // Group reels into sets of 3 (each with 2 copies = 6 labels per page)
-      const labelGroups = [];
-      for (let i = 0; i < selectedReels.length; i += 3) {
-        labelGroups.push(selectedReels.slice(i, i + 3));
-      }
-
-      const pages = labelGroups.map(group => {
-        const labels = [];
-        group.forEach(reel => {
-          // Create 2 identical labels for each reel
-          for (let copy = 0; copy < 2; copy++) {
-            labels.push(this.createLabelHTML(reel));
-          }
-        });
-
-        // Fill remaining spaces with empty labels if needed
-        while (labels.length < 6) {
-          labels.push('<div class="label empty"></div>');
+      const allLabels = [];
+      selectedReels.forEach(reel => {
+        // Create 2 identical labels for each reel
+        for (let copy = 0; copy < 2; copy++) {
+          allLabels.push(this.createLabelHTML(reel));
         }
+      });
 
-        return `<div class="page">${labels.join('')}</div>`;
-      }).join('');
+      // Group labels into pages of 6 (2 columns x 3 rows)
+      const pages = [];
+      for (let i = 0; i < allLabels.length; i += 6) {
+        const pageLabels = allLabels.slice(i, i + 6);
+        // If not full, still include without empties
+        pages.push(`<div class="page">${pageLabels.join('')}</div>`);
+      }
 
       return `
         <html>
@@ -330,50 +482,71 @@ export default {
             <style>
               body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
               .page {
-                page-break-after: always;
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                grid-template-rows: 1fr 1fr 1fr;
-                height: 297mm;
-                width: 210mm;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 5mm;
                 padding: 5mm;
                 box-sizing: border-box;
-                gap: 0;
+                height: auto;
+                min-height: 297mm;
+                width: 210mm;
               }
               .label {
-                border: 2px solid black;
-                padding: 8px;
-                margin: 2.5mm;
+                border: none;
+                padding: 0;
                 text-align: center;
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
+                box-sizing: border-box;
+                width: 96mm;
+                height: 88mm;
               }
-              .reel-no {
-                font-size: 18px;
+              .label-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-family: 'Courier New', monospace;
+                font-size: 13px;
                 font-weight: bold;
-                margin-bottom: 5px;
-                color: #000;
+                height: 100%;
+                border: 4px solid black;
               }
-              .supplier {
-                font-size: 12px;
+              .label-cell {
+                border: 1px solid black;
+                padding: 1px;
+                text-align: left;
+                height: 24px;
+                box-sizing: border-box;
+              }
+              .label-header {
                 font-weight: bold;
-                margin-bottom: 3px;
+                background-color: #f0f0f0;
+                width: 40%;
               }
-              .quality {
-                font-size: 10px;
-                margin-bottom: 5px;
+              .label-value {
+                font-weight: bold;
               }
-              .details {
-                font-size: 9px;
-                line-height: 1.2;
+              .label-blank {
+                height: 24px;
               }
-              .details div { margin: 2px 0; }
-              @media print { body { margin: 0; } }
+              .label-heading {
+                font-size: 20px;
+                font-weight: 900;
+                text-align: center;
+                background-color: #e0e0e0;
+              }
+              .label-quality {
+                font-weight: bold;
+              }
+              .label-checkboxes {
+                text-align: center;
+                font-weight: bold;
+              }
+              @media print { body { margin: 0; } @page { margin: 0; } }
             </style>
           </head>
           <body>
-            ${pages}
+            ${pages.join('')}
           </body>
         </html>
       `;
@@ -386,59 +559,73 @@ export default {
             <style>
               body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
               .page {
-                page-break-after: always;
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                grid-template-rows: 1fr 1fr 1fr;
-                height: 297mm;
-                width: 210mm;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 5mm;
                 padding: 5mm;
                 box-sizing: border-box;
-                gap: 0;
+                height: auto;
+                min-height: 297mm;
+                width: 210mm;
               }
               .label {
-                border: 2px solid black;
-                padding: 8px;
-                margin: 2.5mm;
+                border: none;
+                padding: 0;
                 text-align: center;
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
-                height: calc((297mm - 10mm) / 3);
+                box-sizing: border-box;
+                width: 96mm;
+                height: 88mm;
+              }
+              .label-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-family: 'Courier New', monospace;
+                font-size: 13px;
+                font-weight: bold;
+                height: 100%;
+                border: 4px solid black;
+              }
+              .label-cell {
+                border: 1px solid black;
+                padding: 1px;
+                text-align: left;
+                height: 24px;
                 box-sizing: border-box;
               }
-              .empty { border: none; }
-              .reel-no {
-                font-size: 18px;
+              .label-header {
                 font-weight: bold;
-                margin-bottom: 5px;
-                color: #000;
+                background-color: #f0f0f0;
+                width: 40%;
               }
-              .supplier {
-                font-size: 12px;
+              .label-value {
                 font-weight: bold;
-                margin-bottom: 3px;
               }
-              .quality {
-                font-size: 10px;
-                margin-bottom: 5px;
+              .label-blank {
+                height: 24px;
               }
-              .details {
-                font-size: 9px;
-                line-height: 1.2;
+              .label-heading {
+                font-size: 20px;
+                font-weight: 900;
+                text-align: center;
+                background-color: #e0e0e0;
               }
-              .details div { margin: 2px 0; }
-              @media print { body { margin: 0; } }
+              .label-quality {
+                font-weight: bold;
+              }
+              .label-checkboxes {
+                text-align: center;
+                font-weight: bold;
+              }
+              @media print { body { margin: 0; } @page { margin: 0; } }
             </style>
           </head>
           <body>
             <div class="page">
               ${this.createLabelHTML(receipt)}
               ${this.createLabelHTML(receipt)}
-              <div class="label empty"></div>
-              <div class="label empty"></div>
-              <div class="label empty"></div>
-              <div class="label empty"></div>
             </div>
           </body>
         </html>
@@ -450,21 +637,63 @@ export default {
       labelWindow.print();
     },
     createLabelHTML(receipt) {
+      const quality = receipt.reel.paper_quality_display || 'N/A';
       return `
         <div class="label">
-          <div class="reel-no">${receipt.reel.reel_no}</div>
-          <div class="supplier">${receipt.reel.supplier ? receipt.reel.supplier.name : 'N/A'}</div>
-          <div class="quality">${(() => {
-            const pq = this.resolvePaperQuality(receipt.reel);
-            if (!pq) return 'N/A';
-            return `${pq.quality || pq.item_code || 'N/A'} (${pq.gsm_range || ''})`.trim();
-          })()}</div>
-          <div class="details">
-            <div>Size: ${receipt.reel.reel_size}"</div>
-            <div>Weight: ${receipt.reel.original_weight} kg</div>
-            <div>Date: ${this.formatDate(receipt.receiving_date)}</div>
-            <div>QC: ${receipt.qc_status}</div>
-          </div>
+          <table class="label-table">
+            <tr>
+              <td colspan="2" class="label-cell label-heading">QUALITY CARTONS (PVT.) LTD.</td>
+            </tr>
+            <tr>
+              <td class="label-cell label-header">Reel No:</td>
+              <td class="label-cell label-value" style="text-align: center; font-size: 20px; font-weight: bold;">${receipt.reel.reel_no}</td>
+            </tr>
+            <tr>
+              <td class="label-cell label-header">Supplier:</td>
+              <td class="label-cell label-value">${receipt.reel.supplier ? receipt.reel.supplier.name : 'N/A'}</td>
+            </tr>
+            <tr>
+              <td class="label-cell label-header">Quality:</td>
+              <td class="label-cell label-quality">${quality}</td>
+            </tr>
+            <tr>
+              <td class="label-cell label-header">Size:</td>
+              <td class="label-cell label-value">${receipt.reel.reel_size}"</td>
+            </tr>
+            <tr>
+              <td class="label-cell label-header">Original Weight:</td>
+              <td class="label-cell label-value" style="font-size: 21px;">${receipt.reel.original_weight} kg</td>
+            </tr>
+            <tr>
+              <td class="label-cell label-header">1st Use:</td>
+              <td class="label-cell label-blank">&nbsp;</td>
+            </tr>
+            <tr>
+              <td class="label-cell label-header">2nd Use:</td>
+              <td class="label-cell label-blank">&nbsp;</td>
+            </tr>
+            <tr>
+              <td class="label-cell label-header">3rd Use:</td>
+              <td class="label-cell label-blank">&nbsp;</td>
+            </tr>
+            <tr>
+              <td class="label-cell label-header">Date:</td>
+              <td class="label-cell label-value" style="font-size: 21px;">${this.formatDate(receipt.receiving_date)}</td>
+            </tr>
+            <tr>
+              <td class="label-cell label-header">Shelf Life:</td>
+              <td class="label-cell label-value" style="font-size: 21px;">${receipt.shelf_life || '10 years'}</td>
+            </tr>
+            <tr>
+              <td class="label-cell label-header">Received By:</td>
+              <td class="label-cell label-value" style="font-size: 21px;">${receipt.received_by || 'Afzal'}</td>
+            </tr>
+            <tr>
+              <td colspan="2" class="label-cell label-checkboxes" style="font-size: 20px;">
+                <strong>[✓] Approve</strong> &nbsp;&nbsp;&nbsp; [ ] Rejected
+              </td>
+            </tr>
+          </table>
         </div>
       `;
     },
@@ -476,32 +705,13 @@ export default {
       const pq = this.resolvePaperQuality(r.reel);
       if (!pq) return 'N/A';
       const name = pq.quality || pq.item_code;
-      const gsm = pq.gsm_range ? ` (${pq.gsm_range})` : '';
+      const gsm = pq.gsm_range ? ` ${pq.gsm_range}` : '';
       return `${name}${gsm}`;
     },
-    formatRate(rate) {
-      if (rate === null || rate === undefined || rate === '') {
-        return '-';
-      }
-      const numericRate = Number(rate);
-      if (Number.isNaN(numericRate)) {
-        return '-';
-      }
-      return `PKR ${numericRate.toFixed(2)}`;
-    },
-    formatDate(dateString) {
-      if (!dateString) return '-';
-      const date = new Date(dateString);
-      if (Number.isNaN(date.getTime())) return '-';
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = date.getFullYear();
-      return `${day}/${month}/${year}`;
-    },
-    fetchReceipts() {
-      axios.get('/api/reel-receipts').then(response => {
-        if (Array.isArray(response.data)) {
-          this.receipts = reactive(response.data.map(item => {
+    fetchReceipts(params = {}) {
+      axios.get('/api/reel-receipts', { params }).then(response => {
+        if (response.data.data && Array.isArray(response.data.data)) {
+          this.receipts = reactive(response.data.data.map(item => {
             item = reactive(item);
             if (item.reel) {
               item.reel = reactive(item.reel);
@@ -514,6 +724,15 @@ export default {
             }
             return item;
           }));
+          this.pagination = {
+            current_page: response.data.current_page,
+            last_page: response.data.last_page,
+            per_page: response.data.per_page,
+            total: response.data.total
+          };
+          if (response.data.reel_prefix) {
+            this.reelPrefix = response.data.reel_prefix;
+          }
           this.$nextTick(() => {
             this.$forceUpdate();
           });
@@ -528,6 +747,10 @@ export default {
         alert('Failed to load receipts. Please check your connection.');
         this.receipts = reactive([]);
       });
+    },
+    goToPage(page) {
+      if (page < 1 || page > this.pagination.last_page) return;
+      this.fetchReceipts({ page: page, reel_no: this.reelSearch || undefined });
     },
     fetchSuppliers() {
       axios.get('/api/suppliers').then(response => {
@@ -569,20 +792,42 @@ export default {
       this.bulkData.reels.splice(index, 1);
     },
     saveReceipt() {
-      if (this.editing) {
-        axios.put('/api/reel-receipts/' + this.receipt.id, this.receipt).then(() => {
-          this.fetchReceipts();
-          this.cancel();
-        });
-      } else {
-        axios.post('/api/reel-receipts', this.receipt).then(() => {
-          this.fetchReceipts();
-          this.cancel();
-        });
+      const requiredFields = ['paper_quality_id', 'supplier_id', 'reel_size', 'reel_weight', 'receiving_date', 'qc_status'];
+      const missing = requiredFields.filter(field => !this.receipt[field]);
+      if (missing.length) {
+        alert('Please fill all required fields before saving.');
+        return;
       }
+
+      const payload = this.prepareReceiptPayload(this.receipt);
+      const request = this.editing
+        ? axios.put('/api/reel-receipts/' + this.receipt.id, payload)
+        : axios.post('/api/reel-receipts', payload);
+
+      request.then(() => {
+        if (!this.editing) {
+          this.advanceReelNumber(1);
+        }
+        this.fetchReceipts();
+        this.cancel();
+      }).catch(error => {
+        console.error('Error saving receipt:', error);
+        const apiErrors = error.response?.data?.errors;
+        if (apiErrors) {
+          const messages = Object.values(apiErrors).flat().join('\n');
+          alert('Failed to save receipt:\n' + messages);
+        } else {
+          const errorMsg = error.response?.data?.error || error.message;
+          alert('Failed to save receipt: ' + errorMsg);
+        }
+      });
     },
     saveBulkReceipt() {
+      const reelCount = Array.isArray(this.bulkData.reels) ? this.bulkData.reels.length : 0;
       axios.post('/api/reel-receipts/bulk', this.bulkData).then(() => {
+        if (reelCount > 0) {
+          this.advanceReelNumber(reelCount);
+        }
         this.fetchReceipts();
         this.cancel();
         alert('Bulk receipt saved successfully!');
@@ -590,77 +835,6 @@ export default {
         console.error('Error saving bulk receipt:', error);
         alert('Failed to save bulk receipt. Please check your data.');
       });
-    },
-    printLabel(receipt) {
-      const labelContent = `
-        <html>
-          <head>
-            <title>Reel Label</title>
-            <style>
-              body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
-              .page {
-                page-break-after: always;
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                grid-template-rows: 1fr 1fr 1fr;
-                height: 297mm;
-                width: 210mm;
-                padding: 5mm;
-                box-sizing: border-box;
-                gap: 0;
-              }
-              .label {
-                border: 2px solid black;
-                padding: 8px;
-                margin: 2.5mm;
-                text-align: center;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                height: calc((297mm - 10mm) / 3);
-                box-sizing: border-box;
-              }
-              .empty { border: none; }
-              .reel-no {
-                font-size: 18px;
-                font-weight: bold;
-                margin-bottom: 5px;
-                color: #000;
-              }
-              .supplier {
-                font-size: 12px;
-                font-weight: bold;
-                margin-bottom: 3px;
-              }
-              .quality {
-                font-size: 10px;
-                margin-bottom: 5px;
-              }
-              .details {
-                font-size: 9px;
-                line-height: 1.2;
-              }
-              .details div { margin: 2px 0; }
-              @media print { body { margin: 0; } }
-            </style>
-          </head>
-          <body>
-            <div class="page">
-              ${this.createLabelHTML(receipt)}
-              ${this.createLabelHTML(receipt)}
-              <div class="label empty"></div>
-              <div class="label empty"></div>
-              <div class="label empty"></div>
-              <div class="label empty"></div>
-            </div>
-          </body>
-        </html>
-      `;
-
-      const labelWindow = window.open('', '_blank', 'width=800,height=600');
-      labelWindow.document.write(labelContent);
-      labelWindow.document.close();
-      labelWindow.print();
     },
     editReceipt(r) {
       this.receipt = {
@@ -671,6 +845,7 @@ export default {
         reel_size: r.reel.reel_size,
         reel_weight: r.reel.original_weight,
         receiving_date: r.receiving_date,
+        received_by: r.received_by || 'Afzal',
         gsm: r.gsm,
         bursting_strength: r.bursting_strength,
         rate_per_kg: r.rate_per_kg,
@@ -692,6 +867,7 @@ export default {
         reel_size: '',
         reel_weight: '',
         receiving_date: new Date().toISOString().substr(0,10),
+        received_by: 'Afzal',
         gsm: '',
         bursting_strength: '',
         rate_per_kg: '',
@@ -703,6 +879,7 @@ export default {
           paper_quality_id: '',
           supplier_id: '',
           receiving_date: new Date().toISOString().substr(0,10),
+          received_by: 'Afzal',
           gsm: '',
           bursting_strength: '',
           rate_per_kg: '',
@@ -717,26 +894,254 @@ export default {
       this.selectedReceipts = [];
     },
     generateNextReelNo() {
-      // Generate preview of next reel number
-      // This is a client-side preview, actual generation happens server-side
-      axios.get('/api/reel-receipts?limit=1&orderBy=id&sort=desc').then(response => {
-        if (response.data.length > 0) {
-          const lastReel = response.data[0].reel.reel_no;
-          const lastNum = parseInt(lastReel.substr(6));
-          const nextNum = lastNum + 1;
-          this.receipt.reel_no = 'RL2026' + nextNum.toString().padStart(6, '0');
-        } else {
-          this.receipt.reel_no = 'RL2026000001';
-        }
-      }).catch(() => {
-        // Fallback
-        this.receipt.reel_no = 'RL2026000001';
+      const prefix = this.reelPrefix || 'RL111';
+      const padding = Number(this.reelPadding) > 0 ? Number(this.reelPadding) : 3;
+      const nextNum = Number(this.pendingNextNumber ?? this.reelNextNumber) || 1;
+      this.receipt.reel_no = prefix + nextNum.toString().padStart(padding, '0');
+    },
+    advanceReelNumber(count = 1) {
+      const increment = Number.isFinite(count) && count > 0 ? Math.floor(count) : 1;
+      const current = Number(this.pendingNextNumber ?? this.reelNextNumber) || 1;
+      const newNext = current + increment;
+      this.pendingNextNumber = newNext;
+      this.reelNextNumber = newNext;
+      const value = newNext.toString();
+      axios.post('/api/setup/settings', { key: 'reel_next_number', value })
+        .catch(error => {
+          console.error('Failed to persist next reel number:', error);
+        });
+    },
+    showHistory(reelNo) {
+      axios.get(`/api/reports/reel-stock/${reelNo}/history`).then(response => {
+        this.selectedReel = response.data.reel;
+        this.history = Array.isArray(response.data.history) ? response.data.history : [];
+        this.openHistoryWindow();
+      }).catch(error => {
+        console.error('Error fetching history:', error);
+        const errorMsg = error.response?.data?.error || error.message;
+        alert('Error loading reel history: ' + errorMsg);
       });
+    },
+    openHistoryWindow() {
+      const historyWindow = window.open('', '_blank');
+      if (!historyWindow) {
+        alert('Unable to open history window. Please allow pop-ups for this site.');
+        return;
+      }
+
+      historyWindow.document.write(this.generateHistoryHTML());
+      historyWindow.document.close();
+    },
+    escapeHtml(value) {
+      if (value === null || value === undefined) {
+        return '';
+      }
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    },
+    generateHistoryHTML() {
+      if (!this.selectedReel) {
+        return '<html><body><p>No history available.</p></body></html>';
+      }
+
+      const rows = this.history.length
+        ? this.history.map(entry => `
+          <tr>
+            <td>${this.escapeHtml(this.formatDate(entry.date))}</td>
+            <td>${this.escapeHtml(entry.type)}</td>
+            <td>${this.escapeHtml(entry.details)}</td>
+            <td class="text-end">${this.escapeHtml(this.formatWeight(entry.weight))}</td>
+            <td class="text-end">${this.escapeHtml(this.formatWeight(entry.balance))}</td>
+          </tr>
+        `).join('')
+        : '<tr><td colspan="5" class="text-center">No history found.</td></tr>';
+
+      return `
+        <html>
+          <head>
+            <title>Reel History - ${this.escapeHtml(this.selectedReel.reel_no)}</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              h1 { margin-bottom: 10px; }
+              h2 { margin-top: 30px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th, td { border: 1px solid #ccc; padding: 8px; }
+              th { background: #f5f5f5; }
+              .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+              .summary-card { border: 1px solid #ddd; padding: 12px; border-radius: 4px; background: #fafafa; }
+              .label { font-weight: bold; color: #555; }
+              .value { font-size: 1.1em; }
+              .meta { margin-top: 6px; color: #666; font-size: 0.9em; }
+            </style>
+          </head>
+          <body>
+            <h1>Reel History</h1>
+            <div class="summary-grid">
+              <div class="summary-card">
+                <div class="label">Reel No.</div>
+                <div class="value">${this.escapeHtml(this.selectedReel.reel_no)}</div>
+                <div class="meta">Supplier: ${this.escapeHtml(this.selectedReel.supplier)}</div>
+              </div>
+              <div class="summary-card">
+                <div class="label">Quality</div>
+                <div class="value">${this.escapeHtml(this.selectedReel.quality)}</div>
+                <div class="meta">GSM: ${this.escapeHtml(this.selectedReel.gsm ?? 'N/A')}</div>
+              </div>
+              <div class="summary-card">
+                <div class="label">Original Weight</div>
+                <div class="value">${this.escapeHtml(this.formatWeight(this.selectedReel.original_weight))} kg</div>
+                <div class="meta">Current Balance: ${this.escapeHtml(this.formatWeight(this.selectedReel.current_balance ?? 0))} kg</div>
+              </div>
+              <div class="summary-card">
+                <div class="label">Bursting Strength</div>
+                <div class="value">${this.escapeHtml(this.selectedReel.bursting_strength ?? 'N/A')}</div>
+              </div>
+            </div>
+
+            <h2>Consumption History</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Details</th>
+                  <th class="text-end">Weight (kg)</th>
+                  <th class="text-end">Balance (kg)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `;
+    },
+    prepareReceiptPayload(receipt) {
+      const payload = { ...receipt };
+
+      ['reel_size', 'reel_weight'].forEach(field => {
+        if (payload[field] !== null && payload[field] !== undefined && payload[field] !== '') {
+          payload[field] = Number(payload[field]);
+        }
+      });
+
+      ['gsm', 'bursting_strength', 'rate_per_kg'].forEach(field => {
+        payload[field] = this.toNullableNumber(payload[field]);
+      });
+
+      if (!payload.reel_no) {
+        delete payload.reel_no;
+      }
+
+      if (!this.editing) {
+        delete payload.id;
+      }
+
+      return payload;
+    },
+    toNullableNumber(value) {
+      if (value === null || value === undefined || value === '') {
+        return null;
+      }
+      const number = Number(value);
+      return Number.isNaN(number) ? null : number;
+    },
+    formatWeight(value) {
+      if (value === null || value === undefined) {
+        return '-';
+      }
+      const num = Number(value);
+      if (Number.isNaN(num)) {
+        return '-';
+      }
+      return num >= 0 ? `${num.toFixed(2)}` : `(${Math.abs(num).toFixed(2)})`;
+    },
+    printTable() {
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Paper Reel Receipt - Print</title>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+            <style>
+              body { margin: 20px; }
+              table { width: 100%; border-collapse: collapse; }
+              th, td { border: 1px solid #ddd; padding: 4px 6px; text-align: left; }
+              th { background-color: #f2f2f2; text-align: center; font-size: 0.75rem; }
+              .text-center { text-align: center; }
+              .text-end { text-align: right; }
+              .text-start { text-align: left; }
+              .fw-bold { font-weight: bold; }
+              @media print { body { margin: 0; } }
+            </style>
+          </head>
+          <body>
+            <h2>Paper Reel Receipt</h2>
+            <table class="table table-striped table-sticky-header">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Reel No.</th>
+                  <th>Date</th>
+                  <th class="text-start">Supplier</th>
+                  <th class="text-start">Paper Quality</th>
+                  <th>Size</th>
+                  <th>Weight Kg</th>
+                  <th>Rate/Kg PKR</th>
+                  <th>QC Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${this.receiptList.map(r => `
+                  <tr>
+                    <td class="text-center">${r.id}</td>
+                    <td class="text-center">
+                      <div>${this.getReelPrefix(r.reel.reel_no)}</div>
+                      <div>${this.getReelSerial(r.reel.reel_no)}</div>
+                    </td>
+                    <td>${this.formatDate(r.receiving_date)}</td>
+                    <td class="text-start">${r.reel.supplier ? r.reel.supplier.name : 'N/A'}</td>
+                    <td class="text-start">${this.getQuality(r)}</td>
+                    <td>${this.formatReelSize(r.reel.reel_size)}</td>
+                    <td class="text-center fw-bold">${this.formatWeightKg(r.reel.original_weight)}</td>
+                    <td class="text-center">${this.formatRate(r.rate_per_kg)}</td>
+                    <td>${r.qc_status}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
     }
   }
 };
 </script>
 
 <style scoped>
-/* Add styles if needed */
+.table-sticky-header thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: #f8f9fa;
+  text-align: center;
+  vertical-align: middle;
+  padding: 4px 6px;
+}
+
+.table-sticky-header tbody td {
+  vertical-align: middle;
+  padding: 4px 6px;
+}
+
+.table-sticky-header tbody td:not(.text-start):not(.text-center):not(.text-end) {
+  text-align: center;
+}
 </style>

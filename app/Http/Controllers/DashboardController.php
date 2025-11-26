@@ -13,8 +13,17 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // Fetch real data from database
-        $reels = \App\Models\Reel::with('paperQuality', 'supplier')->get();
+        // Fetch real data from database, excluding fully used reels
+        $reels = \App\Models\Reel::with('paperQuality', 'supplier')
+            ->where(function ($query) {
+                $query->whereNull('balance_weight')
+                      ->orWhere('balance_weight', '>', 0);
+            })
+            ->where(function ($query) {
+                $query->whereNull('status')
+                      ->orWhere('status', '!=', 'fully_used');
+            })
+            ->get();
 
         // Calculate totals
         $totalReels = $reels->count();

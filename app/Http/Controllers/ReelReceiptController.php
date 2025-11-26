@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Models\ReelReceipt;
+use App\Models\Setting;
 use App\Models\Reel;
+use App\Models\ReelReceipt;
 
 class ReelReceiptController extends Controller
 {
@@ -32,23 +33,43 @@ class ReelReceiptController extends Controller
 
             if ($request->has('orderBy') && $request->orderBy === 'id' && $request->has('sort') && $request->sort === 'desc') {
                 $query->orderBy('id', 'desc');
+            } else {
+                $query->orderBy('id', 'desc');
             }
 
             if ($request->has('limit')) {
                 $query->limit($request->limit);
             }
 
-            $receipts = $query->get();
+            $prefix = Setting::where('key', 'reel_no_prefix')->value('value') ?? 'RL2026';
+
+            $receipts = $query->paginate(50);
 
             // Manually include reel data
-            $receipts = $receipts->map(function ($receipt) {
+            $receipts->getCollection()->transform(function ($receipt) {
                 $reel = Reel::with('paperQuality', 'supplier')->find($receipt->reel_id);
                 $receiptArray = $receipt->toArray();
-                $receiptArray['reel'] = $reel ? $reel->toArray() : null;
+                if ($reel) {
+                    $reelArray = $reel->toArray();
+                    // Concatenate quality and gsm_range
+                    if ($reel->paperQuality) {
+                        $quality = $reel->paperQuality->quality ?? $reel->paperQuality->item_code ?? '';
+                        $gsm = $reel->paperQuality->gsm_range ? ' ' . $reel->paperQuality->gsm_range : '';
+                        $reelArray['paper_quality_display'] = $quality . $gsm;
+                    } else {
+                        $reelArray['paper_quality_display'] = 'N/A';
+                    }
+                    $receiptArray['reel'] = $reelArray;
+                } else {
+                    $receiptArray['reel'] = null;
+                }
                 return $receiptArray;
             });
 
-            return response()->json($receipts);
+            $response = $receipts->toArray();
+            $response['reel_prefix'] = $prefix;
+
+            return response()->json($response);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -63,6 +84,7 @@ class ReelReceiptController extends Controller
                 'reel_size' => 'required|numeric|min:0',
                 'reel_weight' => 'required|numeric|min:0',
                 'receiving_date' => 'required|date',
+                'received_by' => 'nullable|string',
                 'gsm' => 'nullable|numeric|min:0',
                 'bursting_strength' => 'nullable|numeric|min:0',
                 'rate_per_kg' => 'nullable|numeric|min:0',
@@ -70,10 +92,13 @@ class ReelReceiptController extends Controller
                 'remarks' => 'nullable|string',
             ]);
 
-            // Auto-generate reel_no
-            $lastReel = Reel::where('reel_no', 'like', 'RL2026%')->orderBy('reel_no', 'desc')->first();
-            $nextId = $lastReel ? intval(substr($lastReel->reel_no, 6)) + 1 : 1;
-            $reelNo = 'RL2026' . str_pad($nextId, 6, '0', STR_PAD_LEFT);  // RL2026000001, etc.
+            // Fetch reel settings
+            $prefix = Setting::where('key', 'reel_no_prefix')->value('value') ?? 'RL111';
+            $padding = (int) Setting::where('key', 'reel_padding')->value('value') ?: 3;
+            $currentNextNumber = (int) Setting::where('key', 'reel_next_number')->value('value') ?: 1;
+
+            $nextNumber = $currentNextNumber;
+            $reelNo = $prefix . str_pad($nextNumber, $padding, '0', STR_PAD_LEFT);
 
             $reel = Reel::create([
                 'reel_no' => $reelNo,
@@ -88,12 +113,18 @@ class ReelReceiptController extends Controller
             $receipt = ReelReceipt::create([
                 'reel_id' => $reel->id,
                 'receiving_date' => $request->receiving_date,
+                'received_by' => $request->received_by,
                 'gsm' => $request->gsm,
                 'bursting_strength' => $request->bursting_strength,
                 'rate_per_kg' => $request->rate_per_kg,
                 'qc_status' => $request->qc_status,
                 'remarks' => $request->remarks,
             ]);
+
+            Setting::updateOrCreate(
+                ['key' => 'reel_next_number'],
+                ['value' => (string) ($nextNumber + 1)]
+            );
 
             return response()->json($receipt->load('reel.paperQuality', 'reel.supplier'), 201);
         } catch (\Exception $e) {
@@ -108,6 +139,7 @@ class ReelReceiptController extends Controller
             'common.paper_quality_id' => 'required|exists:paper_qualities,id',
             'common.supplier_id' => 'required|exists:suppliers,id',
             'common.receiving_date' => 'required|date',
+            'common.received_by' => 'nullable|string',
             'common.gsm' => 'nullable|numeric|min:0',
             'common.bursting_strength' => 'nullable|numeric|min:0',
             'common.rate_per_kg' => 'nullable|numeric|min:0',
@@ -119,11 +151,13 @@ class ReelReceiptController extends Controller
         ]);
 
         $receipts = [];
-        $lastReel = Reel::where('reel_no', 'like', 'RL2026%')->orderBy('reel_no', 'desc')->first();
-        $nextId = $lastReel ? intval(substr($lastReel->reel_no, 6)) + 1 : 1;
+        $prefix = Setting::where('key', 'reel_no_prefix')->value('value') ?? 'RL111';
+        $padding = (int) Setting::where('key', 'reel_padding')->value('value') ?: 3;
+        $currentNextNumber = (int) Setting::where('key', 'reel_next_number')->value('value') ?: 1;
+        $nextId = $currentNextNumber;
 
         foreach ($request->reels as $reelData) {
-            $reelNo = 'RL2026' . str_pad($nextId++, 6, '0', STR_PAD_LEFT);
+            $reelNo = $prefix . str_pad($nextId++, $padding, '0', STR_PAD_LEFT);
 
             $reel = Reel::create([
                 'reel_no' => $reelNo,
@@ -138,6 +172,7 @@ class ReelReceiptController extends Controller
             $receipt = ReelReceipt::create([
                 'reel_id' => $reel->id,
                 'receiving_date' => $request->common['receiving_date'],
+                'received_by' => $request->common['received_by'],
                 'gsm' => $request->common['gsm'],
                 'bursting_strength' => $request->common['bursting_strength'],
                 'rate_per_kg' => $request->common['rate_per_kg'],
@@ -147,6 +182,11 @@ class ReelReceiptController extends Controller
 
             $receipts[] = $receipt;
         }
+
+        Setting::updateOrCreate(
+            ['key' => 'reel_next_number'],
+            ['value' => (string) $nextId]
+        );
 
         return response()->json(ReelReceipt::with('reel.paperQuality', 'reel.supplier')->whereIn('id', array_column($receipts, 'id'))->get(), 201);
     }
@@ -162,7 +202,7 @@ class ReelReceiptController extends Controller
         $receipt = ReelReceipt::findOrFail($id);
         
         // Update receipt fields
-        $receiptFields = ['receiving_date', 'gsm', 'bursting_strength', 'rate_per_kg', 'qc_status', 'remarks'];
+        $receiptFields = ['receiving_date', 'received_by', 'gsm', 'bursting_strength', 'rate_per_kg', 'qc_status', 'remarks'];
         $receiptData = $request->only($receiptFields);
         $receipt->update($receiptData);
 

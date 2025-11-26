@@ -1,7 +1,7 @@
 <template>
   <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2>Paper Reel Stock Dashboard</h2>
+      <h2><i class="bi bi-speedometer2"></i> Paper Reel Stock Dashboard</h2>
       <div class="d-flex gap-2">
         <select v-model="timeRange" @change="fetchDashboard" class="form-select">
           <option value="7">Last 7 days</option>
@@ -10,6 +10,9 @@
         </select>
         <button @click="fetchDashboard" class="btn btn-primary">Refresh</button>
       </div>
+    </div>
+    <div class="alert alert-info mb-4" v-if="user">
+      <strong>{{ greeting }}, {{ user.name }}!</strong> Welcome to the Paper Reel Stock Dashboard.
     </div>
 
     <!-- Loading State -->
@@ -32,36 +35,40 @@
     </div>
 
     <!-- KPI Cards -->
-    <div class="row mb-4" v-if="dashboard.total_reels_in_stock !== undefined">
+    <div class="row mb-4" v-if="canViewDashboard && dashboard.total_reels_in_stock !== undefined">
       <div class="col-md-3">
         <div class="card text-white bg-primary">
-          <div class="card-body">
-            <h5 class="card-title">Total Reels in Stock</h5>
-            <h3>{{ dashboard.total_reels_in_stock }}</h3>
+          <div class="card-body text-center">
+            <i class="bi bi-boxes display-6 mb-2"></i>
+            <h5 class="card-title mb-2">Total Reels in Stock</h5>
+            <h3 class="mb-0">{{ formattedTotalReels }}</h3>
           </div>
         </div>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-3" v-if="canSeeAmounts">
         <div class="card text-white bg-success">
-          <div class="card-body">
-            <h5 class="card-title">Total Weight in Stock</h5>
-            <h3>{{ totalBalanceWeight.toFixed(1) }} kg</h3>
+          <div class="card-body text-center">
+            <i class="bi bi-box-seam display-6 mb-2"></i>
+            <h5 class="card-title mb-2">Total Weight in Stock</h5>
+            <h3 class="mb-0">{{ formattedTotalWeight }}</h3>
           </div>
         </div>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-3" v-if="canSeeAmounts">
         <div class="card text-white bg-warning">
-          <div class="card-body">
-            <h5 class="card-title">Consumption Efficiency</h5>
-            <h3>{{ dashboard.efficiency_percentage }}%</h3>
+          <div class="card-body text-center">
+            <i class="bi bi-graph-up display-6 mb-2"></i>
+            <h5 class="card-title mb-2">Consumption Efficiency</h5>
+            <h3 class="mb-0">{{ formattedEfficiency }}</h3>
           </div>
         </div>
       </div>
       <div class="col-md-3">
         <div class="card text-white bg-info">
-          <div class="card-body">
-            <h5 class="card-title">Low Stock Alerts</h5>
-            <h3>{{ dashboard.low_stock_alerts ? dashboard.low_stock_alerts.length : 0 }}</h3>
+          <div class="card-body text-center">
+            <i class="bi bi-exclamation-triangle display-6 mb-2"></i>
+            <h5 class="card-title mb-2">Low Stock Alerts</h5>
+            <h3 class="mb-0">{{ formattedLowStockAlerts }}</h3>
           </div>
         </div>
       </div>
@@ -211,7 +218,20 @@
 import axios from 'axios';
 
 export default {
-  props: ['user'],
+  props: {
+    user: {
+      type: Object,
+      default: null
+    },
+    canViewDashboard: {
+      type: Boolean,
+      default: true
+    },
+    canSeeAmounts: {
+      type: Boolean,
+      default: true
+    }
+  },
   data() {
     return {
       dashboard: {},
@@ -222,6 +242,31 @@ export default {
   computed: {
     totalBalanceWeight() {
       return this.dashboard.total_weight_in_stock || 0;
+    },
+    formattedTotalReels() {
+      const count = Number(this.dashboard.total_reels_in_stock) || 0;
+      return `${count.toLocaleString('en-US')} Reels`;
+    },
+    formattedTotalWeight() {
+      const weight = Math.round(this.totalBalanceWeight);
+      return `${weight.toLocaleString('en-US')} Kg`;
+    },
+    formattedEfficiency() {
+      const efficiency = Number(this.dashboard.efficiency_percentage);
+      if (Number.isFinite(efficiency)) {
+        return `${efficiency.toFixed(1)}%`;
+      }
+      return '0.0%';
+    },
+    formattedLowStockAlerts() {
+      const count = this.dashboard.low_stock_alerts ? this.dashboard.low_stock_alerts.length : 0;
+      return count.toLocaleString('en-US');
+    },
+    greeting() {
+      const hour = new Date().getHours();
+      if (hour < 12) return 'Good Morning';
+      if (hour < 17) return 'Good Afternoon';
+      return 'Good Evening';
     }
   },
   mounted() {
@@ -483,10 +528,27 @@ export default {
       }
     },
     formatDate(dateString) {
-      return new Date(dateString).toLocaleDateString();
+      if (!dateString) {
+        return '';
+      }
+      const date = new Date(dateString);
+      if (Number.isNaN(date.getTime())) {
+        return '';
+      }
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
     },
     formatDateTime(dateString) {
-      return new Date(dateString).toLocaleString();
+      const date = new Date(dateString);
+      if (Number.isNaN(date.getTime())) {
+        return '-';
+      }
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
     }
   },
   beforeUnmount() {

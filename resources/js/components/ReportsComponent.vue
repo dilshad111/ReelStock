@@ -24,7 +24,7 @@
       <div class="col-md-3 mb-4">
         <div class="card h-100">
           <div class="card-body d-flex flex-column">
-            <h5 class="card-title">Reel Receipt Report</h5>
+            <h5 class="card-title">Reel Received Report</h5>
             <p class="card-text flex-grow-1">Review reel receipts and supplier information.</p>
             <button @click="$parent.currentView = 'reel-receipt'" class="btn btn-primary mt-auto">View Report</button>
           </div>

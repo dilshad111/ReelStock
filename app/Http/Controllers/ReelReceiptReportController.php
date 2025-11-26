@@ -38,6 +38,7 @@ class ReelReceiptReportController extends Controller
                 'supplier_id' => $reel->supplier->id ?? null,
                 'supplier' => $reel->supplier->name ?? null,
                 'paper_quality' => $reel->paperQuality ? $reel->paperQuality->quality : null,
+                'gsm_range' => $reel->paperQuality ? $reel->paperQuality->gsm_range : null,
                 'reel_size' => $reel->reel_size,
                 'weight' => $weight,
                 'rate_per_kg' => $rate,

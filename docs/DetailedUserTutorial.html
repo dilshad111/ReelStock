@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reel Stock Management System - User Tutorial</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #2c3e50;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #16a085;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .title {
+            color: #2c3e50;
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #34495e;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .section-title {
+            color: #16a085;
+            font-size: 26px;
+            font-weight: bold;
+            text-align: center;
+            margin: 40px 0 20px 0;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 10px;
+        }
+        .subsection-title {
+            color: #2980b9;
+            font-size: 20px;
+            font-weight: bold;
+            margin: 30px 0 15px 0;
+        }
+        .field-title {
+            color: #34495e;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0 10px 0;
+        }
+        .highlight {
+            color: #e67e22;
+            font-weight: bold;
+        }
+        .success {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .danger {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .info {
+            color: #3498db;
+            font-weight: bold;
+        }
+        .warning {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        .muted {
+            color: #95a5a6;
+        }
+        .italic {
+            font-style: italic;
+        }
+        .center {
+            text-align: center;
+        }
+        .step {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+        .screenshot-placeholder {
+            background: #ecf0f1;
+            border: 2px dashed #bdc3c7;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .feature-box {
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ecf0f1;
+            color: #95a5a6;
+            font-size: 14px;
+        }
+        @media print {
+            body { margin: 0.5in; }
+            .section-title { page-break-before: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1 class="title">Reel Stock Management System</h1>
+        <h2 class="subtitle">Complete User Tutorial</h2>
+    </div>
+
+    <h2 class="section-title">Software Overview</h2>
+
+    <h3 class="subsection-title">English Version</h3>
+    <p>The <strong>Reel Stock Management System</strong> is a comprehensive inventory management solution designed specifically for packaging plants to efficiently track and manage paper reel stock. This system provides real-time monitoring of reel receipts, consumption tracking, returns management, and detailed reporting capabilities. Key features include an intuitive dashboard, automated label printing, complete historical tracking, and multi-user support with role-based access control.</p>
+
+    <h3 class="subsection-title">Urdu Version</h3>
+    <p><strong>ریل اسٹاک مینجمنٹ سسٹم</strong> ایک جامع انوینٹری مینجمنٹ حل ہے جو خاص طور پر پیکیجنگ پلانٹس کے لیے ڈیزائن کیا گیا ہے تاکہ پیپر ریل اسٹاک کو مؤثر طریقے سے ٹریک اور منظم کیا جا سکے۔ یہ سسٹم ریل ریسیپٹس کی حقیقی وقت نگرانی، استعمال کی ٹریکنگ، ریٹرنز مینجمنٹ، اور تفصیلی رپورٹنگ کی صلاحیت فراہم کرتا ہے۔ اہم خصوصیات میں ایک صارف دوست ڈیش بورڈ، خودکار لیبل پرنٹنگ، مکمل تاریخی ٹریکنگ، اور رول بیسڈ رسائی کنٹرول کے ساتھ ملٹی یوزر سپورٹ شامل ہیں۔</p>
+
+    <div class="screenshot-placeholder">
+        <span class="muted italic">Screenshot: Dashboard showing summary cards, charts, and activity feed</span>
+    </div>
+
+    <h2 class="section-title">Getting Started - Login</h2>
+
+    <h3 class="field-title">Login Page Instructions</h3>
+
+    <div class="step">
+        <p><span class="danger">Step 1:</span> Open your web browser and navigate to the application URL (e.g., <code>http://localhost/reelstock</code>)</p>
+    </div>
+    <div class="step">
+        <p><span class="danger">Step 2:</span> You will see the login page with the following fields:</p>
+        <ul>
+            <li><strong>Email Address:</strong> Enter your registered email</li>
+            <li><strong>Password:</strong> Enter your password</li>
+        </ul>
+    </div>
+    <div class="step">
+        <p><span class="danger">Step 3:</span> Click the <span class="success">Login</span> button</p>
+    </div>
+    <div class="step">
+        <p><span class="danger">Step 4:</span> Upon successful login, you will be redirected to the main dashboard</p>
+    </div>
+
+    <div class="screenshot-placeholder">
+        <span class="muted italic">Screenshot: Login page with email and password fields</span>
+    </div>
+
+    <h3 class="field-title">Navigation Menu Overview</h3>
+    <p>After logging in, you will see the main navigation menu at the top of the page:</p>
+    <ul>
+        <li><span class="highlight" style="color: #8e44ad;">Dashboard</span> - Main overview page with statistics and charts</li>
+        <li><span class="highlight" style="color: #8e44ad;">Reel Receipt</span> - Add new paper reels to inventory</li>
+        <li><span class="highlight" style="color: #8e44ad;">Reel Issue</span> - Issue reels to departments</li>
+        <li><span class="highlight" style="color: #8e44ad;">Reel Stock Report</span> - View current stock and generate reports</li>
+        <li><span class="highlight" style="color: #8e44ad;">Paper Quality</span> - Manage paper quality types</li>
+        <li><span class="highlight" style="color: #8e44ad;">Suppliers</span> - Manage supplier information</li>
+        <li><span class="highlight" style="color: #8e44ad;">Logout</span> - Sign out of the system</li>
+    </ul>
+
+    <h2 class="section-title">Dashboard Page</h2>
+
+    <h3 class="subsection-title">Main Dashboard Overview</h3>
+    <p>The <strong>Dashboard</strong> is your main hub for monitoring reel stock status and key metrics.</p>
+
+    <h3 class="field-title">Dashboard Components:</h3>
+
+    <div class="feature-box">
+        <h4 class="highlight">Summary Cards</h4>
+        <ul>
+            <li><strong>Total Reels:</strong> Shows total number of active reels in stock</li>
+            <li><strong>Total Weight:</strong> Displays combined weight of all reels</li>
+            <li><strong>Low Stock Alerts:</strong> Number of reels below minimum threshold</li>
+            <li><strong>Recently Added:</strong> Latest reel receipts</li>
+        </ul>
+    </div>
+
+    <div class="feature-box">
+        <h4 class="highlight">Stock Chart</h4>
+        <ul>
+            <li>Visual representation of stock levels by paper quality</li>
+            <li>Color-coded bars for easy identification</li>
+            <li>Interactive tooltips showing exact quantities</li>
+        </ul>
+    </div>
+
+    <div class="feature-box">
+        <h4 class="highlight">Recent Activity</h4>
+        <ul>
+            <li>List of recent reel receipts and issues</li>
+            <li>Shows date, reel number, and action type</li>
+            <li>Click any item to view details</li>
+        </ul>
+    </div>
+
+    <div class="feature-box">
+        <h4 class="highlight">Low Stock Warnings</h4>
+        <ul>
+            <li>Red-highlighted reels needing immediate attention</li>
+            <li>Shows current balance and recommended reorder quantity</li>
+        </ul>
+    </div>
+
+    <h3 class="field-title">How to Use Dashboard:</h3>
+    <ul>
+        <li><span class="success">Refresh Data:</span> Click the refresh button to update all metrics</li>
+        <li><span class="success">Filter by Date:</span> Use date selector to view specific time periods</li>
+        <li><span class="success">Export Data:</span> Click export button to download dashboard data as Excel</li>
+        <li><span class="success">View Details:</span> Click on any reel number or activity item to see full information</li>
+    </ul>
+
+    <h2 class="section-title">Reel Receipt Page</h2>
+
+    <h3 class="subsection-title">Adding New Reels to Inventory</h3>
+    <p>The <strong>Reel Receipt</strong> page allows you to add new paper reels to your inventory system.</p>
+
+    <h3 class="field-title">Page Layout:</h3>
+    <ol>
+        <li><span class="highlight">Add Receipt Form</span> (Left Panel)</li>
+        <li><span class="highlight">Existing Receipts List</span> (Right Panel)</li>
+        <li><span class="highlight">Print Labels Button</span> (Top Right)</li>
+    </ol>
+
+    <h3 class="field-title">Form Fields Explained:</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Field Name</th>
+                <th>Description</th>
+                <th>Required</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><em>Receiving Date</em></td>
+                <td>Date when reel was received</td>
+                <td><span class="danger">Yes</span></td>
+            </tr>
+            <tr>
+                <td><em>Paper Quality</em></td>
+                <td>Type/quality of paper</td>
+                <td><span class="danger">Yes</span></td>
+            </tr>
+            <tr>
+                <td><em>Supplier</em></td>
+                <td>Company that supplied the reel</td>
+                <td><span class="danger">Yes</span></td>
+            </tr>
+            <tr>
+                <td><em>Reel Size</em></td>
+                <td>Dimensions of the reel</td>
+                <td><span class="danger">Yes</span></td>
+            </tr>
+            <tr>
+                <td><em>Net Weight</em></td>
+                <td>Actual weight of the reel</td>
+                <td><span class="danger">Yes</span></td>
+            </tr>
+            <tr>
+                <td><em>GSM</em></td>
+                <td>Grams per square meter</td>
+                <td><span class="danger">Yes</span></td>
+            </tr>
+            <tr>
+                <td><em>Bursting Strength</em></td>
+                <td>Paper strength measurement</td>
+                <td><span class="danger">Yes</span></td>
+            </tr>
+            <tr>
+                <td><em>Rate per KG</em></td>
+                <td>Cost per kilogram</td>
+                <td><span class="danger">Yes</span></td>
+            </tr>
+            <tr>
+                <td><em>QC Status</em></td>
+                <td>Quality control status</td>
+                <td><span class="danger">Yes</span></td>
+            </tr>
+            <tr>
+                <td><em>Remarks</em></td>
+                <td>Additional notes</td>
+                <td>No</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="screenshot-placeholder">
+        <span class="muted italic">Screenshot: Add Receipt form with all fields filled</span>
+    </div>
+
+    <h3 class="field-title">Step-by-Step Process:</h3>
+    <div class="step">
+        <p><span class="danger">Step 1:</span> Click on the <strong>Reel Receipt</strong> menu item</p>
+    </div>
+    <div class="step">
+        <p><span class="danger">Step 2:</span> Fill in all required fields in the form:</p>
+        <ul>
+            <li>Select <strong>Receiving Date</strong> from calendar</li>
+            <li>Choose <strong>Paper Quality</strong> from dropdown</li>
+            <li>Select <strong>Supplier</strong> from dropdown</li>
+            <li>Enter <strong>Reel Size</strong> (e.g., "32" for 32 inches)</li>
+            <li>Enter <strong>Net Weight</strong> in kilograms</li>
+            <li>Enter <strong>GSM</strong> value</li>
+            <li>Enter <strong>Bursting Strength</strong></li>
+            <li>Enter <strong>Rate per KG</strong></li>
+            <li>Select <strong>QC Status</strong> (Approved/Pending/Rejected)</li>
+        </ul>
+    </div>
+    <div class="step">
+        <p><span class="danger">Step 3:</span> Click <span class="success">Save Receipt</span> button</p>
+    </div>
+    <div class="step">
+        <p><span class="danger">Step 4:</span> System will:</p>
+        <ul>
+            <li>Generate automatic reel number (e.g., "RL2026000043")</li>
+            <li>Save the receipt to database</li>
+            <li>Add the new reel to the list on the right</li>
+        </ul>
+    </div>
+    <div class="step">
+        <p><span class="danger">Step 5:</span> Print labels by clicking <span class="info">Print Labels</span></p>
+    </div>
+
+    <h3 class="field-title">Managing Existing Receipts:</h3>
+    <ul>
+        <li><span class="success">View History:</span> Click any reel number to open detailed history in new tab</li>
+        <li><span class="success">Edit Receipt:</span> Click the edit icon next to any receipt</li>
+        <li><span class="success">Delete Receipt:</span> Click the delete icon (with confirmation)</li>
+        <li><span class="success">Search:</span> Use the search box to filter reels by number (without "RL" prefix)</li>
+    </ul>
+
+    <h3 class="field-title">Label Printing:</h3>
+    <ol>
+        <li>Select reels by checking the boxes next to reel numbers</li>
+        <li>Click <span class="info">Print Labels</span></li>
+        <li>Print dialog will open with formatted labels</li>
+        <li>Labels include: company name, reel number, quality, size, weight, GSM, bursting strength</li>
+        <li>Print on standard label paper (95mm × 96mm)</li>
+    </ol>
+
+    <div class="screenshot-placeholder">
+        <span class="muted italic">Screenshot: Print labels dialog with selected reels</span>
+    </div>
+
+    <h2 class="section-title">Reel Issue Page</h2>
+
+    <h3 class="subsection-title">Issuing and Returning Reels</h3>
+    <p>The <strong>Reel Issue</strong> page manages the distribution of reels to different departments and tracks returns.</p>
+
+    <h3 class="field-title">Page Sections:</h3>
+    <ol>
+        <li><span class="highlight">Issue Reel Form</span> - For issuing reels to departments</li>
+        <li><span class="highlight">Return Reel Form</span> - For recording returned reels</li>
+        <li><span class="highlight">Issue History</span> - List of all issued reels</li>
+    </ol>
+
+    <h3 class="field-title">Issue Reel Form Fields:</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Field Name</th>
+                <th>Description</th>
+                <th>Default Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><em>Reel Number</em></td>
+                <td>Auto-suggest reel from available stock</td>
+                <td>Search and select</td>
+            </tr>
+            <tr>
+                <td><em>Issue Date</em></td>
+                <td>Date of issue</td>
+                <td>Today's date</td>
+            </tr>
+            <tr>
+                <td><em>Quantity Issued</em></td>
+                <td>Weight to issue in KG</td>
+                <td>Enter manually</td>
+            </tr>
+            <tr>
+                <td><em>Issue To</em></td>
+                <td>Department receiving the reel</td>
+                <td><strong>"Corrugation Plant"</strong></td>
+            </tr>
+            <tr>
+                <td><em>Remarks</em></td>
+                <td>Additional notes</td>
+                <td>Optional</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="screenshot-placeholder">
+        <span class="muted italic">Screenshot: Issue Reel form with default "Corrugation Plant" value</span>
+    </div>
+
+    <h3 class="field-title">How to Issue a Reel:</h3>
+    <div class="step">
+        <p><span class="danger">Step 1:</span> Click in the <strong>Reel Number</strong> field</p>
+    </div>
+    <div class="step">
+        <p><span class="danger">Step 2:</span> Type reel number (without "RL") or select from dropdown</p>
+    </div>
+    <div class="step">
+        <p><span class="danger">Step 3:</span> Verify the reel details that appear</p>
+    </div>
+    <div class="step">
+        <p><span class="danger">Step 4:</span> Enter <strong>Quantity Issued</strong> in kilograms</p>
+    </div>
+    <div class="step">
+        <p><span class="danger">Step 5:</span> Change <strong>Issue To</strong> if needed (defaults to "Corrugation Plant")</p>
+    </div>
+    <div class="step">
+        <p><span class="danger">Step 6:</span> Add <strong>Remarks</strong> if necessary</p>
+    </div>
+    <div class="step">
+        <p><span class="danger">Step 7:</span> Click <span class="success">Issue Reel</span></p>
+    </div>
+    <div class="step">
+        <p><span class="danger">Step 8:</span> System updates stock and adds to issue history</p>
+    </div>
+
+    <h3 class="field-title">Return Reel Form Fields:</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Field Name</th>
+                <th>Description</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><em>Reel Number</em></td>
+                <td>Select previously issued reel</td>
+                <td>Shows issued reels only</td>
+            </tr>
+            <tr>
+                <td><em>Return Date</em></td>
+                <td>Date of return</td>
+                <td>Today's date</td>
+            </tr>
+            <tr>
+                <td><em>Remaining Weight</em></td>
+                <td>Weight returned in KG</td>
+                <td>Must be ≤ issued quantity</td>
+            </tr>
+            <tr>
+                <td><em>Return To</em></td>
+                <td>Location/department</td>
+                <td>Enter manually</td>
+            </tr>
+            <tr>
+                <td><em>Condition</em></td>
+                <td>Reel condition status</td>
+                <td>Good/Damaged/Partial</td>
+            </tr>
+            <tr>
+                <td><em>Remarks</em></td>
+                <td>Additional notes</td>
+                <td>Optional</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="screenshot-placeholder">
+        <span class="muted italic">Screenshot: Return Reel form with condition selection</span>
+    </div>
+
+    <h2 class="section-title">Reel Stock Report Page</h2>
+
+    <h3 class="subsection-title">Viewing and Analyzing Stock</h3>
+    <p>The <strong>Reel Stock Report</strong> page provides comprehensive views of current inventory and consumption patterns.</p>
+
+    <h3 class="field-title">Report Features:</h3>
+    <div class="feature-box">
+        <h4 class="highlight">Advanced Filters</h4>
+        <ul>
+            <li>Filter by Paper Quality</li>
+            <li>Filter by Reel Size</li>
+            <li>Filter by Balance Weight range</li>
+            <li>Date range filters</li>
+        </ul>
+    </div>
+
+    <div class="feature-box">
+        <h4 class="highlight">Stock Table</h4>
+        <ul>
+            <li>Shows all available reels</li>
+            <li>Columns: Reel No, Quality, Size, Original Weight, Balance Weight, Status</li>
+            <li>Color-coded status indicators</li>
+        </ul>
+    </div>
+
+    <div class="feature-box">
+        <h4 class="highlight">Export Options</h4>
+        <ul>
+            <li>Export to Excel</li>
+            <li>Export to PDF</li>
+            <li>Print report</li>
+        </ul>
+    </div>
+
+    <h3 class="field-title">Using Filters:</h3>
+    <ol>
+        <li><span class="danger">Quality Filter:</span> Select specific paper quality from dropdown</li>
+        <li><span class="danger">Size Filter:</span> Enter reel size or select from common sizes</li>
+        <li><span class="danger">Weight Filter:</span> Set minimum and maximum balance weight</li>
+        <li><span class="danger">Apply Filters:</span> Click <span class="info">Apply Filters</span> button</li>
+        <li><span class="danger">Reset:</span> Click <span class="warning">Reset</span> to clear all filters</li>
+    </ol>
+
+    <div class="screenshot-placeholder">
+        <span class="muted italic">Screenshot: Stock report page with filters applied</span>
+    </div>
+
+    <h3 class="field-title">Viewing Reel History:</h3>
+    <ol>
+        <li>Click on any <span class="info"><strong>Reel Number</strong></span> in the stock table</li>
+        <li>A new tab will open showing complete reel history:
+            <ul>
+                <li><span class="success">Reel Information:</span> Basic details, GSM, bursting strength</li>
+                <li><span class="success">Receipt History:</span> When and how it was received</li>
+                <li><span class="success">Issue History:</span> All issuances with dates and quantities</li>
+                <li><span class="success">Return History:</span> All returns with conditions</li>
+                <li><span class="success">Running Balance:</span> Current balance calculation</li>
+            </ul>
+        </li>
+    </ol>
+
+    <div class="screenshot-placeholder">
+        <span class="muted italic">Screenshot: Reel history tab showing complete lifecycle</span>
+    </div>
+
+    <h3 class="field-title">Exporting Reports:</h3>
+    <ol>
+        <li>Apply desired filters</li>
+        <li>Click <span class="success">Export to Excel</span> for spreadsheet format</li>
+        <li>Click <span class="success">Export to PDF</span> for document format</li>
+        <li>Click <span class="success">Print</span> for hard copy</li>
+    </ol>
+
+    <h2 class="section-title">Paper Quality Management</h2>
+
+    <h3 class="subsection-title">Managing Paper Types</h3>
+    <p>The <strong>Paper Quality</strong> page manages different types and qualities of paper in your inventory.</p>
+
+    <h3 class="field-title">Page Functions:</h3>
+    <ol>
+        <li><span class="highlight">Add New Quality</span>
+            <ul>
+                <li>Enter quality name (e.g., "Premium Kraft")</li>
+                <li>Enter description</li>
+                <li>Set minimum stock threshold</li>
+                <li>Save to system</li>
+            </ul>
+        </li>
+        <li><span class="highlight">Edit Existing Quality</span>
+            <ul>
+                <li>Click edit icon next to quality</li>
+                <li>Modify details as needed</li>
+                <li>Save changes</li>
+            </ul>
+        </li>
+        <li><span class="highlight">Delete Quality</span>
+            <ul>
+                <li>Click delete icon (if not in use)</li>
+                <li>Confirm deletion</li>
+            </ul>
+        </li>
+    </ol>
+
+    <div class="screenshot-placeholder">
+        <span class="muted italic">Screenshot: Paper Quality management page</span>
+    </div>
+
+    <h2 class="section-title">Supplier Management</h2>
+
+    <h3 class="subsection-title">Managing Supplier Information</h3>
+    <p>The <strong>Suppliers</strong> page maintains records of all paper suppliers.</p>
+
+    <h3 class="field-title">Supplier Information Fields:</h3>
+    <ul>
+        <li><span class="highlight">Company Name</span> - Legal business name</li>
+        <li><span class="highlight">Contact Person</span> - Primary contact</li>
+        <li><span class="highlight">Phone Number</span> - Contact phone</li>
+        <li><span class="highlight">Email Address</span> - Contact email</li>
+        <li><span class="highlight">Address</span> - Physical address</li>
+        <li><span class="highlight">Tax Number</span> - Business tax ID</li>
+    </ul>
+
+    <h3 class="field-title">Operations:</h3>
+    <ol>
+        <li><span class="success">Add Supplier:</span> Click "Add New Supplier" and fill form</li>
+        <li><span class="success">Edit Supplier:</span> Click edit icon to modify details</li>
+        <li><span class="success">View History:</span> See all receipts from this supplier</li>
+        <li><span class="success">Delete Supplier:</span> Remove if no transactions exist</li>
+    </ol>
+
+    <div class="screenshot-placeholder">
+        <span class="muted italic">Screenshot: Supplier management page with contact details</span>
+    </div>
+
+    <h2 class="section-title">Advanced Features</h2>
+
+    <h3 class="subsection-title">System Capabilities</h3>
+
+    <h4 class="field-title">Real-Time Updates:</h4>
+    <ul>
+        <li><span class="highlight">Live Dashboard:</span> Stock levels update instantly</li>
+        <li><span class="highlight">Auto-Calculations:</span> Balance weights computed automatically</li>
+        <li><span class="highlight">Notifications:</span> Low stock alerts in real-time</li>
+    </ul>
+
+    <h4 class="field-title">Search and Filter:</h4>
+    <ul>
+        <li><span class="highlight">Global Search:</span> Find reels quickly across all pages</li>
+        <li><span class="highlight">Advanced Filters:</span> Multiple filter combinations</li>
+        <li><span class="highlight">Sort Options:</span> Sort by date, weight, quality, etc.</li>
+    </ul>
+
+    <h4 class="field-title">Data Export:</h4>
+    <ul>
+        <li><span class="highlight">Excel Export:</span> Full data with formatting</li>
+        <li><span class="highlight">PDF Reports:</span> Professional document format</li>
+        <li><span class="highlight">Print-Friendly:</span> Optimized layouts for printing</li>
+    </ul>
+
+    <h4 class="field-title">Security Features:</h4>
+    <ul>
+        <li><span class="highlight">User Authentication:</span> Secure login system</li>
+        <li><span class="highlight">Role-Based Access:</span> Different permissions for different users</li>
+        <li><span class="highlight">Audit Trail:</span> Complete history of all actions</li>
+    </ul>
+
+    <h2 class="section-title">Troubleshooting Guide</h2>
+
+    <h3 class="subsection-title">Common Issues and Solutions</h3>
+
+    <h4 class="field-title">Login Problems:</h4>
+    <ul>
+        <li><span class="danger">Issue:</span> Cannot login</li>
+        <li><span class="success">Solution:</span> Check email/password, contact administrator for reset</li>
+    </ul>
+
+    <h4 class="field-title">Page Loading Issues:</h4>
+    <ul>
+        <li><span class="danger">Issue:</span> Pages load slowly or show errors</li>
+        <li><span class="success">Solution:</span> Clear browser cache, check internet connection</li>
+    </ul>
+
+    <h4 class="field-title">History Not Opening:</h4>
+    <ul>
+        <li><span class="danger">Issue:</span> Reel history doesn't open in new tab</li>
+        <li><span class="success">Solution:</span> Enable pop-ups for this site in browser settings</li>
+    </ul>
+
+    <h4 class="field-title">Print Issues:</h4>
+    <ul>
+        <li><span class="danger">Issue:</span> Labels don't print correctly</li>
+        <li><span class="success">Solution:</span> Check printer settings, use correct label size (95mm × 96mm)</li>
+    </ul>
+
+    <h4 class="field-title">Data Not Saving:</h4>
+    <ul>
+        <li><span class="danger">Issue:</span> Forms don't save data</li>
+        <li><span class="success">Solution:</span> Check all required fields are filled, ensure internet connection</li>
+    </ul>
+
+    <h4 class="field-title">Export Problems:</h4>
+    <ul>
+        <li><span class="danger">Issue:</span> Cannot export reports</li>
+        <li><span class="success">Solution:</span> Check browser download settings, try different format</li>
+    </ul>
+
+    <h2 class="section-title">Best Practices</h2>
+
+    <h3 class="subsection-title">Recommended Usage Guidelines</h3>
+
+    <h4 class="field-title">Data Entry:</h4>
+    <ul>
+        <li><span class="success">Consistent Formatting:</span> Use consistent units and formats</li>
+        <li><span class="success">Complete Information:</span> Fill all available fields for better tracking</li>
+        <li><span class="success">Regular Updates:</span> Update reel status promptly</li>
+    </ul>
+
+    <h4 class="field-title">Inventory Management:</h4>
+    <ul>
+        <li><span class="success">Daily Reconciliation:</span> Check dashboard daily for accuracy</li>
+        <li><span class="success">Low Stock Monitoring:</span> Address low stock alerts immediately</li>
+        <li><span class="success">Quality Control:</span> Regular QC status updates</li>
+    </ul>
+
+    <h4 class="field-title">Reporting:</h4>
+    <ul>
+        <li><span class="success">Regular Reports:</span> Generate weekly/monthly stock reports</li>
+        <li><span class="success">Backup Data:</span> Keep exported reports as backup</li>
+        <li><span class="success">Analysis:</span> Use reports for consumption analysis</li>
+    </ul>
+
+    <h2 class="section-title">Contact Support</h2>
+
+    <h3 class="subsection-title">Getting Help When Needed</h3>
+
+    <h4 class="field-title">Support Channels:</h4>
+    <ul>
+        <li><span class="highlight">IT Department:</span> Contact your system administrator</li>
+        <li><span class="highlight">Email Support:</span> support@yourcompany.com</li>
+        <li><span class="highlight">Phone Support:</span> +1-234-567-8900</li>
+    </ul>
+
+    <h4 class="field-title">Information to Provide:</h4>
+    <ul>
+        <li><span class="success">Error Messages:</span> Copy exact error text</li>
+        <li><span class="success">Steps Taken:</span> Describe what you were doing</li>
+        <li><span class="success">Browser/OS:</span> Mention your browser and operating system</li>
+        <li><span class="success">Screenshots:</span> Include screenshots if possible</li>
+    </ul>
+
+    <h2 class="section-title">Conclusion</h2>
+
+    <div class="center">
+        <p class="italic" style="font-size: 18px; margin: 30px 0;">
+            The Reel Stock Management System is designed to streamline your inventory processes and provide accurate, real-time tracking of paper reels. By following this comprehensive guide, you can effectively utilize all features of the system to maintain optimal stock levels, track consumption patterns, and generate detailed reports for business analysis.
+        </p>
+        <p style="margin: 20px 0;">
+            <span class="muted" style="font-weight: bold;">
+                For additional training or questions, please contact your system administrator.
+            </span>
+        </p>
+    </div>
+
+    <div class="footer">
+        <p>© 2025 Reel Stock Management System. All rights reserved.</p>
+    </div>
+
+</body>
+</html>

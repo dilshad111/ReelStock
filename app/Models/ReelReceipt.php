@@ -12,6 +12,7 @@ class ReelReceipt extends Model
     protected $fillable = [
         'reel_id',
         'receiving_date',
+        'received_by',
         'gsm',
         'bursting_strength',
         'qc_status',

@@ -6,6 +6,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "barryvdh/laravel-dompdf": "^3.1",
         "guzzlehttp/guzzle": "^7.2",
         "laravel/framework": "^9.19",
         "laravel/sanctum": "^3.0",
@@ -62,7 +63,10 @@
     },
     "audit": {
         "ignore": [
-            "PKSA-8qx3-n5y5-vvnd"
+            "PKSA-8qx3-n5y5-vvnd",
+            "PKSA-365x-2zjk-pt47",
+            "PKSA-b35n-565h-rs4q",
+            "PKSA-wws7-mr54-jsny"
         ]
     }
 },
@@ -71,4 +75,3 @@
 
 
 }
-

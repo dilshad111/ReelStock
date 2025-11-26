@@ -15,6 +15,9 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MonthlyClosingReportController;
+use App\Http\Controllers\UserPermissionController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\SetupController;
 
 /*
 |--------------------------------------------------------------------------
@@ -68,14 +71,24 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Dashboard
     Route::get('dashboard', [DashboardController::class, 'index']);
-});
 
-// Test route
-Route::get('test', function () {
-    return response()->json(['message' => 'API is working']);
-});
+    // User Permissions
+    Route::get('user-permissions/{userId}', [UserPermissionController::class, 'getPermissions']);
+    Route::post('user-permissions/{userId}', [UserPermissionController::class, 'updatePermissions']);
 
-// Test layers route
-Route::get('test-layers', function () {
-    return response()->json(['layers' => [['position' => 1, 'type' => 'liner']]]);
+    // Customers
+    Route::apiResource('customers', CustomerController::class);
+
+    // Carton Sketch
+    Route::post('carton-sketch/export-pdf', [CartonSketchController::class, 'exportPdf']);
+
+    // Setup (Admin only)
+    Route::prefix('setup')->group(function () {
+        Route::get('settings', [SetupController::class, 'getSettings']);
+        Route::post('settings', [SetupController::class, 'updateSetting']);
+        Route::post('reset-all', [SetupController::class, 'resetAllData']);
+        Route::post('delete-table', [SetupController::class, 'deleteTable']);
+        Route::get('tables', [SetupController::class, 'getTables']);
+        Route::post('upload-logo', [SetupController::class, 'uploadLogo']);
+    });
 });

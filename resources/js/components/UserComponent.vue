@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <div v-if="user && user.role && user.role.name === 'Admin'">
+    <div v-if="hasAccess">
       <h2>User Management</h2>
       <button @click="showForm = !showForm" class="btn btn-primary mb-3">Add User</button>
 
@@ -87,6 +87,17 @@ export default {
       showForm: false,
       editing: false
     };
+  },
+  computed: {
+    hasAccess() {
+      if (!this.user) {
+        return false;
+      }
+      if (this.user.email === 'superadmin@qc.com') {
+        return true;
+      }
+      return this.user.role && this.user.role.name === 'Admin';
+    }
   },
   mounted() {
     if (this.user) {

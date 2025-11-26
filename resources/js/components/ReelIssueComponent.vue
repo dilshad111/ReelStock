@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <h2>Paper Reel Issue and Return</h2>
+    <h2><i class="bi bi-arrow-left-right"></i> Paper Reel Issue and Return</h2>
     <div class="mb-3">
       <label>Action</label>
       <select v-model="type" @change="resetForm" class="form-control">
@@ -9,6 +9,7 @@
       </select>
     </div>
     <button @click="showForm = !showForm" class="btn btn-primary mb-3">{{ type === 'issue' ? 'Issue Reel' : 'Return Reel' }}</button>
+    <button @click="printTable" class="btn btn-secondary mb-3">Print Tables</button>
 
     <div v-if="showForm" class="card mb-3">
       <div class="card-body">
@@ -172,7 +173,7 @@ export default {
         reel_no: '',
         issue_date: new Date().toISOString().substr(0,10),
         quantity_issued: '',
-        issued_to: '',
+        issued_to: 'Corrugation Plant',
         return_date: new Date().toISOString().substr(0,10),
         remaining_weight: '',
         return_to: 'stock',
@@ -245,7 +246,7 @@ export default {
         reel_no: '',
         issue_date: new Date().toISOString().substr(0,10),
         quantity_issued: '',
-        issued_to: '',
+        issued_to: 'Corrugation Plant',
         return_date: new Date().toISOString().substr(0,10),
         remaining_weight: '',
         return_to: 'stock',
@@ -285,6 +286,78 @@ export default {
     getSupplierName(reel) {
       if (!reel || !reel.supplier) return 'N/A';
       return reel.supplier.name || 'N/A';
+    },
+    printTable() {
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Reel Issue and Return - Print</title>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+            <style>
+              body { margin: 20px; }
+              table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #f2f2f2; }
+              h4 { margin-top: 40px; }
+              @media print { body { margin: 0; } }
+            </style>
+          </head>
+          <body>
+            <h2>Paper Reel Issue and Return</h2>
+            
+            <h4>Issues</h4>
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Reel No.</th>
+                  <th>Quality</th>
+                  <th>Issue Date</th>
+                  <th>Quantity Issued</th>
+                  <th>Issued To</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${this.issues.map(i => `
+                  <tr>
+                    <td>${i.reel.reel_no}</td>
+                    <td>${this.getQuality(i.reel)}</td>
+                    <td>${i.issue_date}</td>
+                    <td>${i.quantity_issued} kg</td>
+                    <td>${i.issued_to}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            
+            <h4>Returns</h4>
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Reel No.</th>
+                  <th>Quality</th>
+                  <th>Return Date</th>
+                  <th>Remaining Weight</th>
+                  <th>Condition</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${this.returns.map(r => `
+                  <tr>
+                    <td>${r.reel.reel_no}</td>
+                    <td>${this.getQuality(r.reel)}</td>
+                    <td>${r.return_date}</td>
+                    <td>${r.remaining_weight} kg</td>
+                    <td>${r.condition}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
     }
   }
 };

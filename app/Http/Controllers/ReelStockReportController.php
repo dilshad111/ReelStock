@@ -67,65 +67,74 @@ class ReelStockReportController extends Controller
 
     public function getReelHistory($reel_no)
     {
-        $reel = Reel::with('paperQuality', 'supplier')->where('reel_no', $reel_no)->first();
+        try {
+            $reel = Reel::with(['paperQuality', 'supplier', 'receipts' => function ($q) {
+                $q->orderByDesc('receiving_date');
+            }, 'issues', 'returns'])->where('reel_no', $reel_no)->first();
 
-        if (!$reel) {
-            return response()->json(['message' => 'Reel not found'], 404);
+            if (!$reel) {
+                return response()->json(['message' => 'Reel not found'], 404);
+            }
+
+            $latestReceipt = $reel->receipts->first();
+            $history = [];
+
+            // Receipt history
+            foreach ($reel->receipts as $receipt) {
+                $history[] = [
+                    'date' => $receipt->receiving_date,
+                    'type' => 'Receipt',
+                    'details' => 'Received ' . $reel->original_weight . ' kg',
+                    'weight' => $reel->original_weight,
+                ];
+            }
+
+            // Issue history
+            foreach ($reel->issues as $issue) {
+                $history[] = [
+                    'date' => $issue->issue_date,
+                    'type' => 'Issue',
+                    'details' => 'Issued ' . $issue->quantity_issued . ' kg',
+                    'weight' => -$issue->quantity_issued, // Negative for issues
+                ];
+            }
+
+            // Return history
+            foreach ($reel->returns as $return) {
+                $history[] = [
+                    'date' => $return->return_date,
+                    'type' => 'Return',
+                    'details' => 'Returned ' . $return->remaining_weight . ' kg',
+                    'weight' => $return->remaining_weight, // Positive for returns
+                ];
+            }
+
+            // Sort by date
+            usort($history, function($a, $b) {
+                return strtotime($a['date']) - strtotime($b['date']);
+            });
+
+            // Calculate running balance
+            $balance = 0;
+            foreach ($history as &$item) {
+                $balance += $item['weight'];
+                $item['balance'] = $balance;
+            }
+
+            return response()->json([
+                'reel' => [
+                    'reel_no' => $reel->reel_no,
+                    'quality' => $reel->paperQuality->quality . ' (' . $reel->paperQuality->gsm_range . ')',
+                    'supplier' => $reel->supplier->name,
+                    'original_weight' => $reel->original_weight,
+                    'current_balance' => $reel->balance_weight,
+                    'gsm' => $latestReceipt ? $latestReceipt->gsm : null,
+                    'bursting_strength' => $latestReceipt ? $latestReceipt->bursting_strength : null,
+                ],
+                'history' => $history,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
-
-        $history = [];
-
-        // Receipt history
-        foreach ($reel->receipts as $receipt) {
-            $history[] = [
-                'date' => $receipt->receiving_date,
-                'type' => 'Receipt',
-                'details' => 'Received ' . $reel->original_weight . ' kg',
-                'weight' => $reel->original_weight,
-            ];
-        }
-
-        // Issue history
-        foreach ($reel->issues as $issue) {
-            $history[] = [
-                'date' => $issue->issue_date,
-                'type' => 'Issue',
-                'details' => 'Issued ' . $issue->quantity_issued . ' kg',
-                'weight' => -$issue->quantity_issued, // Negative for issues
-            ];
-        }
-
-        // Return history
-        foreach ($reel->returns as $return) {
-            $history[] = [
-                'date' => $return->return_date,
-                'type' => 'Return',
-                'details' => 'Returned ' . $return->remaining_weight . ' kg',
-                'weight' => $return->remaining_weight, // Positive for returns
-            ];
-        }
-
-        // Sort by date
-        usort($history, function($a, $b) {
-            return strtotime($a['date']) - strtotime($b['date']);
-        });
-
-        // Calculate running balance
-        $balance = 0;
-        foreach ($history as &$item) {
-            $balance += $item['weight'];
-            $item['balance'] = $balance;
-        }
-
-        return response()->json([
-            'reel' => [
-                'reel_no' => $reel->reel_no,
-                'quality' => $reel->paperQuality->quality . ' (' . $reel->paperQuality->gsm_range . ')',
-                'supplier' => $reel->supplier->name,
-                'original_weight' => $reel->original_weight,
-                'current_balance' => $reel->balance_weight,
-            ],
-            'history' => $history,
-        ]);
     }
 }

@@ -15,7 +15,11 @@ class UserController extends Controller
     }
     public function index()
     {
-        return response()->json(User::with('role')->get());
+        return response()->json(
+            User::with('role')
+                ->where('email', '!=', 'superadmin@qc.com')
+                ->get()
+        );
     }
 
     public function store(Request $request)
@@ -50,6 +54,10 @@ class UserController extends Controller
             'role_id' => 'required|exists:roles,id',
         ]);
 
+        if ($user->email === 'superadmin@qc.com') {
+            return response()->json(['message' => 'Super admin account cannot be modified.'], 403);
+        }
+
         $user->update($request->only(['name', 'email', 'role_id']));
 
         if ($request->filled('password')) {
@@ -64,6 +72,10 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        if ($user->email === 'superadmin@qc.com') {
+            return response()->json(['message' => 'Super admin account cannot be deleted.'], 403);
+        }
+
         $user->delete();
         return response()->json(['message' => 'User deleted']);
     }

@@ -1,7 +1,8 @@
 <template>
   <div class="container">
-    <h2>Supplier Management</h2>
+    <h2><i class="bi bi-people"></i> Supplier Management</h2>
     <button @click="showForm = !showForm" class="btn btn-primary mb-3">Add Supplier</button>
+    <button @click="printTable" class="btn btn-secondary mb-3">Print</button>
 
     <div v-if="showForm" class="card mb-3">
       <div class="card-body">
@@ -152,6 +153,51 @@ export default {
       };
       this.showForm = false;
       this.editing = false;
+    },
+    printTable() {
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Supplier Management - Print</title>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+            <style>
+              body { margin: 20px; }
+              table { width: 100%; border-collapse: collapse; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #f2f2f2; }
+              @media print { body { margin: 0; } }
+            </style>
+          </head>
+          <body>
+            <h2>Supplier Management</h2>
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Supplier ID</th>
+                  <th>Name</th>
+                  <th>Contact Person</th>
+                  <th>Phone</th>
+                  <th>Email</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${this.suppliers.map(sup => `
+                  <tr>
+                    <td>${sup.supplier_id}</td>
+                    <td>${sup.name}</td>
+                    <td>${sup.contact_person}</td>
+                    <td>${sup.phone}</td>
+                    <td>${sup.email}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
     }
   }
 };
