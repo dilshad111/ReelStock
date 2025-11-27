@@ -20,3 +20,7 @@ Route::get('/', function () {
 Route::get('/login', function () {
     return redirect('/');
 })->name('login');
+
+Route::get('/{any}', function () {
+    return view('welcome');
+})->where('any', '.*');

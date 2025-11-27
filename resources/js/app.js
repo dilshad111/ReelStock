@@ -53,6 +53,106 @@ const VIEW_ORDER = [
     'user-rights'
 ];
 
+const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
+    dashboard: 'dashboard',
+    suppliers: 'suppliers',
+    qualities: 'qualities',
+    receipts: 'receipts',
+    issues: 'issues',
+    returns: 'returns',
+    'monthly-consumption': 'monthly-consumption',
+    'reel-stock': 'reel-stock',
+    'reel-receipt': 'reel-receipt',
+    'monthly-closing': 'monthly-closing',
+    cartons: 'cartons',
+    customers: 'customers',
+    'sketch-generator': 'sketch-generator',
+    reports: 'reports',
+    users: 'users',
+    'user-rights': 'user-rights',
+    setup: 'setup'
+});
+
+const VALID_VIEWS = new Set(Object.keys(VIEW_TO_ROUTE_SEGMENT));
+const DASHBOARD_VIEW = 'dashboard';
+
+const normalizePathname = path => {
+    if (!path) {
+        return '/';
+    }
+    if (path === '/') {
+        return '/';
+    }
+    const trimmed = path.replace(/\/+$/, '');
+    if (trimmed === '') {
+        return '/';
+    }
+    return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+};
+
+const resolveViewFromPath = pathname => {
+    if (!pathname) {
+        return DASHBOARD_VIEW;
+    }
+    const trimmed = pathname.replace(/\/+$/, '');
+    if (trimmed === '' || trimmed === '/') {
+        return DASHBOARD_VIEW;
+    }
+    const segments = trimmed.split('/').filter(Boolean);
+    for (let i = segments.length - 1; i >= 0; i--) {
+        const segment = segments[i];
+        if (segment === 'login') {
+            return DASHBOARD_VIEW;
+        }
+        if (VALID_VIEWS.has(segment)) {
+            return segment;
+        }
+    }
+    return DASHBOARD_VIEW;
+};
+
+const computeBasePath = (pathname, view) => {
+    if (!pathname) {
+        return '';
+    }
+    const trimmed = pathname.replace(/\/+$/, '');
+    if (trimmed === '' || trimmed === '/') {
+        return '';
+    }
+    if (trimmed === '/login') {
+        return '';
+    }
+    if (trimmed.endsWith('/login')) {
+        const withoutLogin = trimmed.slice(0, -'/login'.length);
+        if (withoutLogin === '') {
+            return '';
+        }
+        return withoutLogin.startsWith('/') ? withoutLogin : `/${withoutLogin}`;
+    }
+    const segment = VIEW_TO_ROUTE_SEGMENT[view];
+    if (segment) {
+        const suffix = `/${segment}`;
+        if (trimmed.endsWith(suffix)) {
+            const base = trimmed.slice(0, trimmed.length - suffix.length);
+            if (base === '') {
+                return '';
+            }
+            return base.startsWith('/') ? base : `/${base}`;
+        }
+    }
+    return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+};
+
+const buildPathForView = (basePath, view) => {
+    const segment = VIEW_TO_ROUTE_SEGMENT[view] || VIEW_TO_ROUTE_SEGMENT[DASHBOARD_VIEW];
+    const cleanedBase = basePath ? basePath.replace(/\/+$/, '') : '';
+    const combined = `${cleanedBase}/${segment}`.replace(/\/{2,}/g, '/');
+    if (combined === '') {
+        return '/';
+    }
+    return combined.startsWith('/') ? combined : `/${combined}`;
+};
+
 const createEmptyPermissions = () => {
     const perms = {};
     PERMISSION_KEYS.forEach(key => {
@@ -78,12 +178,20 @@ const app = createApp({
             user: null,
             token: localStorage.getItem('token'),
             permissions: createEmptyPermissions(),
-            permissionsLoaded: false
+            permissionsLoaded: false,
+            initialRouteView: null,
+            basePath: ''
         };
 
     },
 
     mounted() {
+        this.initialRouteView = resolveViewFromPath(window.location.pathname);
+        this.basePath = computeBasePath(window.location.pathname, this.initialRouteView);
+        if (this.initialRouteView && this.initialRouteView !== this.currentView) {
+            this.currentView = this.initialRouteView;
+        }
+        window.addEventListener('popstate', this.handlePopState);
         try {
             this.user = JSON.parse(localStorage.getItem('user')) || null;
         } catch (e) {
@@ -97,7 +205,52 @@ const app = createApp({
         }
     },
 
+    beforeUnmount() {
+        window.removeEventListener('popstate', this.handlePopState);
+    },
+
     methods: {
+        normalizeView(view) {
+            if (typeof view !== 'string') {
+                return DASHBOARD_VIEW;
+            }
+            return VALID_VIEWS.has(view) ? view : DASHBOARD_VIEW;
+        },
+        getViewFromRoute() {
+            return resolveViewFromPath(window.location.pathname);
+        },
+        updateRoute(view, replace = false) {
+            const targetPath = buildPathForView(this.basePath, view);
+            const normalizedTarget = normalizePathname(targetPath);
+            const currentPath = normalizePathname(window.location.pathname);
+            if (currentPath === normalizedTarget) {
+                if (replace) {
+                    window.history.replaceState({ view }, '', normalizedTarget);
+                    this.basePath = computeBasePath(normalizedTarget, view);
+                }
+                return;
+            }
+            const method = replace ? 'replaceState' : 'pushState';
+            window.history[method]({ view }, '', normalizedTarget);
+            this.basePath = computeBasePath(normalizedTarget, view);
+        },
+        applyInitialRouteView(options = {}) {
+            if (!this.initialRouteView) {
+                return false;
+            }
+            const view = this.normalizeView(this.initialRouteView);
+            this.initialRouteView = null;
+            const replace = Object.prototype.hasOwnProperty.call(options, 'replace') ? options.replace : true;
+            this.setView(view, { replace, skipRoute: true });
+            return true;
+        },
+        handlePopState() {
+            const path = window.location.pathname;
+            const view = resolveViewFromPath(path);
+            this.basePath = computeBasePath(path, view);
+            this.initialRouteView = null;
+            this.setView(view, { replace: true, skipRoute: true });
+        },
         checkAuth() {
             axios.get('/api/user').then(response => {
                 this.user = response.data;
@@ -110,7 +263,9 @@ const app = createApp({
             if (!this.user || this.user.role?.name === 'Admin' || this.user.email === 'superadmin@qc.com') {
                 this.permissions = createFullPermissions();
                 this.permissionsLoaded = true;
-                this.currentView = this.getFirstPermittedView();
+                if (!this.applyInitialRouteView({ replace: true })) {
+                    this.setView(this.getFirstPermittedView(), { replace: true });
+                }
                 return;
             }
             axios.get(`/api/user-permissions/${this.user.id}`).then(response => {
@@ -125,12 +280,16 @@ const app = createApp({
                     }
                 });
                 this.permissionsLoaded = true;
-                this.currentView = this.getFirstPermittedView();
+                if (!this.applyInitialRouteView({ replace: true })) {
+                    this.setView(this.getFirstPermittedView(), { replace: true });
+                }
             }).catch(error => {
                 console.error('Error loading permissions:', error);
                 this.permissions = createEmptyPermissions();
                 this.permissionsLoaded = true;
-                this.currentView = this.getFirstPermittedView();
+                if (!this.applyInitialRouteView({ replace: true })) {
+                    this.setView(this.getFirstPermittedView(), { replace: true });
+                }
             });
         },
         logout() {
@@ -140,7 +299,12 @@ const app = createApp({
             delete axios.defaults.headers.common['Authorization'];
             this.permissions = createEmptyPermissions();
             this.permissionsLoaded = false;
-            this.currentView = 'dashboard';
+            this.currentView = DASHBOARD_VIEW;
+            this.initialRouteView = DASHBOARD_VIEW;
+            const loginBase = this.basePath ? this.basePath.replace(/\/+$/, '') : '';
+            const loginPath = `${loginBase}/login`.replace(/\/{2,}/g, '/');
+            const normalizedLoginPath = loginPath.startsWith('/') ? loginPath : `/${loginPath}`;
+            window.history.replaceState({}, '', normalizedLoginPath);
         },
         canView(view) {
             if (this.user?.email === 'superadmin@qc.com') {
@@ -170,19 +334,29 @@ const app = createApp({
             const permission = this.permissions[permKey];
             return permission ? permission.can_see_amounts : false;
         },
-        setView(view) {
+        setView(view, options = {}) {
+            const { replace = false, skipRoute = false } = options;
+            const targetView = this.normalizeView(view);
+
             if (!this.user) {
-                this.currentView = view;
+                this.currentView = targetView;
+                if (!skipRoute) {
+                    this.updateRoute(targetView, replace);
+                }
                 return;
             }
-            if (!this.permissionsLoaded && PERMISSION_KEY_MAP[view]) {
+            if (!this.permissionsLoaded && PERMISSION_KEY_MAP[targetView]) {
                 return;
             }
-            if (this.canView(view)) {
-                this.currentView = view;
-            } else {
-                const fallback = this.getFirstPermittedView();
-                this.currentView = fallback;
+
+            let nextView = targetView;
+            if (!this.canView(targetView)) {
+                nextView = this.getFirstPermittedView();
+            }
+
+            this.currentView = nextView;
+            if (!skipRoute) {
+                this.updateRoute(nextView, replace);
             }
         },
         getFirstPermittedView() {
