@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 28, 2025 at 09:57 AM
+-- Generation Time: Nov 22, 2025 at 05:26 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -287,9 +287,7 @@ INSERT INTO `personal_access_tokens` (`id`, `tokenable_type`, `tokenable_id`, `n
 (84, 'App\\Models\\User', 7, 'auth_token', 'c44fc2295bc01f0e1afc94dd10ad6a9bbb5fd29d764d7a4ca56dffa7bf567b38', '[\"*\"]', '2025-11-22 10:50:54', NULL, '2025-11-22 10:42:26', '2025-11-22 10:50:54'),
 (85, 'App\\Models\\User', 2, 'auth_token', 'd3548917a2290c8a87c54a3f11db0ef80c8a9f545d121af04f5b5490fcd693f1', '[\"*\"]', '2025-11-22 10:54:01', NULL, '2025-11-22 10:53:42', '2025-11-22 10:54:01'),
 (86, 'App\\Models\\User', 3, 'auth_token', 'c11fdf63c83ab793ab6268c53fcf49c108ad0385965784b93401b637f50b7015', '[\"*\"]', '2025-11-22 10:56:46', NULL, '2025-11-22 10:54:28', '2025-11-22 10:56:46'),
-(87, 'App\\Models\\User', 7, 'auth_token', '18866e87fd0a86fe147d89255d014d408a88501c47729d522a8e0b33a63a42e5', '[\"*\"]', '2025-11-22 11:24:54', NULL, '2025-11-22 10:57:28', '2025-11-22 11:24:54'),
-(88, 'App\\Models\\User', 2, 'auth_token', '00c1510945b8ef92f788b48622e26d8ecd983ecfd2cdf8e987cec8a8635767cf', '[\"*\"]', '2025-11-27 13:17:39', NULL, '2025-11-27 11:56:05', '2025-11-27 13:17:39'),
-(89, 'App\\Models\\User', 2, 'auth_token', 'e3116cec200fd6e1e671ceeca78f3819f4e796334ffa34df68c7f142a6ffbc25', '[\"*\"]', '2025-11-27 13:39:45', NULL, '2025-11-27 13:39:43', '2025-11-27 13:39:45');
+(87, 'App\\Models\\User', 7, 'auth_token', '18866e87fd0a86fe147d89255d014d408a88501c47729d522a8e0b33a63a42e5', '[\"*\"]', '2025-11-22 11:24:54', NULL, '2025-11-22 10:57:28', '2025-11-22 11:24:54');
 
 -- --------------------------------------------------------
 
@@ -1054,6 +1052,14 @@ CREATE TABLE `user_permissions` (
 --
 
 INSERT INTO `user_permissions` (`id`, `user_id`, `menu`, `can_view`, `can_edit`, `can_see_amounts`, `created_at`, `updated_at`) VALUES
+(1, 3, 'dashboard', 0, 0, 0, '2025-11-18 13:00:55', '2025-11-18 13:00:55'),
+(2, 3, 'supplier', 1, 1, 0, '2025-11-18 13:00:55', '2025-11-18 13:00:55'),
+(3, 3, 'reel_receipt', 1, 1, 0, '2025-11-18 13:00:55', '2025-11-18 13:00:55'),
+(4, 3, 'reel_issue', 1, 1, 0, '2025-11-18 13:00:55', '2025-11-18 13:00:55'),
+(5, 3, 'monthly_consumption', 1, 1, 0, '2025-11-18 13:00:55', '2025-11-18 13:00:55'),
+(6, 3, 'reel_stock', 1, 1, 0, '2025-11-18 13:00:55', '2025-11-18 13:00:55'),
+(7, 3, 'reel_receipt_report', 1, 1, 0, '2025-11-18 13:00:55', '2025-11-18 13:00:55'),
+(8, 3, 'monthly_closing', 1, 1, 0, '2025-11-18 13:00:55', '2025-11-18 13:00:55'),
 (9, 5, 'dashboard', 1, 1, 1, '2025-11-22 11:01:29', '2025-11-22 11:01:29'),
 (10, 5, 'supplier', 1, 1, 0, '2025-11-22 11:01:29', '2025-11-22 11:01:29'),
 (11, 5, 'reel_receipt', 1, 1, 1, '2025-11-22 11:01:29', '2025-11-22 11:01:29'),
@@ -1062,16 +1068,7 @@ INSERT INTO `user_permissions` (`id`, `user_id`, `menu`, `can_view`, `can_edit`,
 (14, 5, 'reel_stock', 1, 1, 1, '2025-11-22 11:01:29', '2025-11-22 11:01:29'),
 (15, 5, 'reel_receipt_report', 1, 1, 1, '2025-11-22 11:01:29', '2025-11-22 11:01:29'),
 (16, 5, 'monthly_closing', 1, 1, 1, '2025-11-22 11:01:29', '2025-11-22 11:01:29'),
-(17, 5, 'cartons', 1, 1, 0, '2025-11-22 11:01:29', '2025-11-22 11:01:29'),
-(18, 3, 'dashboard', 1, 0, 0, '2025-11-27 12:16:09', '2025-11-27 12:16:09'),
-(19, 3, 'supplier', 1, 1, 0, '2025-11-27 12:16:09', '2025-11-27 12:16:09'),
-(20, 3, 'reel_receipt', 1, 1, 0, '2025-11-27 12:16:09', '2025-11-27 12:16:09'),
-(21, 3, 'reel_issue', 1, 1, 0, '2025-11-27 12:16:09', '2025-11-27 12:16:09'),
-(22, 3, 'monthly_consumption', 1, 1, 0, '2025-11-27 12:16:09', '2025-11-27 12:16:09'),
-(23, 3, 'reel_stock', 1, 1, 0, '2025-11-27 12:16:09', '2025-11-27 12:16:09'),
-(24, 3, 'reel_receipt_report', 1, 1, 0, '2025-11-27 12:16:09', '2025-11-27 12:16:09'),
-(25, 3, 'monthly_closing', 1, 1, 0, '2025-11-27 12:16:09', '2025-11-27 12:16:09'),
-(26, 3, 'cartons', 0, 0, 0, '2025-11-27 12:16:09', '2025-11-27 12:16:09');
+(17, 5, 'cartons', 1, 1, 0, '2025-11-22 11:01:29', '2025-11-22 11:01:29');
 
 --
 -- Indexes for dumped tables
@@ -1228,7 +1225,7 @@ ALTER TABLE `paper_qualities`
 -- AUTO_INCREMENT for table `personal_access_tokens`
 --
 ALTER TABLE `personal_access_tokens`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=90;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=88;
 
 --
 -- AUTO_INCREMENT for table `reels`
@@ -1282,7 +1279,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `user_permissions`
 --
 ALTER TABLE `user_permissions`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- Constraints for dumped tables
