@@ -1,7 +1,18 @@
 import { createApp } from 'vue';
 import axios from 'axios';
 
-axios.defaults.baseURL = 'http://127.0.0.1:8000';
+const resolveApiBaseUrl = () => {
+    const envUrl = import.meta.env?.VITE_API_BASE_URL;
+    if (envUrl && typeof envUrl === 'string') {
+        return envUrl.replace(/\/+$/, '');
+    }
+    if (typeof window !== 'undefined' && window.location?.origin) {
+        return window.location.origin.replace(/\/+$/, '');
+    }
+    return 'http://localhost';
+};
+
+axios.defaults.baseURL = resolveApiBaseUrl();
 
 const PERMISSION_KEY_MAP = {
     dashboard: 'dashboard',

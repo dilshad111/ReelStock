@@ -19,7 +19,15 @@ class ContentSecurityPolicy
         $response = $next($request);
 
         if (!app()->environment('local')) {
-            $response->headers->set('Content-Security-Policy', "script-src 'self' 'unsafe-eval' 'unsafe-inline' http://localhost:5173 https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.jsdelivr.net;");
+            $devHosts = array_filter(array_map('trim', explode(',', env('CSP_DEV_HOSTS', 'http://localhost:5173'))));
+            $scriptSources = array_merge(["'self'", "'unsafe-eval'", "'unsafe-inline'"], $devHosts, ['https://cdn.jsdelivr.net']);
+
+            $csp = sprintf(
+                "script-src %s; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.jsdelivr.net;",
+                implode(' ', $scriptSources)
+            );
+
+            $response->headers->set('Content-Security-Policy', $csp);
         }
 
         return $response;
