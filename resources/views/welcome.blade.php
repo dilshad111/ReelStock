@@ -187,7 +187,8 @@
                                 <ul class="dropdown-menu" aria-labelledby="paperDropdown">
                                     <li><button class="dropdown-item" @click="setView('qualities')">Paper Qualities</button></li>
                                     <li v-if="!permissionsLoaded || canView('receipts')"><button class="dropdown-item" @click="setView('receipts')">Receipts</button></li>
-                                    <li v-if="!permissionsLoaded || canView('issues')"><button class="dropdown-item" @click="setView('issues')">Issues</button></li>
+                                    <li v-if="!permissionsLoaded || canView('issues')"><button class="dropdown-item" @click="setView('issues')">Reel Issue</button></li>
+                                    <li v-if="!permissionsLoaded || canView('return-supplier')"><button class="dropdown-item" @click="setView('return-supplier')">Reel Return to Supplier</button></li>
                                 </ul>
                             </li>
                             <li class="nav-item dropdown">
@@ -255,6 +256,7 @@
                 <paper-quality-component v-else-if="currentView === 'qualities'" :user="user"></paper-quality-component>
                 <reel-receipt-component v-else-if="currentView === 'receipts'" :user="user"></reel-receipt-component>
                 <reel-issue-component v-else-if="currentView === 'issues'" :user="user"></reel-issue-component>
+                <reel-return-supplier-component v-else-if="currentView === 'return-supplier'" :user="user"></reel-return-supplier-component>
                 <monthly-consumption-report-component v-else-if="currentView === 'monthly-consumption'" :user="user" :can-see-amounts="canSeeAmounts('monthly-consumption')"></monthly-consumption-report-component>
                 <reel-stock-report-component v-else-if="currentView === 'reel-stock'" :user="user" :can-see-amounts="canSeeAmounts('reel-stock')"></reel-stock-report-component>
                 <reel-receipt-report-component v-else-if="currentView === 'reel-receipt'" :user="user" :can-see-amounts="canSeeAmounts('reel-receipt')"></reel-receipt-report-component>

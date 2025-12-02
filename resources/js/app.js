@@ -9,7 +9,7 @@ const PERMISSION_KEY_MAP = {
     qualities: null,
     receipts: 'reel_receipt',
     issues: 'reel_issue',
-    returns: 'reel_issue',
+    'return-supplier': 'reel_issue',
     'monthly-consumption': 'monthly_consumption',
     'reel-stock': 'reel_stock',
     'reel-receipt': 'reel_receipt_report',
@@ -40,7 +40,7 @@ const VIEW_ORDER = [
     'qualities',
     'receipts',
     'issues',
-    'returns',
+    'return-supplier',
     'monthly-consumption',
     'reel-stock',
     'reel-receipt',
@@ -59,7 +59,7 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     qualities: 'qualities',
     receipts: 'receipts',
     issues: 'issues',
-    returns: 'returns',
+    'return-supplier': 'return-supplier',
     'monthly-consumption': 'monthly-consumption',
     'reel-stock': 'reel-stock',
     'reel-receipt': 'reel-receipt',
@@ -379,7 +379,7 @@ import PaperQualityComponent from './components/PaperQualityComponent.vue';
 import DashboardComponent from './components/DashboardComponent.vue';
 import ReelReceiptComponent from './components/ReelReceiptComponent.vue';
 import ReelIssueComponent from './components/ReelIssueComponent.vue';
-import ReelReturnComponent from './components/ReelReturnComponent.vue';
+import ReelReturnSupplierComponent from './components/ReelReturnSupplierComponent.vue';
 import LoginComponent from './components/LoginComponent.vue';
 import MonthlyConsumptionReportComponent from './components/MonthlyConsumptionReportComponent.vue';
 import ReelStockReportComponent from './components/ReelStockReportComponent.vue';
@@ -400,7 +400,7 @@ app.component('paper-quality-component', PaperQualityComponent);
 app.component('dashboard-component', DashboardComponent);
 app.component('reel-receipt-component', ReelReceiptComponent);
 app.component('reel-issue-component', ReelIssueComponent);
-app.component('reel-return-component', ReelReturnComponent);
+app.component('reel-return-supplier-component', ReelReturnSupplierComponent);
 app.component('monthly-consumption-report-component', MonthlyConsumptionReportComponent);
 app.component('reel-stock-report-component', ReelStockReportComponent);
 app.component('reel-receipt-report-component', ReelReceiptReportComponent);

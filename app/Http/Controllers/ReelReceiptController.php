@@ -228,4 +228,27 @@ class ReelReceiptController extends Controller
 
         return response()->json($receipt->load('reel.paperQuality', 'reel.supplier'));
     }
+
+    public function destroy($id)
+    {
+        $receipt = ReelReceipt::with('reel')->findOrFail($id);
+
+        return DB::transaction(function () use ($receipt) {
+            $reel = $receipt->reel;
+
+            if ($reel && ($reel->issues()->exists() || $reel->returns()->exists())) {
+                return response()->json([
+                    'error' => 'Cannot delete this receipt because the associated reel has issue or return records.'
+                ], 400);
+            }
+
+            $receipt->delete();
+
+            if ($reel && !$reel->receipts()->exists()) {
+                $reel->delete();
+            }
+
+            return response()->json(['message' => 'Receipt deleted successfully.']);
+        });
+    }
 }

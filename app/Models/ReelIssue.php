@@ -15,6 +15,9 @@ class ReelIssue extends Model
         'quantity_issued',
         'issued_to',
         'remarks',
+        'return_to_stock_weight',
+        'net_consumed_weight',
+        'auto_return_id',
     ];
 
     public function reel()

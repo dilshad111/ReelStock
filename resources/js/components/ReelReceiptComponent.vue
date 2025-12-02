@@ -229,9 +229,10 @@
             <td class="text-center">{{ formatWeightKg(r.reel.original_weight) }}</td>
             <td class="text-center">{{ formatRate(r.rate_per_kg) }}</td>
             <td>{{ r.qc_status }}</td>
-            <td style="min-width: 170px;">
+            <td style="min-width: 230px;">
               <button @click="editReceipt(r)" class="btn btn-sm btn-warning me-1">Edit</button>
-              <button @click="printLabel(r)" class="btn btn-sm btn-info">Print Label</button>
+              <button @click="printLabel(r)" class="btn btn-sm btn-info me-1">Print Label</button>
+              <button @click="deleteReceipt(r)" class="btn btn-sm btn-danger">Delete</button>
             </td>
           </tr>
         </template>
@@ -467,12 +468,14 @@ export default {
         }
       });
 
-      // Group labels into pages of 6 (2 columns x 3 rows)
       const pages = [];
       for (let i = 0; i < allLabels.length; i += 6) {
         const pageLabels = allLabels.slice(i, i + 6);
-        // If not full, still include without empties
-        pages.push(`<div class="page">${pageLabels.join('')}</div>`);
+        pages.push(this.buildPageHTML(pageLabels));
+      }
+
+      if (pages.length === 0) {
+        pages.push(this.buildPageHTML([]));
       }
 
       return `
@@ -482,14 +485,27 @@ export default {
             <style>
               body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
               .page {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 5mm;
-                padding: 5mm;
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                grid-template-rows: repeat(3, minmax(0, 1fr));
+                gap: 4mm;
+                padding: 6mm;
                 box-sizing: border-box;
-                height: auto;
-                min-height: 297mm;
                 width: 210mm;
+                height: 297mm;
+                page-break-after: always;
+                align-items: stretch;
+                justify-items: stretch;
+              }
+              .slot {
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-sizing: border-box;
+                padding: 0;
+                min-width: 0;
+                min-height: 0;
               }
               .label {
                 border: none;
@@ -500,7 +516,9 @@ export default {
                 justify-content: center;
                 box-sizing: border-box;
                 width: 96mm;
-                height: 88mm;
+                height: 90mm;
+                flex-shrink: 0;
+                margin: 0 auto;
               }
               .label-table {
                 width: 100%;
@@ -542,7 +560,10 @@ export default {
                 text-align: center;
                 font-weight: bold;
               }
-              @media print { body { margin: 0; } @page { margin: 0; } }
+              @media print {
+                body { margin: 0; }
+                @page { size: A4 portrait; margin: 0; }
+              }
             </style>
           </head>
           <body>
@@ -552,6 +573,11 @@ export default {
       `;
     },
     printLabel(receipt) {
+      const labelCopies = [
+        this.createLabelHTML(receipt),
+        this.createLabelHTML(receipt)
+      ];
+
       const labelContent = `
         <html>
           <head>
@@ -559,14 +585,26 @@ export default {
             <style>
               body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
               .page {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 5mm;
-                padding: 5mm;
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                grid-template-rows: repeat(3, minmax(0, 1fr));
+                gap: 4mm;
+                padding: 6mm;
                 box-sizing: border-box;
-                height: auto;
-                min-height: 297mm;
                 width: 210mm;
+                height: 297mm;
+                align-items: stretch;
+                justify-items: stretch;
+              }
+              .slot {
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-sizing: border-box;
+                padding: 0;
+                min-width: 0;
+                min-height: 0;
               }
               .label {
                 border: none;
@@ -577,7 +615,9 @@ export default {
                 justify-content: center;
                 box-sizing: border-box;
                 width: 96mm;
-                height: 88mm;
+                height: 90mm;
+                flex-shrink: 0;
+                margin: 0 auto;
               }
               .label-table {
                 width: 100%;
@@ -619,14 +659,14 @@ export default {
                 text-align: center;
                 font-weight: bold;
               }
-              @media print { body { margin: 0; } @page { margin: 0; } }
+              @media print {
+                body { margin: 0; }
+                @page { size: A4 portrait; margin: 0; }
+              }
             </style>
           </head>
           <body>
-            <div class="page">
-              ${this.createLabelHTML(receipt)}
-              ${this.createLabelHTML(receipt)}
-            </div>
+            ${this.buildPageHTML(labelCopies)}
           </body>
         </html>
       `;
@@ -696,6 +736,15 @@ export default {
           </table>
         </div>
       `;
+    },
+    buildPageHTML(labels) {
+      const slots = [];
+      for (let index = 0; index < 6; index++) {
+        const labelContent = labels[index] || '';
+        const slotClass = labelContent ? 'slot' : 'slot empty';
+        slots.push(`<div class="${slotClass}" data-slot="${index + 1}">${labelContent}</div>`);
+      }
+      return `<div class="page">${slots.join('')}</div>`;
     },
     resolvePaperQuality(reel) {
       if (!reel) return null;
@@ -856,6 +905,26 @@ export default {
       this.showForm = true;
       // Scroll to top for editing
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    deleteReceipt(receipt) {
+      if (!receipt || !receipt.id) {
+        return;
+      }
+      if (!confirm('Are you sure you want to delete this receipt?')) {
+        return;
+      }
+      axios.delete(`/api/reel-receipts/${receipt.id}`)
+        .then(() => {
+          if (this.editing && this.receipt.id === receipt.id) {
+            this.cancel();
+          }
+          alert('Receipt deleted successfully.');
+          this.fetchReceipts();
+        })
+        .catch(error => {
+          const message = error.response?.data?.error || error.response?.data?.message || 'Failed to delete receipt.';
+          alert(message);
+        });
     },
     cancel() {
       this.isBulk = false;

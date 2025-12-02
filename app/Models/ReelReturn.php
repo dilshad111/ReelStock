@@ -11,8 +11,10 @@ class ReelReturn extends Model
 
     protected $fillable = [
         'reel_id',
+        'challan_no',
         'return_date',
         'remaining_weight',
+        'returned_to',
         'condition',
         'remarks',
     ];

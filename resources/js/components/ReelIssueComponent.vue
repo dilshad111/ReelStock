@@ -1,25 +1,25 @@
 <template>
   <div class="container">
-    <h2><i class="bi bi-arrow-left-right"></i> Paper Reel Issue and Return</h2>
-    <div class="mb-3">
-      <label>Action</label>
-      <select v-model="type" @change="resetForm" class="form-control">
-        <option value="issue">Issue Reel</option>
-        <option value="return">Return Reel</option>
-      </select>
+    <div class="mb-2">
+      <h2 class="mb-0"><i class="bi bi-arrow-left-right"></i> Paper Reel Issue</h2>
     </div>
-    <button @click="showForm = !showForm" class="btn btn-primary mb-3">{{ type === 'issue' ? 'Issue Reel' : 'Return Reel' }}</button>
-    <button @click="printTable" class="btn btn-secondary mb-3">Print Tables</button>
+    <div class="mb-3">
+      <button @click="toggleForm" class="btn btn-primary me-2">
+        <i class="bi" :class="showForm ? 'bi-dash-circle' : 'bi-plus-circle'"></i>
+        {{ showForm ? 'Close Issue Form' : 'Issue Reel' }}
+      </button>
+      <button @click="printTable" class="btn btn-secondary">Print Tables</button>
+    </div>
 
     <div v-if="showForm" class="card mb-3">
       <div class="card-body">
-        <h5>{{ type === 'issue' ? 'Issue Reel' : 'Return Reel' }}</h5>
-        <form @submit.prevent="type === 'issue' ? saveIssue() : saveReturn()">
+        <h5>Issue Reel</h5>
+        <form @submit.prevent="saveIssue()">
           <div class="row">
             <div class="col-md-6">
               <div class="mb-3">
                 <label>Reel No.</label>
-                <input v-model="formData.reel_no" type="text" class="form-control" required @blur="fetchReel">
+                <input v-model="formData.reel_no" type="text" class="form-control" required @blur="fetchReel" :disabled="isEditing">
               </div>
               <div v-if="reel" class="mb-3">
                 <p>Quality: {{ getQuality(reel) }}</p>
@@ -56,44 +56,25 @@
               </div>
             </div>
             <div class="col-md-6">
-              <div v-if="type === 'issue'">
-                <div class="mb-3">
-                  <label>Issue Date</label>
-                  <input v-model="formData.issue_date" type="date" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                  <label>Quantity Issued (kg)</label>
-                  <input v-model="formData.quantity_issued" type="number" step="0.01" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                  <label>Issued To</label>
-                  <input v-model="formData.issued_to" type="text" class="form-control" required>
-                </div>
+              <div class="mb-3">
+                <label>Issue Date</label>
+                <input v-model="formData.issue_date" type="date" class="form-control" required>
               </div>
-              <div v-else>
-                <div class="mb-3">
-                  <label>Return Date</label>
-                  <input v-model="formData.return_date" type="date" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                  <label>Remaining Weight (kg)</label>
-                  <input v-model="formData.remaining_weight" type="number" step="0.01" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                  <label>Return To</label>
-                  <select v-model="formData.return_to" class="form-control">
-                    <option value="stock">Stock</option>
-                    <option value="supplier">Supplier</option>
-                  </select>
-                </div>
-                <div class="mb-3">
-                  <label>Condition</label>
-                  <select v-model="formData.condition" class="form-control" required>
-                    <option value="good">Good</option>
-                    <option value="damaged">Damaged</option>
-                    <option value="qc_required">QC Required</option>
-                  </select>
-                </div>
+              <div class="mb-3">
+                <label>Quantity Issued (kg)</label>
+                <input v-model.number="formData.quantity_issued" @input="normalizeQuantities" type="number" step="0.01" min="0" class="form-control" required>
+              </div>
+              <div class="mb-3">
+                <label>Return to Stock (kg)</label>
+                <input v-model.number="formData.return_to_stock_weight" @input="normalizeQuantities" type="number" step="0.01" min="0" class="form-control">
+              </div>
+              <div class="mb-3">
+                <label>Consumed Weight (kg)</label>
+                <input :value="formattedBalance" type="text" class="form-control" readonly>
+              </div>
+              <div class="mb-3">
+                <label>Issued To</label>
+                <input v-model="formData.issued_to" type="text" class="form-control" required>
               </div>
               <div class="mb-3">
                 <label>Remarks</label>
@@ -108,7 +89,13 @@
     </div>
 
     <div class="row">
-      <div class="col-md-6">
+      <div class="col-12">
+        <div class="row g-3 align-items-end mb-3">
+          <div class="col-md-4 col-sm-6">
+            <label class="form-label">Search Reel No.</label>
+            <input v-model.trim="issueSearch" type="text" class="form-control" placeholder="Enter reel number to filter">
+          </div>
+        </div>
         <h4>Issues</h4>
         <table class="table table-striped">
           <thead>
@@ -117,39 +104,25 @@
               <th>Quality</th>
               <th>Issue Date</th>
               <th>Quantity Issued</th>
+              <th>Return to Stock</th>
+              <th>Net Consumed</th>
               <th>Issued To</th>
+              <th class="text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="i in issues" :key="i.id">
+            <tr v-for="i in filteredIssues" :key="i.id">
               <td>{{ i.reel.reel_no }}</td>
               <td>{{ getQuality(i.reel) }}</td>
               <td>{{ i.issue_date }}</td>
-              <td>{{ i.quantity_issued }} kg</td>
+              <td>{{ formatNumber(i.quantity_issued) }} kg</td>
+              <td>{{ formatNumber(i.return_to_stock_weight || 0) }} kg</td>
+              <td>{{ formatNumber(i.net_consumed_weight || 0) }} kg</td>
               <td>{{ i.issued_to }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="col-md-6">
-        <h4>Returns</h4>
-        <table class="table table-striped">
-          <thead>
-            <tr>
-              <th>Reel No.</th>
-              <th>Quality</th>
-              <th>Return Date</th>
-              <th>Remaining Weight</th>
-              <th>Condition</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="r in returns" :key="r.id">
-              <td>{{ r.reel.reel_no }}</td>
-              <td>{{ getQuality(r.reel) }}</td>
-              <td>{{ r.return_date }}</td>
-              <td>{{ r.remaining_weight }} kg</td>
-              <td>{{ r.condition }}</td>
+              <td class="text-center" style="min-width: 150px;">
+                <button class="btn btn-sm btn-warning me-1" @click="editIssue(i)">Edit</button>
+                <button class="btn btn-sm btn-danger" @click="deleteIssue(i)">Delete</button>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -165,37 +138,50 @@ export default {
   data() {
     return {
       issues: [],
-      returns: [],
       reel: null,
       reelHistory: [],
-      type: 'issue',
       formData: {
         reel_no: '',
         issue_date: new Date().toISOString().substr(0,10),
         quantity_issued: '',
+        return_to_stock_weight: 0,
         issued_to: 'Corrugation Plant',
-        return_date: new Date().toISOString().substr(0,10),
-        remaining_weight: '',
-        return_to: 'stock',
-        condition: 'good',
         remarks: ''
       },
-      showForm: false
+      showForm: false,
+      editingIssueId: null,
+      originalNetConsumed: 0,
+      issueSearch: ''
     };
   },
   mounted() {
     this.fetchIssues();
-    this.fetchReturns();
+  },
+  computed: {
+    calculatedBalance() {
+      const issued = Number(this.formData.quantity_issued) || 0;
+      const returned = Number(this.formData.return_to_stock_weight) || 0;
+      const balance = issued - returned;
+      return balance < 0 ? 0 : balance;
+    },
+    formattedBalance() {
+      return this.formatNumber(this.calculatedBalance);
+    },
+    isEditing() {
+      return this.editingIssueId !== null;
+    },
+    filteredIssues() {
+      if (!this.issueSearch) {
+        return this.issues;
+      }
+      const term = this.issueSearch.trim().toLowerCase();
+      return this.issues.filter(issue => issue?.reel?.reel_no?.toLowerCase().includes(term));
+    }
   },
   methods: {
     fetchIssues() {
       axios.get('/api/reel-issues').then(response => {
         this.issues = response.data;
-      });
-    },
-    fetchReturns() {
-      axios.get('/api/reel-returns').then(response => {
-        this.returns = response.data;
       });
     },
     fetchReel() {
@@ -204,9 +190,10 @@ export default {
         this.formData.reel_no = normalizedReelNo;
         axios.get(`/api/fetch-reel/${encodeURIComponent(normalizedReelNo)}`).then(response => {
           this.reel = response.data;
-          if (this.type === 'issue') {
-            this.formData.quantity_issued = parseFloat(this.reel.balance_weight) || 0;
-          }
+          const balance = parseFloat(this.reel.balance_weight) || 0;
+          this.formData.quantity_issued = balance;
+          this.formData.return_to_stock_weight = 0;
+          this.originalNetConsumed = 0;
           this.loadReelHistory();
         }).catch(() => {
           alert('Reel not found or invalid');
@@ -214,6 +201,37 @@ export default {
           this.reelHistory = [];
         });
       }
+    },
+    normalizeQuantities() {
+      let issued = Number(this.formData.quantity_issued);
+      let returned = Number(this.formData.return_to_stock_weight);
+
+      if (!Number.isFinite(issued) || issued < 0) {
+        issued = 0;
+      }
+
+      let maxIssued = Number(this.reel?.balance_weight);
+      if (this.isEditing) {
+        const allowance = Number(this.reel?.balance_weight) + Number(this.originalNetConsumed);
+        maxIssued = Number.isFinite(allowance) ? allowance : issued;
+      }
+      if (!Number.isFinite(maxIssued) || maxIssued <= 0) {
+        maxIssued = issued;
+      }
+      if (issued > maxIssued) {
+        issued = maxIssued;
+      }
+
+      if (!Number.isFinite(returned) || returned < 0) {
+        returned = 0;
+      }
+
+      if (returned > issued) {
+        returned = issued;
+      }
+
+      this.formData.quantity_issued = issued;
+      this.formData.return_to_stock_weight = returned;
     },
     loadReelHistory() {
       axios.get(`/api/reports/reel-stock/${this.formData.reel_no}/history`).then(response => {
@@ -225,16 +243,26 @@ export default {
     },
     saveIssue() {
       const payload = { ...this.formData, reel_no: this.normalizeReelNo(this.formData.reel_no) };
-      axios.post('/api/reel-issues', payload).then(() => {
+      payload.quantity_issued = Number(payload.quantity_issued) || 0;
+      payload.return_to_stock_weight = Number(payload.return_to_stock_weight) || 0;
+      payload.net_consumed_weight = this.calculatedBalance;
+
+      if (payload.return_to_stock_weight > payload.quantity_issued) {
+        alert('Return to stock weight cannot exceed quantity issued.');
+        return;
+      }
+
+      const request = this.editingIssueId
+        ? axios.put(`/api/reel-issues/${this.editingIssueId}`, payload)
+        : axios.post('/api/reel-issues', payload);
+
+      request.then(() => {
+        alert('Issue saved successfully.');
         this.fetchIssues();
         this.cancel();
-      });
-    },
-    saveReturn() {
-      const payload = { ...this.formData, reel_no: this.normalizeReelNo(this.formData.reel_no) };
-      axios.post('/api/reel-returns', payload).then(() => {
-        this.fetchReturns();
-        this.cancel();
+      }).catch(error => {
+        const message = error.response?.data?.error || 'Failed to save issue.';
+        alert(message);
       });
     },
     cancel() {
@@ -246,15 +274,56 @@ export default {
         reel_no: '',
         issue_date: new Date().toISOString().substr(0,10),
         quantity_issued: '',
+        return_to_stock_weight: 0,
         issued_to: 'Corrugation Plant',
-        return_date: new Date().toISOString().substr(0,10),
-        remaining_weight: '',
-        return_to: 'stock',
-        condition: 'good',
         remarks: ''
       };
       this.reel = null;
       this.reelHistory = [];
+      this.editingIssueId = null;
+      this.originalNetConsumed = 0;
+    },
+    toggleForm() {
+      this.showForm = !this.showForm;
+      if (!this.showForm) {
+        this.resetForm();
+      }
+    },
+    editIssue(issue) {
+      if (!issue) return;
+      this.editingIssueId = issue.id;
+      this.originalNetConsumed = Number(issue.net_consumed_weight) || 0;
+      this.formData = {
+        reel_no: issue.reel?.reel_no || '',
+        issue_date: issue.issue_date,
+        quantity_issued: Number(issue.quantity_issued) || 0,
+        return_to_stock_weight: Number(issue.return_to_stock_weight) || 0,
+        issued_to: issue.issued_to,
+        remarks: issue.remarks || ''
+      };
+      this.reel = issue.reel ? { ...issue.reel } : null;
+      this.showForm = true;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    deleteIssue(issue) {
+      if (!issue || !issue.id) {
+        return;
+      }
+      if (!confirm('Are you sure you want to delete this issue?')) {
+        return;
+      }
+      axios.delete(`/api/reel-issues/${issue.id}`)
+        .then(() => {
+          alert('Issue deleted successfully.');
+          if (this.editingIssueId === issue.id) {
+            this.cancel();
+          }
+          this.fetchIssues();
+        })
+        .catch(error => {
+          const message = error.response?.data?.error || 'Failed to delete issue.';
+          alert(message);
+        });
     },
     formatDate(dateString) {
       if (!dateString) return '-';
@@ -287,6 +356,13 @@ export default {
       if (!reel || !reel.supplier) return 'N/A';
       return reel.supplier.name || 'N/A';
     },
+    formatNumber(value) {
+      const number = Number(value);
+      if (!Number.isFinite(number)) {
+        return '-';
+      }
+      return number.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    },
     printTable() {
       const printWindow = window.open('', '_blank');
       printWindow.document.write(`
@@ -304,8 +380,8 @@ export default {
             </style>
           </head>
           <body>
-            <h2>Paper Reel Issue and Return</h2>
-            
+            <h2>Paper Reel Issue</h2>
+
             <h4>Issues</h4>
             <table class="table table-striped">
               <thead>
@@ -314,6 +390,8 @@ export default {
                   <th>Quality</th>
                   <th>Issue Date</th>
                   <th>Quantity Issued</th>
+                  <th>Return to Stock</th>
+                  <th>Net Consumed</th>
                   <th>Issued To</th>
                 </tr>
               </thead>
@@ -323,32 +401,10 @@ export default {
                     <td>${i.reel.reel_no}</td>
                     <td>${this.getQuality(i.reel)}</td>
                     <td>${i.issue_date}</td>
-                    <td>${i.quantity_issued} kg</td>
+                    <td>${this.formatNumber(i.quantity_issued)} kg</td>
+                    <td>${this.formatNumber(i.return_to_stock_weight || 0)} kg</td>
+                    <td>${this.formatNumber(i.net_consumed_weight || 0)} kg</td>
                     <td>${i.issued_to}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-            
-            <h4>Returns</h4>
-            <table class="table table-striped">
-              <thead>
-                <tr>
-                  <th>Reel No.</th>
-                  <th>Quality</th>
-                  <th>Return Date</th>
-                  <th>Remaining Weight</th>
-                  <th>Condition</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${this.returns.map(r => `
-                  <tr>
-                    <td>${r.reel.reel_no}</td>
-                    <td>${this.getQuality(r.reel)}</td>
-                    <td>${r.return_date}</td>
-                    <td>${r.remaining_weight} kg</td>
-                    <td>${r.condition}</td>
                   </tr>
                 `).join('')}
               </tbody>
