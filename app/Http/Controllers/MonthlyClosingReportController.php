@@ -43,7 +43,7 @@ class MonthlyClosingReportController extends Controller
 
             $returnsByReel = DB::table('reel_returns')
                 ->where('return_date', '<=', $targetDate->toDateString())
-                ->select('reel_id', 'return_date', 'remaining_weight')
+                ->select('reel_id', 'return_date', 'remaining_weight', 'returned_to')
                 ->orderBy('return_date')
                 ->get()
                 ->groupBy('reel_id');
@@ -66,13 +66,20 @@ class MonthlyClosingReportController extends Controller
                 if ($returnsByReel->has($reel->id)) {
                     $returns = $returnsByReel->get($reel->id);
                     $latestReturn = $returns->last();
-                    $closingBalance = $latestReturn->remaining_weight ?? 0;
+                    
+                    // If the latest return was to supplier, the reel is no longer in stock
+                    if ($latestReturn->returned_to === 'supplier') {
+                        $closingBalance = 0;
+                    } else {
+                        // Latest return was to stock
+                        $closingBalance = $latestReturn->remaining_weight ?? 0;
 
-                    $issuesAfterReturn = $issuesForReel->filter(function ($issue) use ($latestReturn) {
-                        return Carbon::parse($issue->issue_date)->greaterThan(Carbon::parse($latestReturn->return_date));
-                    });
+                        $issuesAfterReturn = $issuesForReel->filter(function ($issue) use ($latestReturn) {
+                            return Carbon::parse($issue->issue_date)->greaterThan(Carbon::parse($latestReturn->return_date));
+                        });
 
-                    $closingBalance -= $issuesAfterReturn->sum('quantity_issued');
+                        $closingBalance -= $issuesAfterReturn->sum('quantity_issued');
+                    }
                 } else {
                     $closingBalance -= $issuesForReel->sum('quantity_issued');
                 }

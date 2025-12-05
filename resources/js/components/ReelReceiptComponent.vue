@@ -682,7 +682,7 @@ export default {
         <div class="label">
           <table class="label-table">
             <tr>
-              <td colspan="2" class="label-cell label-heading">QUALITY CARTONS (PVT.) LTD.</td>
+              <td colspan="2" class="label-cell label-heading" style="border-bottom: 3px solid black;">QUALITY CARTONS (PVT.) LTD.</td>
             </tr>
             <tr>
               <td class="label-cell label-header">Reel No:</td>
@@ -698,7 +698,7 @@ export default {
             </tr>
             <tr>
               <td class="label-cell label-header">Size:</td>
-              <td class="label-cell label-value">${receipt.reel.reel_size}"</td>
+              <td class="label-cell label-value" style="font-size: 21px;">${receipt.reel.reel_size}"</td>
             </tr>
             <tr>
               <td class="label-cell label-header">Original Weight:</td>

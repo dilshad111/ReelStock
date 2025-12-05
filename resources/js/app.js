@@ -19,7 +19,8 @@ const PERMISSION_KEY_MAP = {
     'sketch-generator': 'cartons',
     reports: null,
     users: null,
-    'user-rights': null
+    'user-rights': null,
+    'best-ui': null
 };
 
 const PERMISSION_KEYS = [
@@ -50,7 +51,8 @@ const VIEW_ORDER = [
     'sketch-generator',
     'reports',
     'users',
-    'user-rights'
+    'user-rights',
+    'best-ui'
 ];
 
 const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
@@ -70,6 +72,7 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     reports: 'reports',
     users: 'users',
     'user-rights': 'user-rights',
+    'best-ui': 'best-ui',
     setup: 'setup'
 });
 
@@ -394,6 +397,7 @@ import ReportsComponent from './components/ReportsComponent.vue';
 import ThemeSelectorComponent from './components/ThemeSelectorComponent.vue';
 import ScrollToTopComponent from './components/ScrollToTopComponent.vue';
 import SetupComponent from './components/SetupComponent.vue';
+import BestUiShowcaseComponent from './components/BestUiShowcaseComponent.vue';
 
 app.component('supplier-component', SupplierComponent);
 app.component('paper-quality-component', PaperQualityComponent);
@@ -415,6 +419,7 @@ app.component('reports-component', ReportsComponent);
 app.component('theme-selector-component', ThemeSelectorComponent);
 app.component('scroll-to-top-component', ScrollToTopComponent);
 app.component('setup-component', SetupComponent);
+app.component('best-ui-showcase-component', BestUiShowcaseComponent);
 
 /**
  * The following block of code may be used to automatically register your

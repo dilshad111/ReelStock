@@ -26,6 +26,88 @@
             --border-color: #dee2e6;
         }
 
+        /* Modern Theme (Premium Glassmorphism) */
+        [data-theme="modern"] {
+            --primary-color: #6366f1; /* Indigo */
+            --secondary-color: #64748b; /* Slate */
+            --success-color: #10b981; /* Emerald */
+            --warning-color: #f59e0b; /* Amber */
+            --danger-color: #ef4444; /* Red */
+            --info-color: #06b6d4; /* Cyan */
+            --light-color: #f1f5f9; /* Slate 100 */
+            --dark-color: #0f172a; /* Slate 900 */
+            --bg-color: #f8fafc; /* Slate 50 */
+            --text-color: #1e293b; /* Slate 800 */
+            --navbar-bg: rgba(255, 255, 255, 0.8);
+            --card-bg: rgba(255, 255, 255, 0.7);
+            --border-color: rgba(255, 255, 255, 0.5);
+            --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        /* Modern Theme Overrides */
+        [data-theme="modern"] body {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        [data-theme="modern"] .top-navbar {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+        
+        [data-theme="modern"] .top-navbar .navbar-brand,
+        [data-theme="modern"] .top-navbar .nav-link,
+        [data-theme="modern"] .top-navbar .text-white {
+            color: #1e293b !important;
+            font-weight: 600;
+        }
+
+        [data-theme="modern"] .top-navbar .btn-outline-light {
+            color: #1e293b;
+            border-color: #cbd5e1;
+        }
+        
+        [data-theme="modern"] .top-navbar .btn-outline-light:hover {
+            background-color: #1e293b;
+            color: #fff;
+        }
+
+        [data-theme="modern"] .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            border-radius: 1rem;
+        }
+
+        [data-theme="modern"] .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            border: none;
+            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+            transition: transform 0.2s;
+        }
+
+        [data-theme="modern"] .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 8px -1px rgba(99, 102, 241, 0.5);
+        }
+
+        [data-theme="modern"] .table {
+            --bs-table-bg: transparent;
+        }
+        
+        [data-theme="modern"] .dropdown-menu {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            border: var(--glass-border);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-radius: 0.75rem;
+        }
+
         /* Light Theme (Default) */
         [data-theme="light"] {
             --primary-color: #0d6efd;
@@ -128,13 +210,97 @@
             --border-color: #ffcc02;
         }
 
+        /* Red Theme */
+        [data-theme="red"] {
+            --primary-color: #dc3545;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #b02a37;
+            --info-color: #17a2b8;
+            --light-color: #ffebee;
+            --dark-color: #c62828;
+            --bg-color: #fff5f5;
+            --text-color: #c62828;
+            --navbar-bg: #d32f2f;
+            --card-bg: #ffffff;
+            --border-color: #ef9a9a;
+        }
+
+        /* Teal Theme */
+        [data-theme="teal"] {
+            --primary-color: #20c997;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+            --light-color: #e0f2f1;
+            --dark-color: #00695c;
+            --bg-color: #f0fffe;
+            --text-color: #00695c;
+            --navbar-bg: #00897b;
+            --card-bg: #ffffff;
+            --border-color: #80cbc4;
+        }
+
+        /* Noble UI Theme (Elegant Professional) */
+        [data-theme="noble-ui"] {
+            --primary-color: #7367f0;
+            --secondary-color: #82868b;
+            --success-color: #28c76f;
+            --warning-color: #ff9f43;
+            --danger-color: #ea5455;
+            --info-color: #00cfe8;
+            --light-color: #f8f8f8;
+            --dark-color: #4b4b4b;
+            --bg-color: #f8f8f8;
+            --text-color: #4b4b4b;
+            --navbar-bg: #7367f0;
+            --card-bg: #ffffff;
+            --border-color: #ebe9f1;
+        }
+
+        /* Vuexy Theme (Modern Admin) */
+        [data-theme="vuexy"] {
+            --primary-color: #7367f0;
+            --secondary-color: #82868b;
+            --success-color: #28c76f;
+            --warning-color: #ff9f43;
+            --danger-color: #ea5455;
+            --info-color: #00cfe8;
+            --light-color: #f6f6f6;
+            --dark-color: #5e5873;
+            --bg-color: #f8f8f8;
+            --text-color: #6e6b7b;
+            --navbar-bg: #7367f0;
+            --card-bg: #ffffff;
+            --border-color: #d8d6de;
+        }
+
+        /* Vuely Theme (Clean & Minimal) */
+        [data-theme="vuely"] {
+            --primary-color: #5d92f4;
+            --secondary-color: #8f98a8;
+            --success-color: #46c35f;
+            --warning-color: #ffc107;
+            --danger-color: #ef1616;
+            --info-color: #00d0bd;
+            --light-color: #f3f4f7;
+            --dark-color: #282f40;
+            --bg-color: #ffffff;
+            --text-color: #484848;
+            --navbar-bg: #5d92f4;
+            --card-bg: #ffffff;
+            --border-color: #e8ecf1;
+        }
+
         /* Sidebar styles */
         .main-content {
             padding: 20px;
             padding-top: 100px;
             min-height: 100vh;
             position: relative;
-            z-index: 999;
         }
 
         .top-navbar {
@@ -155,7 +321,10 @@
 </head>
 <body>
     <div id="app">
-        <div v-if="!user">
+        <div v-if="currentView === 'best-ui'">
+            <best-ui-showcase-component></best-ui-showcase-component>
+        </div>
+        <div v-else-if="!user">
             <login-component @logged-in="user = $event; checkAuth()"></login-component>
         </div>
         <div v-else>
@@ -268,6 +437,7 @@
                 <user-component v-else-if="currentView === 'users'" :user="user"></user-component>
                 <user-rights-component v-else-if="currentView === 'user-rights'" :user="user"></user-rights-component>
                 <setup-component v-else-if="currentView === 'setup'" :user="user"></setup-component>
+                <best-ui-showcase-component v-else-if="currentView === 'best-ui'"></best-ui-showcase-component>
                 <!-- Add other components here -->
                 <div v-else>
                     <h2>@{{ currentView.charAt(0).toUpperCase() + currentView.slice(1) }} Management</h2>

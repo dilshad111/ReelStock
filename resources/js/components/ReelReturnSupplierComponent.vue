@@ -8,9 +8,6 @@
         <i class="bi" :class="showForm ? 'bi-dash-circle' : 'bi-plus-circle'"></i>
         {{ showForm ? 'Close Form' : 'Return Reel to Supplier' }}
       </button>
-      <button class="btn btn-outline-success" @click="printAllReturns" :disabled="!returns.length">
-        <i class="bi bi-printer"></i> Print All Returns
-      </button>
     </div>
 
     <div v-if="showForm" class="card mb-4">
@@ -63,6 +60,26 @@
                 <option value="damaged">Damaged</option>
                 <option value="qc_required">QC Required</option>
               </select>
+            </div>
+            <div class="col-lg-4 col-md-6">
+              <label class="form-label">Vehicle Number</label>
+              <input
+                v-model.trim="formData.vehicle_number"
+                type="text"
+                class="form-control"
+                placeholder="Enter vehicle number"
+                maxlength="50"
+              >
+            </div>
+            <div class="col-lg-4 col-md-6">
+              <label class="form-label">Return to Supplier</label>
+              <select v-model.number="formData.return_to_supplier_id" class="form-select">
+                <option :value="null">-- Select Supplier (Optional) --</option>
+                <option v-for="supplier in suppliers" :key="supplier.id" :value="supplier.id">
+                  {{ supplier.name }}
+                </option>
+              </select>
+              <div class="form-text" v-if="reel && reel.supplier">Original supplier: {{ reel.supplier.name }}</div>
             </div>
             <div class="col-12">
               <label class="form-label">Remarks</label>
@@ -138,6 +155,8 @@
                 <th>Return Date</th>
                 <th class="text-end">Qty (kg)</th>
                 <th>Condition</th>
+                <th>Vehicle No.</th>
+                <th>Return To</th>
                 <th>Remarks</th>
                 <th class="text-center">Actions</th>
               </tr>
@@ -155,6 +174,13 @@
                 <td>{{ formatDate(item.return_date) }}</td>
                 <td class="text-end">{{ formatNumber(item.remaining_weight) }}</td>
                 <td class="text-capitalize">{{ item.condition.replace('_', ' ') }}</td>
+                <td>{{ item.vehicle_number || '-' }}</td>
+                <td>
+                  <span v-if="item.return_to_supplier_id">
+                    {{ getSupplierNameById(item.return_to_supplier_id) }}
+                  </span>
+                  <span v-else class="text-muted">Original</span>
+                </td>
                 <td>{{ item.remarks || '-' }}</td>
                 <td class="text-center">
                   <button class="btn btn-sm btn-outline-danger" type="button" @click="removePendingEntry(idx)" :disabled="batchSubmitting">
@@ -184,6 +210,20 @@
             <label class="form-label">Search Reel No.</label>
             <input v-model.trim="returnSearch" type="text" class="form-control" placeholder="Enter reel number to filter">
           </div>
+          <div class="col-md-4 col-sm-6">
+            <label class="form-label">Filter by Challan No.</label>
+            <select v-model="selectedChallanFilter" class="form-select">
+              <option value="">All Challans</option>
+              <option v-for="challan in uniqueChallanNumbers" :key="challan" :value="challan">
+                {{ challan }}
+              </option>
+            </select>
+          </div>
+          <div class="col-md-4 col-sm-6">
+            <button class="btn btn-success w-100" @click="printSelectedChallan" :disabled="!filteredReturns.length">
+              <i class="bi bi-printer"></i> {{ selectedChallanFilter ? 'Print Challan' : 'Print All Challans' }}
+            </button>
+          </div>
         </div>
         <div v-if="returns.length === 0" class="alert alert-info mb-0">
           No returns to supplier recorded yet.
@@ -192,14 +232,14 @@
           <table class="table table-striped align-middle mb-0">
             <thead>
               <tr>
-                <th>Challan No.</th>
-                <th>Reel No.</th>
-                <th>Date</th>
-                <th>Supplier</th>
-                <th>Quality</th>
-                <th class="text-end">Qty Returned (kg)</th>
-                <th>Condition</th>
-                <th>Remarks</th>
+                <th class="text-center">Challan No.</th>
+                <th class="text-center">Reel No.</th>
+                <th class="text-center">Date</th>
+                <th class="text-center">Supplier</th>
+                <th class="text-center">Quality</th>
+                <th class="text-center">Qty Returned (kg)</th>
+                <th class="text-center">Condition</th>
+                <th class="text-center">Remarks</th>
                 <th class="text-center">Actions</th>
               </tr>
             </thead>
@@ -245,6 +285,8 @@ const defaultFormState = () => ({
   return_date: new Date().toISOString().split('T')[0],
   remaining_weight: '',
   condition: 'good',
+  vehicle_number: '',
+  return_to_supplier_id: null,
   remarks: '',
   returned_to: 'supplier',
 });
@@ -271,6 +313,8 @@ export default {
       batchSubmitting: false,
       nextChallanIndex: 1,
       currentBatchChallanNo: null,
+      suppliers: [],
+      selectedChallanFilter: '',
     };
   },
   computed: {
@@ -295,6 +339,10 @@ export default {
     pendingTotalWeight() {
       return this.returnEntries.reduce((total, entry) => total + (Number(entry.remaining_weight) || 0), 0);
     },
+    uniqueChallanNumbers() {
+      const challans = [...new Set(this.returns.map(item => item.challan_no).filter(Boolean))];
+      return challans.sort();
+    },
   },
   watch: {
     user() {
@@ -304,6 +352,7 @@ export default {
   mounted() {
     this.ensureAuthHeader();
     this.fetchReturns();
+    this.fetchSuppliers();
   },
   methods: {
     ensureAuthHeader() {
@@ -356,6 +405,7 @@ export default {
           this.returns = data.map((item) => ({
             ...item,
             challan_no: item.challan_no || this.formatChallanNumber(this.parseChallanNumber(item.id) || 0),
+            return_to_supplier: item.return_to_supplier || null,
           }));
           this.recalculateNextChallan();
         })
@@ -365,6 +415,16 @@ export default {
         })
         .finally(() => {
           this.loading = false;
+        });
+    },
+    fetchSuppliers() {
+      axios
+        .get('/api/suppliers')
+        .then((response) => {
+          this.suppliers = Array.isArray(response.data) ? response.data : [];
+        })
+        .catch((error) => {
+          console.error('Error fetching suppliers:', error);
         });
     },
     normalizeReelNo(value) {
@@ -434,6 +494,8 @@ export default {
         remaining_weight: Number(this.formData.remaining_weight) || 0,
         returned_to: 'supplier',
         condition: this.formData.condition,
+        vehicle_number: this.formData.vehicle_number,
+        return_to_supplier_id: this.formData.return_to_supplier_id,
         remarks: this.formData.remarks,
       };
     },
@@ -476,7 +538,17 @@ export default {
         ...payload,
         reel: this.reel ? JSON.parse(JSON.stringify(this.reel)) : null,
       });
-      this.formData = { ...defaultFormState(), challan_no: this.currentBatchChallanNo };
+      
+      // Preserve vehicle number and supplier for next entry in the same batch
+      const vehicleNumber = this.formData.vehicle_number;
+      const returnToSupplierId = this.formData.return_to_supplier_id;
+      
+      this.formData = { 
+        ...defaultFormState(), 
+        challan_no: this.currentBatchChallanNo,
+        vehicle_number: vehicleNumber,
+        return_to_supplier_id: returnToSupplierId,
+      };
       this.reel = null;
       this.latestReceipt = null;
       alert('Entry added to pending list.');
@@ -530,13 +602,19 @@ export default {
         return_date: item.return_date,
         remaining_weight: Number(item.remaining_weight) || 0,
         condition: item.condition,
+        vehicle_number: item.vehicle_number || '',
+        return_to_supplier_id: item.return_to_supplier_id || null,
         remarks: item.remarks || '',
         returned_to: 'supplier',
       };
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     deleteReturn(item) {
+      console.log('Attempting to delete return:', item);
+      console.log('Item ID:', item?.id);
       if (!item || !item.id) {
+        console.error('Delete failed: Invalid item or missing ID', item);
+        alert('Error: Cannot delete this item because it is missing an ID. Please refresh the page and try again.');
         return;
       }
       if (!confirm('Are you sure you want to delete this return?')) {
@@ -597,9 +675,32 @@ export default {
       }
       const challanNumber = rows[0].challan_no || '-';
       const challanDate = rows[0].return_date || '-';
-      const supplierNames = [...new Set(entries.map((entry) => (entry.reel ? this.getSupplierName(entry.reel) : '-')))]
-        .filter((name) => name && name !== '-')
-        .join(', ') || '-';
+      
+      // Check if all entries have the same return_to_supplier_id
+      const returnToSupplierIds = entries.map(e => e.return_to_supplier_id).filter(id => id);
+      const hasReturnToSupplier = returnToSupplierIds.length > 0;
+      
+      let supplierNames;
+      if (hasReturnToSupplier) {
+        // If return_to_supplier is specified, show only that supplier
+        const uniqueReturnSuppliers = [...new Set(returnToSupplierIds)];
+        supplierNames = uniqueReturnSuppliers
+          .map(id => this.getSupplierNameById(id))
+          .filter(name => name && name !== 'N/A')
+          .join(', ') || '-';
+      } else {
+        // Otherwise show original suppliers
+        supplierNames = [...new Set(entries.map((entry) => {
+          if (entry.reel) {
+            return this.getSupplierName(entry.reel);
+          }
+          return '-';
+        }))]
+          .filter((name) => name && name !== '-')
+          .join(', ') || '-';
+      }
+      
+      const vehicleNumber = entries[0]?.vehicle_number || '-';
 
       const tableRows = rows
         .map(
@@ -656,6 +757,7 @@ export default {
                   <td class="label">Challan Date</td><td>${challanDate}</td>
                 </tr>
                 <tr><td class="label">Supplier(s)</td><td colspan="3">${supplierNames}</td></tr>
+                <tr><td class="label">Vehicle Number</td><td colspan="3">${vehicleNumber}</td></tr>
               </table>
             </div>
             <table class="challan">
@@ -728,7 +830,9 @@ export default {
           remaining_weight: entry.remaining_weight,
           condition: entry.condition,
           remarks: entry.remarks,
+          vehicle_number: entry.vehicle_number,
           reel: entry.reel,
+          return_to_supplier_id: entry.return_to_supplier_id,
         }));
     },
     printExistingReturn(item) {
@@ -742,30 +846,71 @@ export default {
           remaining_weight: item.remaining_weight,
           condition: item.condition,
           remarks: item.remarks,
+          vehicle_number: item.vehicle_number,
           reel: item.reel,
+          return_to_supplier_id: item.return_to_supplier_id,
         },
       ];
       const html = this.buildChallanHTML(payload, this.user?.name);
       this.printChallanHTML(html);
     },
-    printAllReturns() {
-      if (!this.returns.length) {
+    printSelectedChallan() {
+      if (!this.filteredReturns.length) {
         alert('No returns to print.');
         return;
       }
-      const html = this.buildChallanHTML(
-        this.returns.map((item) => ({
-          challan_no: item.challan_no,
-          reel_no: item.reel?.reel_no,
-          return_date: item.return_date,
-          remaining_weight: item.remaining_weight,
-          condition: item.condition,
-          remarks: item.remarks,
-          reel: item.reel,
-        })),
-        this.user?.name,
-      );
-      this.printChallanHTML(html);
+      
+      if (this.selectedChallanFilter) {
+        // Print specific challan
+        const challanEntries = this.filteredReturns.filter(
+          item => item.challan_no === this.selectedChallanFilter
+        );
+        const html = this.buildChallanHTML(
+          challanEntries.map((item) => ({
+            challan_no: item.challan_no,
+            reel_no: item.reel?.reel_no,
+            return_date: item.return_date,
+            remaining_weight: item.remaining_weight,
+            condition: item.condition,
+            remarks: item.remarks,
+            vehicle_number: item.vehicle_number,
+            return_to_supplier_id: item.return_to_supplier_id,
+            reel: item.reel,
+          })),
+          this.user?.name,
+        );
+        this.printChallanHTML(html);
+      } else {
+        // Print all challans separately
+        const challanGroups = {};
+        this.filteredReturns.forEach(item => {
+          const challan = item.challan_no || 'No Challan';
+          if (!challanGroups[challan]) {
+            challanGroups[challan] = [];
+          }
+          challanGroups[challan].push(item);
+        });
+        
+        // Print each challan group
+        Object.keys(challanGroups).forEach(challanNo => {
+          const entries = challanGroups[challanNo];
+          const html = this.buildChallanHTML(
+            entries.map((item) => ({
+              challan_no: item.challan_no,
+              reel_no: item.reel?.reel_no,
+              return_date: item.return_date,
+              remaining_weight: item.remaining_weight,
+              condition: item.condition,
+              remarks: item.remarks,
+              vehicle_number: item.vehicle_number,
+              return_to_supplier_id: item.return_to_supplier_id,
+              reel: item.reel,
+            })),
+            this.user?.name,
+          );
+          this.printChallanHTML(html);
+        });
+      }
     },
     getQuality(reel) {
       if (!reel) return 'N/A';
@@ -778,6 +923,11 @@ export default {
     getSupplierName(reel) {
       if (!reel || !reel.supplier) return 'N/A';
       return reel.supplier.name || 'N/A';
+    },
+    getSupplierNameById(supplierId) {
+      if (!supplierId) return 'N/A';
+      const supplier = this.suppliers.find(s => s.id === supplierId);
+      return supplier ? supplier.name : 'N/A';
     },
     formatDate(value) {
       if (!value) return '-';
@@ -808,5 +958,10 @@ export default {
 .info-card h6 {
   font-weight: 600;
   margin-bottom: 10px;
+}
+
+/* Center align all table headers */
+.table thead th {
+  text-align: center !important;
 }
 </style>

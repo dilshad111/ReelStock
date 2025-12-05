@@ -12,7 +12,7 @@ class ReelReturnController extends Controller
 {
     public function index(Request $request)
     {
-        $query = ReelReturn::with(['reel.paperQuality', 'reel.supplier']);
+        $query = ReelReturn::with(['reel.paperQuality', 'reel.supplier', 'returnToSupplier']);
 
         if ($request->filled('returned_to')) {
             $query->where('returned_to', $request->input('returned_to'));
@@ -25,10 +25,13 @@ class ReelReturnController extends Controller
     {
         $request->validate([
             'reel_no' => 'required|string|exists:reels',
+            'challan_no' => 'nullable|string|max:50',
             'return_date' => 'required|date',
             'remaining_weight' => 'required|numeric|min:0',
             'returned_to' => 'required|in:stock,supplier',
             'condition' => 'required|in:good,damaged,qc_required',
+            'vehicle_number' => 'nullable|string|max:50',
+            'return_to_supplier_id' => 'nullable|exists:suppliers,id',
             'remarks' => 'nullable|string',
         ]);
 
@@ -94,19 +97,27 @@ class ReelReturnController extends Controller
             return response()->json(['error' => 'This reel is already in the stock.'], 400);
         }
 
+        $challanNo = null;
+        if ($request->returned_to === 'supplier') {
+            // Use provided challan_no if available, otherwise generate new one
+            if ($request->filled('challan_no')) {
+                $challanNo = $request->challan_no;
+            } else {
+                $challanNo = 'RT' . str_pad($this->generateNextChallanSequence(), 4, '0', STR_PAD_LEFT);
+            }
+        }
+
         $return = ReelReturn::create([
             'reel_id' => $reel->id,
+            'challan_no' => $challanNo,
             'return_date' => $request->return_date,
             'remaining_weight' => $request->remaining_weight,
             'returned_to' => $request->returned_to,
             'condition' => $request->condition,
+            'vehicle_number' => $request->vehicle_number,
+            'return_to_supplier_id' => $request->return_to_supplier_id,
             'remarks' => $request->remarks,
         ]);
-
-        if ($request->returned_to === 'supplier') {
-            $return->challan_no = $this->generateNextChallanNumber();
-            $return->save();
-        }
 
         if ($request->returned_to === 'stock') {
             $reel->balance_weight = $request->remaining_weight;
@@ -133,6 +144,8 @@ class ReelReturnController extends Controller
             'remaining_weight' => 'required|numeric|min:0',
             'returned_to' => 'required|in:supplier',
             'condition' => 'required|in:good,damaged,qc_required',
+            'vehicle_number' => 'nullable|string|max:50',
+            'return_to_supplier_id' => 'nullable|exists:suppliers,id',
             'remarks' => 'nullable|string',
         ]);
 
@@ -159,6 +172,8 @@ class ReelReturnController extends Controller
             $return->return_date = $request->return_date;
             $return->remaining_weight = $newWeight;
             $return->condition = $request->condition;
+            $return->vehicle_number = $request->vehicle_number;
+            $return->return_to_supplier_id = $request->return_to_supplier_id;
             $return->remarks = $request->remarks;
             $return->save();
 

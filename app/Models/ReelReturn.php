@@ -12,6 +12,8 @@ class ReelReturn extends Model
     protected $fillable = [
         'reel_id',
         'challan_no',
+        'vehicle_number',
+        'return_to_supplier_id',
         'return_date',
         'remaining_weight',
         'returned_to',
@@ -22,5 +24,10 @@ class ReelReturn extends Model
     public function reel()
     {
         return $this->belongsTo(Reel::class);
+    }
+
+    public function returnToSupplier()
+    {
+        return $this->belongsTo(Supplier::class, 'return_to_supplier_id');
     }
 }

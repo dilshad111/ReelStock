@@ -21,19 +21,25 @@ export default {
   data() {
     return {
       themes: [
+        { id: 'modern', name: 'Modern', icon: '' },
         { id: 'light', name: 'Light', icon: 'bi bi-sun' },
         { id: 'dark', name: 'Dark', icon: 'bi bi-moon' },
         { id: 'blue', name: 'Blue', icon: 'bi bi-droplet' },
         { id: 'green', name: 'Green', icon: 'bi bi-tree' },
         { id: 'purple', name: 'Purple', icon: 'bi bi-gem' },
-        { id: 'orange', name: 'Orange', icon: 'bi bi-brightness-high' }
+        { id: 'orange', name: 'Orange', icon: 'bi bi-brightness-high' },
+        { id: 'red', name: 'Red', icon: '' },
+        { id: 'teal', name: 'Teal', icon: '' },
+        { id: 'noble-ui', name: 'Noble UI', icon: 'bi bi-award' },
+        { id: 'vuexy', name: 'Vuexy', icon: 'bi bi-lightning' },
+        { id: 'vuely', name: 'Vuely', icon: 'bi bi-cone-striped' }
       ],
       currentTheme: 'light'
     };
   },
   mounted() {
     // Load saved theme or default to light
-    const savedTheme = localStorage.getItem('theme') || 'light';
+    const savedTheme = localStorage.getItem('theme') || 'modern';
     this.setTheme(savedTheme);
   },
   methods: {
