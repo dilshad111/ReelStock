@@ -1,7 +1,7 @@
 import { createApp } from 'vue';
 import axios from 'axios';
 
-axios.defaults.baseURL = 'http://127.0.0.1:8000';
+axios.defaults.baseURL = 'http://192.168.10.47:8000';
 
 const PERMISSION_KEY_MAP = {
     dashboard: 'dashboard',
@@ -20,6 +20,7 @@ const PERMISSION_KEY_MAP = {
     reports: null,
     users: null,
     'user-rights': null,
+    'audit-log': null,
     'best-ui': null
 };
 
@@ -52,6 +53,7 @@ const VIEW_ORDER = [
     'reports',
     'users',
     'user-rights',
+    'audit-log',
     'best-ui'
 ];
 
@@ -72,6 +74,7 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     reports: 'reports',
     users: 'users',
     'user-rights': 'user-rights',
+    'audit-log': 'audit-log',
     'best-ui': 'best-ui',
     setup: 'setup'
 });
@@ -390,6 +393,7 @@ import ReelReceiptReportComponent from './components/ReelReceiptReportComponent.
 import MonthlyClosingReportComponent from './components/MonthlyClosingReportComponent.vue';
 import UserComponent from './components/UserComponent.vue';
 import UserRightsComponent from './components/UserRightsComponent.vue';
+import AuditLogComponent from './components/AuditLogComponent.vue';
 import CartonsComponent from './components/CartonsComponent.vue';
 import CustomerComponent from './components/CustomerComponent.vue';
 import SketchGeneratorComponent from './components/SketchGeneratorComponent.vue';
@@ -411,6 +415,7 @@ app.component('reel-receipt-report-component', ReelReceiptReportComponent);
 app.component('monthly-closing-report-component', MonthlyClosingReportComponent);
 app.component('user-component', UserComponent);
 app.component('user-rights-component', UserRightsComponent);
+app.component('audit-log-component', AuditLogComponent);
 app.component('cartons-component', CartonsComponent);
 app.component('customer-component', CustomerComponent);
 app.component('sketch-generator-component', SketchGeneratorComponent);

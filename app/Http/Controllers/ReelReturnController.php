@@ -12,7 +12,9 @@ class ReelReturnController extends Controller
 {
     public function index(Request $request)
     {
-        $query = ReelReturn::with(['reel.paperQuality', 'reel.supplier', 'returnToSupplier']);
+        $query = ReelReturn::with(['reel.paperQuality', 'reel.supplier', 'reel.receipts' => function ($q) {
+            $q->orderByDesc('receiving_date');
+        }, 'returnToSupplier']);
 
         if ($request->filled('returned_to')) {
             $query->where('returned_to', $request->input('returned_to'));
@@ -165,7 +167,8 @@ class ReelReturnController extends Controller
             $restoredBalance = min($reel->balance_weight + $oldWeight, $reel->original_weight);
             $newWeight = (float) $request->remaining_weight;
 
-            if ($newWeight > $restoredBalance) {
+            // Use a small epsilon for floating point comparison (increased to 0.01 to cover potential rounding differences)
+            if ($newWeight > $restoredBalance + 0.01) {
                 return response()->json(['error' => 'Returned weight cannot exceed current balance weight.'], 400);
             }
 

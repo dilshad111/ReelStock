@@ -178,7 +178,7 @@ export default {
       if (this.companyLogo) {
         return `${window.location.origin}/storage/${this.companyLogo}`;
       }
-      return '/images/quality-cartons-logo.svg';
+      return '/reelStock/images/quality-cartons-logo.svg';
     },
     async exportToPDF() {
       await this.fetchCompanySettings();
@@ -255,7 +255,7 @@ export default {
           <body>
             <div class="header">
               <div class="logo-section">
-                <img src="/images/quality-cartons-logo.svg" alt="Quality Cartons Logo" class="logo">
+                <img src="/reelStock/images/quality-cartons-logo.svg" alt="Quality Cartons Logo" class="logo">
               </div>
               <div class="company-info">
                 <div class="company-name">QUALITY CARTONS (PVT.) LTD.</div>

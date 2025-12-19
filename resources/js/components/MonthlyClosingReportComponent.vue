@@ -152,7 +152,7 @@ export default {
       if (this.companyLogo) {
         return `${window.location.origin}/storage/${this.companyLogo}`;
       }
-      return '/images/quality-cartons-logo.svg';
+      return '/reelStock/images/quality-cartons-logo.svg';
     },
     async exportToPDF() {
       await this.fetchCompanySettings();

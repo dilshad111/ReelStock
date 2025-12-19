@@ -101,11 +101,18 @@ class ReelStockReportController extends Controller
 
             // Return history
             foreach ($reel->returns as $return) {
+                $isSupplierReturn = $return->returned_to === 'supplier';
+                $weight = $isSupplierReturn ? -$return->remaining_weight : $return->remaining_weight;
+                $displayType = $isSupplierReturn ? 'Return to Supplier' : 'Return';
+                $details = $isSupplierReturn 
+                    ? 'Returned to Supplier ' . $return->remaining_weight . ' kg' 
+                    : 'Returned ' . $return->remaining_weight . ' kg';
+
                 $history[] = [
                     'date' => $return->return_date,
-                    'type' => 'Return',
-                    'details' => 'Returned ' . $return->remaining_weight . ' kg',
-                    'weight' => $return->remaining_weight, // Positive for returns
+                    'type' => $displayType,
+                    'details' => $details,
+                    'weight' => $weight, // Negative for supplier returns, positive for stock returns
                 ];
             }
 
@@ -130,6 +137,7 @@ class ReelStockReportController extends Controller
                     'current_balance' => $reel->balance_weight,
                     'gsm' => $latestReceipt ? $latestReceipt->gsm : null,
                     'bursting_strength' => $latestReceipt ? $latestReceipt->bursting_strength : null,
+                    'qc_status' => $latestReceipt ? $latestReceipt->qc_status : null,
                 ],
                 'history' => $history,
             ]);

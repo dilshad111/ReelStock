@@ -47,11 +47,17 @@
                 type="number"
                 step="0.01"
                 min="0"
-                :max="reel ? Number(reel.balance_weight) : undefined"
+                :max="reel ? (Number(reel.balance_weight) + (isEditing ? originalReturnWeight : 0)) : undefined"
                 class="form-control"
                 required
               >
-              <div class="form-text" v-if="reel">Current balance: {{ formatNumber(reel.balance_weight) }} kg</div>
+              <div class="form-text" v-if="reel">
+                <span v-if="!isEditing">Current balance: {{ formatNumber(reel.balance_weight) }} kg</span>
+                <span v-else>
+                  Available for return: {{ formatNumber(Number(reel.balance_weight) + originalReturnWeight) }} kg
+                  (Current Stock: {{ formatNumber(reel.balance_weight) }} + Returning: {{ formatNumber(originalReturnWeight) }})
+                </span>
+              </div>
             </div>
             <div class="col-lg-4 col-md-6">
               <label class="form-label">Condition</label>
@@ -315,6 +321,7 @@ export default {
       currentBatchChallanNo: null,
       suppliers: [],
       selectedChallanFilter: '',
+      originalReturnWeight: 0,
     };
   },
   computed: {
@@ -480,8 +487,9 @@ export default {
         alert('Please enter quantity returned greater than zero.');
         return false;
       }
-      if (this.reel && payload.remaining_weight > Number(this.reel.balance_weight)) {
-        alert('Returned quantity cannot exceed current balance weight.');
+      const maxAllowed = Number(this.reel.balance_weight) + (this.isEditing ? this.originalReturnWeight : 0);
+      if (this.reel && payload.remaining_weight > maxAllowed) {
+        alert(`Returned quantity cannot exceed available balance weight (${maxAllowed} kg).`);
         return false;
       }
       return true;
@@ -607,6 +615,7 @@ export default {
         remarks: item.remarks || '',
         returned_to: 'supplier',
       };
+      this.originalReturnWeight = Number(item.remaining_weight) || 0;
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     deleteReturn(item) {
@@ -648,6 +657,7 @@ export default {
       this.reel = null;
       this.latestReceipt = null;
       this.editingId = null;
+      this.originalReturnWeight = 0;
     },
     advanceChallanIndex() {
       this.nextChallanIndex += 1;

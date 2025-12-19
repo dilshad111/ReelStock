@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Quality Cartons - ReelStock Inventory</title>
-    <link rel="icon" type="image/svg+xml" href="/images/quality-cartons-logo.svg">
+    <link rel="icon" type="image/svg+xml" href="/reelStock/images/quality-cartons-logo.svg">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -331,7 +331,7 @@
             <nav class="navbar navbar-expand-lg navbar-dark top-navbar">
                 <div class="container-fluid">
                     <a class="navbar-brand" href="#">
-                        <img src="/images/quality-cartons-logo.svg" alt="Quality Cartons Logo" width="32" height="32" class="d-inline-block align-text-top me-2">
+                        <img src="/reelStock/images/quality-cartons-logo.svg" alt="Quality Cartons Logo" width="32" height="32" class="d-inline-block align-text-top me-2">
                         QUALITY CARTONS (PVT.) LTD.
                     </a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNavbar" aria-controls="topNavbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -395,6 +395,11 @@
                                             User Rights
                                         </button>
                                     </li>
+                                    <li>
+                                        <button class="dropdown-item" :class="{ active: currentView === 'audit-log' }" @click="setView('audit-log')">
+                                            Audit Logs
+                                        </button>
+                                    </li>
                                 </ul>
                             </li>
                             <li class="nav-item" v-if="user.role.name === 'Admin' || user.email === 'superadmin@qc.com'">
@@ -436,6 +441,7 @@
                 <reports-component v-else-if="currentView === 'reports'" :user="user"></reports-component>
                 <user-component v-else-if="currentView === 'users'" :user="user"></user-component>
                 <user-rights-component v-else-if="currentView === 'user-rights'" :user="user"></user-rights-component>
+                <audit-log-component v-else-if="currentView === 'audit-log'" :user="user"></audit-log-component>
                 <setup-component v-else-if="currentView === 'setup'" :user="user"></setup-component>
                 <best-ui-showcase-component v-else-if="currentView === 'best-ui'"></best-ui-showcase-component>
                 <!-- Add other components here -->

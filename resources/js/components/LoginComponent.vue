@@ -4,7 +4,7 @@
       <div class="col-md-6">
         <div class="card">
           <div class="card-body text-center">
-            <img src="/images/quality-cartons-logo.svg" alt="Quality Cartons Logo" class="mb-3" style="height: 60px;">
+            <img src="/reelStock/images/quality-cartons-logo.svg" alt="Quality Cartons Logo" class="mb-3" style="height: 60px;">
             <h2 class="company-name mb-4">QUALITY CARTONS (PVT.) LTD.</h2>
             <h3 class="card-title">Login to ReelStock</h3>
             <form @submit.prevent="login">
