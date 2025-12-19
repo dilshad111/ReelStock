@@ -156,7 +156,7 @@ export default {
           <body>
             <div class="header">
               <div class="logo-section">
-                <img src="/reelStock/images/quality-cartons-logo.svg" alt="Quality Cartons Logo" class="logo">
+                <img src="/images/quality-cartons-logo.svg" alt="Quality Cartons Logo" class="logo">
               </div>
               <div class="company-info">
                 <div class="company-name">QUALITY CARTONS (PVT.) LTD.</div>
