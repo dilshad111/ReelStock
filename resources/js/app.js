@@ -186,7 +186,9 @@ const app = createApp({
             permissions: createEmptyPermissions(),
             permissionsLoaded: false,
             initialRouteView: null,
-            basePath: ''
+            basePath: '',
+            idleTimer: null,
+            idleTimeout: 3600000 // 1 hour in milliseconds
         };
 
     },
@@ -209,10 +211,21 @@ const app = createApp({
         } else if (this.user) {
             this.logout(); // Token cleared, logout
         }
+
+        this.startIdleTimer();
+        window.addEventListener('mousemove', this.resetIdleTimer);
+        window.addEventListener('keydown', this.resetIdleTimer);
+        window.addEventListener('mousedown', this.resetIdleTimer);
+        window.addEventListener('scroll', this.resetIdleTimer);
     },
 
     beforeUnmount() {
         window.removeEventListener('popstate', this.handlePopState);
+        window.removeEventListener('mousemove', this.resetIdleTimer);
+        window.removeEventListener('keydown', this.resetIdleTimer);
+        window.removeEventListener('mousedown', this.resetIdleTimer);
+        window.removeEventListener('scroll', this.resetIdleTimer);
+        if (this.idleTimer) clearTimeout(this.idleTimer);
     },
 
     methods: {
@@ -297,6 +310,18 @@ const app = createApp({
                     this.setView(this.getFirstPermittedView(), { replace: true });
                 }
             });
+        },
+        startIdleTimer() {
+            if (this.idleTimer) clearTimeout(this.idleTimer);
+            if (this.user) {
+                this.idleTimer = setTimeout(() => {
+                    alert('You have been logged out due to 1 hour of inactivity.');
+                    this.logout();
+                }, this.idleTimeout);
+            }
+        },
+        resetIdleTimer() {
+            this.startIdleTimer();
         },
         logout() {
             this.user = null;

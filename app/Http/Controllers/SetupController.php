@@ -78,7 +78,9 @@ class SetupController extends Controller
 
         $table = $request->table;
 
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         DB::table($table)->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         return response()->json(['message' => "Table {$table} data deleted successfully"]);
     }

@@ -108,6 +108,10 @@ class ReelStockReportController extends Controller
                     ? 'Returned to Supplier ' . $return->remaining_weight . ' kg' 
                     : 'Returned ' . $return->remaining_weight . ' kg';
 
+                if (!$isSupplierReturn && $return->return_location) {
+                    $details .= " (Location: {$return->return_location})";
+                }
+
                 $history[] = [
                     'date' => $return->return_date,
                     'type' => $displayType,

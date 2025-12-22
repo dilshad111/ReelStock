@@ -68,6 +68,14 @@
                 <label>Return to Stock (kg)</label>
                 <input v-model.number="formData.return_to_stock_weight" @input="normalizeQuantities" type="number" step="0.01" min="0" class="form-control">
               </div>
+              <div v-if="formData.return_to_stock_weight > 0" class="mb-3">
+                <label>Return Location</label>
+                <select v-model="formData.return_location" class="form-control" required>
+                  <option value="">Select Location</option>
+                  <option value="GoDown">GoDown</option>
+                  <option value="Factory">Factory</option>
+                </select>
+              </div>
               <div class="mb-3">
                 <label>Consumed Weight (kg)</label>
                 <input :value="formattedBalance" type="text" class="form-control" readonly>
@@ -105,6 +113,7 @@
               <th>Issue Date</th>
               <th>Quantity Issued</th>
               <th>Return to Stock</th>
+              <th>Return Location</th>
               <th>Net Consumed</th>
               <th>Issued To</th>
               <th class="text-center">Actions</th>
@@ -117,6 +126,7 @@
               <td>{{ i.issue_date }}</td>
               <td>{{ formatNumber(i.quantity_issued) }} kg</td>
               <td>{{ formatNumber(i.return_to_stock_weight || 0) }} kg</td>
+              <td>{{ i.return_location || '-' }}</td>
               <td>{{ formatNumber(i.net_consumed_weight || 0) }} kg</td>
               <td>{{ i.issued_to }}</td>
               <td class="text-center" style="min-width: 150px;">
@@ -145,17 +155,22 @@ export default {
         issue_date: new Date().toISOString().substr(0,10),
         quantity_issued: '',
         return_to_stock_weight: 0,
+        return_location: '',
         issued_to: 'Corrugation Plant',
         remarks: ''
       },
       showForm: false,
       editingIssueId: null,
       originalNetConsumed: 0,
-      issueSearch: ''
+      issueSearch: '',
+      companyLogo: window.location.origin + '/images/quality-cartons-logo.svg',
+      companyName: 'QUALITY CARTONS (PVT.) LTD.',
+      companyAddress: 'Plot# 46, Sector 24, Korangi Industrial Area Karachi'
     };
   },
   mounted() {
     this.fetchIssues();
+    this.fetchSettings();
   },
   computed: {
     calculatedBalance() {
@@ -182,6 +197,21 @@ export default {
     fetchIssues() {
       axios.get('/api/reel-issues').then(response => {
         this.issues = response.data;
+      });
+    },
+    fetchSettings() {
+      axios.get('/api/setup/settings').then(response => {
+        const settings = response.data || {};
+        if (settings.company_name) this.companyName = settings.company_name;
+        if (settings.company_address) this.companyAddress = settings.company_address;
+        
+        if (settings.company_logo) {
+          this.companyLogo = window.location.origin + '/storage/' + settings.company_logo;
+        } else {
+          this.companyLogo = window.location.origin + '/images/quality-cartons-logo.svg';
+        }
+      }).catch(error => {
+        console.error('Error fetching settings:', error);
       });
     },
     fetchReel() {
@@ -275,6 +305,7 @@ export default {
         issue_date: new Date().toISOString().substr(0,10),
         quantity_issued: '',
         return_to_stock_weight: 0,
+        return_location: '',
         issued_to: 'Corrugation Plant',
         remarks: ''
       };
@@ -298,6 +329,7 @@ export default {
         issue_date: issue.issue_date,
         quantity_issued: Number(issue.quantity_issued) || 0,
         return_to_stock_weight: Number(issue.return_to_stock_weight) || 0,
+        return_location: issue.return_location || '',
         issued_to: issue.issued_to,
         remarks: issue.remarks || ''
       };
@@ -365,25 +397,42 @@ export default {
     },
     printTable() {
       const printWindow = window.open('', '_blank');
+      const logoHtml = this.companyLogo 
+        ? `<div class="logo-section"><img src="${this.companyLogo}" alt="Logo" class="logo"></div>` 
+        : '';
+        
       printWindow.document.write(`
         <html>
           <head>
             <title>Reel Issue and Return - Print</title>
             <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
             <style>
-              body { margin: 20px; }
-              table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-              th { background-color: #f2f2f2; }
-              h4 { margin-top: 40px; }
-              @media print { body { margin: 0; } }
+              body { margin: 20px; font-family: Arial, sans-serif; }
+              .header { margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+              .logo-section { flex-shrink: 0; }
+              .logo { width: 1in; height: 1in; object-fit: contain; }
+              .company-info { flex-grow: 1; text-align: center; }
+              .company-name { font-size: 24px; font-weight: bold; margin: 0; }
+              .company-address { font-size: 14px; margin: 5px 0 0 0; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th, td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 12px; }
+              th { background-color: #f2f2f2; font-weight: bold; }
+              h4 { margin-top: 20px; text-align: center; }
+              @media print { body { margin: 0; } .header { border-bottom: 2px solid #000; } }
             </style>
           </head>
           <body>
-            <h2>Paper Reel Issue</h2>
+            <div class="header">
+              ${logoHtml}
+              <div class="company-info">
+                <div class="company-name">${this.companyName}</div>
+                <div class="company-address">${this.companyAddress}</div>
+              </div>
+            </div>
+            
+            <h4>Paper Reel Issue Report</h4>
 
-            <h4>Issues</h4>
-            <table class="table table-striped">
+            <table class="table">
               <thead>
                 <tr>
                   <th>Reel No.</th>
@@ -391,6 +440,7 @@ export default {
                   <th>Issue Date</th>
                   <th>Quantity Issued</th>
                   <th>Return to Stock</th>
+                  <th>Return Location</th>
                   <th>Net Consumed</th>
                   <th>Issued To</th>
                 </tr>
@@ -400,20 +450,27 @@ export default {
                   <tr>
                     <td>${i.reel.reel_no}</td>
                     <td>${this.getQuality(i.reel)}</td>
-                    <td>${i.issue_date}</td>
+                    <td>${this.formatDate(i.issue_date)}</td>
                     <td>${this.formatNumber(i.quantity_issued)} kg</td>
                     <td>${this.formatNumber(i.return_to_stock_weight || 0)} kg</td>
+                    <td>${i.return_location || '-'}</td>
                     <td>${this.formatNumber(i.net_consumed_weight || 0)} kg</td>
                     <td>${i.issued_to}</td>
                   </tr>
                 `).join('')}
               </tbody>
             </table>
+            <div style="margin-top: 20px; font-size: 10px; text-align: right;">
+              Printed on: ${new Date().toLocaleString()}
+            </div>
           </body>
         </html>
       `);
       printWindow.document.close();
-      printWindow.print();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
     }
   }
 };

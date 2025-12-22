@@ -86,7 +86,7 @@ export default {
       reelSizes: [],
       companyName: 'QUALITY CARTONS (PVT.) LTD.',
       companyAddress: 'Plot# 46, Sector 24, Korangi Industrial Area Karachi',
-      companyLogo: '',
+      companyLogo: window.location.origin + '/images/quality-cartons-logo.svg',
       companySettingsLoaded: false
     };
   },
@@ -113,9 +113,14 @@ export default {
       }
       try {
         const { data } = await axios.get('/api/setup/settings');
-        this.companyName = data.company_name || this.companyName;
-        this.companyAddress = data.company_address || this.companyAddress;
-        this.companyLogo = data.company_logo || '';
+        if (data.company_name) this.companyName = data.company_name;
+        if (data.company_address) this.companyAddress = data.company_address;
+        
+        if (data.company_logo) {
+          this.companyLogo = window.location.origin + '/storage/' + data.company_logo;
+        } else {
+          this.companyLogo = window.location.origin + '/images/quality-cartons-logo.svg';
+        }
         this.companySettingsLoaded = true;
       } catch (error) {
         console.error('Error fetching company settings:', error);
@@ -149,10 +154,7 @@ export default {
       document.body.removeChild(link);
     },
     getCompanyLogoSrc() {
-      if (this.companyLogo) {
-        return `${window.location.origin}/storage/${this.companyLogo}`;
-      }
-      return '/images/quality-cartons-logo.svg';
+      return this.companyLogo;
     },
     async exportToPDF() {
       await this.fetchCompanySettings();

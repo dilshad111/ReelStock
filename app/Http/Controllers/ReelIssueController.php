@@ -22,6 +22,7 @@ class ReelIssueController extends Controller
             'issue_date' => 'required|date',
             'quantity_issued' => 'required|numeric|min:0.01',
             'return_to_stock_weight' => 'nullable|numeric|min:0',
+            'return_location' => 'nullable|string|in:GoDown,Factory',
             'issued_to' => 'required|string',
             'remarks' => 'nullable|string',
         ]);
@@ -51,6 +52,7 @@ class ReelIssueController extends Controller
                 'quantity_issued' => $request->quantity_issued,
                 'return_to_stock_weight' => $returnWeight,
                 'net_consumed_weight' => $netConsumed,
+                'return_location' => $request->return_location,
                 'issued_to' => $request->issued_to,
                 'remarks' => $request->remarks,
             ]);
@@ -67,6 +69,7 @@ class ReelIssueController extends Controller
                     'return_date' => $request->issue_date,
                     'remaining_weight' => $newBalance,
                     'returned_to' => 'stock',
+                    'return_location' => $request->return_location,
                     'condition' => 'good',
                     'remarks' => $request->remarks ? ($request->remarks . ' (auto return)') : 'Auto return from issue form',
                 ]);
@@ -94,6 +97,7 @@ class ReelIssueController extends Controller
             'issue_date' => 'required|date',
             'quantity_issued' => 'required|numeric|min:0.01',
             'return_to_stock_weight' => 'nullable|numeric|min:0',
+            'return_location' => 'nullable|string|in:GoDown,Factory',
             'issued_to' => 'required|string',
             'remarks' => 'nullable|string',
         ]);
@@ -129,6 +133,7 @@ class ReelIssueController extends Controller
             $issue->quantity_issued = $request->quantity_issued;
             $issue->return_to_stock_weight = $returnWeight;
             $issue->net_consumed_weight = $newNet;
+            $issue->return_location = $request->return_location;
             $issue->issued_to = $request->issued_to;
             $issue->remarks = $request->remarks;
             $issue->save();
@@ -144,6 +149,7 @@ class ReelIssueController extends Controller
                     $autoReturn->update([
                         'return_date' => $request->issue_date,
                         'remaining_weight' => $newBalance,
+                        'return_location' => $request->return_location,
                         'remarks' => $request->remarks ? ($request->remarks . ' (auto return)') : 'Auto return from issue form',
                     ]);
                 } else {
@@ -152,6 +158,7 @@ class ReelIssueController extends Controller
                         'return_date' => $request->issue_date,
                         'remaining_weight' => $newBalance,
                         'returned_to' => 'stock',
+                        'return_location' => $request->return_location,
                         'condition' => 'good',
                         'remarks' => $request->remarks ? ($request->remarks . ' (auto return)') : 'Auto return from issue form',
                     ]);

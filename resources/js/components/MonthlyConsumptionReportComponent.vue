@@ -80,7 +80,10 @@ export default {
       dateFrom: '',
       dateTo: '',
       qualityFilter: '',
-      report: []
+      report: [],
+      companyName: 'QUALITY CARTONS (PVT.) LTD.',
+      companyAddress: 'Plot# 46, Sector 24, Korangi Industrial Area Karachi',
+      companyLogo: window.location.origin + '/images/quality-cartons-logo.svg'
     };
   },
   mounted() {
@@ -93,6 +96,7 @@ export default {
     this.dateTo = lastDay.toISOString().split('T')[0];
     
     this.fetchReport();
+    this.fetchCompanySettings();
   },
   methods: {
     fetchReport() {
@@ -112,6 +116,20 @@ export default {
       }).catch(error => {
         console.error('Error fetching report:', error);
         this.report = [];
+      });
+    },
+    fetchCompanySettings() {
+      axios.get('/api/setup/settings').then(response => {
+        const data = response.data || {};
+        if (data.company_name) this.companyName = data.company_name;
+        if (data.company_address) this.companyAddress = data.company_address;
+        if (data.company_logo) {
+          this.companyLogo = window.location.origin + '/storage/' + data.company_logo;
+        } else {
+          this.companyLogo = window.location.origin + '/images/quality-cartons-logo.svg';
+        }
+      }).catch(error => {
+        console.error('Error fetching company settings:', error);
       });
     },
     exportToExcel() {
@@ -156,11 +174,11 @@ export default {
           <body>
             <div class="header">
               <div class="logo-section">
-                <img src="/images/quality-cartons-logo.svg" alt="Quality Cartons Logo" class="logo">
+                <img src="${this.companyLogo}" alt="Company Logo" class="logo">
               </div>
               <div class="company-info">
-                <div class="company-name">QUALITY CARTONS (PVT.) LTD.</div>
-                <div class="company-address">Plot# 46, Sector 24, Korangi Industrial Area Karachi</div>
+                <div class="company-name">${this.companyName}</div>
+                <div class="company-address">${this.companyAddress}</div>
                 <div class="report-title">Monthly Consumption Report</div>
                 <div class="report-period">Period: ${this.formatDate(this.dateFrom) || 'All'} to ${this.formatDate(this.dateTo) || 'All'}</div>
               </div>
@@ -189,9 +207,16 @@ export default {
             </style>
           </head>
           <body>
-            <h2>Monthly Consumption Report</h2>
-            <div style="text-align: center; margin-bottom: 20px;">
-              Period: ${this.dateFrom || 'All'} to ${this.dateTo || 'All'}
+            <div class="header">
+              <div class="logo-section">
+                <img src="${this.companyLogo}" alt="Company Logo" class="logo">
+              </div>
+              <div class="company-info">
+                <div class="company-name">${this.companyName}</div>
+                <div class="company-address">${this.companyAddress}</div>
+                <div class="report-title">Monthly Consumption Report</div>
+                <div class="report-period">Period: ${this.dateFrom || 'All'} to ${this.dateTo || 'All'}</div>
+              </div>
             </div>
             ${this.generateHTMLTable()}
           </body>

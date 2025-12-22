@@ -110,13 +110,17 @@ export default {
       selectedQuality: '',
       selectedSize: '',
       balanceMin: '',
-      balanceMax: ''
+      balanceMax: '',
+      companyName: 'QUALITY CARTONS (PVT.) LTD.',
+      companyAddress: 'Plot# 46, Sector 24, Korangi Industrial Area Karachi',
+      companyLogo: window.location.origin + '/images/quality-cartons-logo.svg'
     };
   },
   mounted() {
     this.fetchQualities();
     this.fetchSizes();
     this.fetchReport();
+    this.fetchCompanySettings();
   },
   computed: {
     totalOriginalWeight() {
@@ -139,6 +143,20 @@ export default {
         ? amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         : '0.00';
       return withPrefix ? `PKR ${formatted}` : formatted;
+    },
+    fetchCompanySettings() {
+      axios.get('/api/setup/settings').then(response => {
+        const data = response.data || {};
+        if (data.company_name) this.companyName = data.company_name;
+        if (data.company_address) this.companyAddress = data.company_address;
+        if (data.company_logo) {
+          this.companyLogo = window.location.origin + '/storage/' + data.company_logo;
+        } else {
+          this.companyLogo = window.location.origin + '/images/quality-cartons-logo.svg';
+        }
+      }).catch(error => {
+        console.error('Error fetching company settings:', error);
+      });
     },
     formatWholeNumber(value) {
       const num = parseFloat(value);
@@ -336,11 +354,11 @@ export default {
           <body>
             <div class="header">
               <div class="logo-section">
-                <img src="/images/quality-cartons-logo.svg" alt="Quality Cartons Logo" class="logo">
+                <img src="${this.companyLogo}" alt="Company Logo" class="logo">
               </div>
               <div class="company-info">
-                <div class="company-name">QUALITY CARTONS (PVT.) LTD.</div>
-                <div class="company-address">Plot# 46, Sector 24, Korangi Industrial Area Karachi</div>
+                <div class="company-name">${this.companyName}</div>
+                <div class="company-address">${this.companyAddress}</div>
                 <div class="report-title">Reel Stock Report</div>
                 <div class="report-period">As on: ${this.getTimestamp()}${filters.length > 0 ? ' | ' + filters.join(' | ') : ''}</div>
               </div>
@@ -372,7 +390,17 @@ export default {
             </style>
           </head>
           <body>
-            <h2>Reel Stock Report as on ${this.getTimestamp()}</h2>
+            <div class="header">
+               <div class="logo-section">
+                <img src="${this.companyLogo}" alt="Company Logo" class="logo">
+              </div>
+              <div class="company-info">
+                <div class="company-name">${this.companyName}</div>
+                <div class="company-address">${this.companyAddress}</div>
+                <div class="report-title">Reel Stock Report</div>
+                <div class="report-period">As on: ${this.getTimestamp()}</div>
+              </div>
+            </div>
             ${this.generateHTMLTable()}
           </body>
         </html>

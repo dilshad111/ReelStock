@@ -18,6 +18,7 @@ class ReelIssue extends Model implements Auditable
         'remarks',
         'return_to_stock_weight',
         'net_consumed_weight',
+        'return_location',
         'auto_return_id',
     ];
 

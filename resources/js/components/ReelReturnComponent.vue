@@ -37,6 +37,14 @@
                 </select>
               </div>
               <div class="mb-3">
+                <label>Return Location</label>
+                <select v-model="returnData.return_location" class="form-control" required>
+                  <option value="">Select Location</option>
+                  <option value="GoDown">GoDown</option>
+                  <option value="Factory">Factory</option>
+                </select>
+              </div>
+              <div class="mb-3">
                 <label>Remarks</label>
                 <textarea v-model="returnData.remarks" class="form-control"></textarea>
               </div>
@@ -54,6 +62,7 @@
           <th>Reel No.</th>
           <th>Return Date</th>
           <th>Remaining Weight</th>
+          <th>Return Location</th>
           <th>Condition</th>
         </tr>
       </thead>
@@ -62,6 +71,7 @@
           <td>{{ r.reel.reel_no }}</td>
           <td>{{ r.return_date }}</td>
           <td>{{ r.remaining_weight }} kg</td>
+          <td>{{ r.return_location || '-' }}</td>
           <td>{{ r.condition }}</td>
         </tr>
       </tbody>
@@ -82,6 +92,7 @@ export default {
         return_date: new Date().toISOString().substr(0,10),
         remaining_weight: '',
         condition: 'good',
+        return_location: '',
         remarks: ''
       },
       showForm: false
@@ -122,6 +133,7 @@ export default {
         return_date: new Date().toISOString().substr(0,10),
         remaining_weight: '',
         condition: 'good',
+        return_location: '',
         remarks: ''
       };
       this.reel = null;

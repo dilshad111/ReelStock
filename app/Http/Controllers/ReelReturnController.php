@@ -31,6 +31,7 @@ class ReelReturnController extends Controller
             'return_date' => 'required|date',
             'remaining_weight' => 'required|numeric|min:0',
             'returned_to' => 'required|in:stock,supplier',
+            'return_location' => 'nullable|string|in:GoDown,Factory',
             'condition' => 'required|in:good,damaged,qc_required',
             'vehicle_number' => 'nullable|string|max:50',
             'return_to_supplier_id' => 'nullable|exists:suppliers,id',
@@ -115,6 +116,7 @@ class ReelReturnController extends Controller
             'return_date' => $request->return_date,
             'remaining_weight' => $request->remaining_weight,
             'returned_to' => $request->returned_to,
+            'return_location' => $request->return_location,
             'condition' => $request->condition,
             'vehicle_number' => $request->vehicle_number,
             'return_to_supplier_id' => $request->return_to_supplier_id,
@@ -145,6 +147,7 @@ class ReelReturnController extends Controller
             'return_date' => 'required|date',
             'remaining_weight' => 'required|numeric|min:0',
             'returned_to' => 'required|in:supplier',
+            'return_location' => 'nullable|string|in:GoDown,Factory',
             'condition' => 'required|in:good,damaged,qc_required',
             'vehicle_number' => 'nullable|string|max:50',
             'return_to_supplier_id' => 'nullable|exists:suppliers,id',
@@ -174,6 +177,7 @@ class ReelReturnController extends Controller
 
             $return->return_date = $request->return_date;
             $return->remaining_weight = $newWeight;
+            $return->return_location = $request->return_location;
             $return->condition = $request->condition;
             $return->vehicle_number = $request->vehicle_number;
             $return->return_to_supplier_id = $request->return_to_supplier_id;

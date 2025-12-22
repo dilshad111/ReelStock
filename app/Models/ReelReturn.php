@@ -18,6 +18,7 @@ class ReelReturn extends Model implements Auditable
         'return_date',
         'remaining_weight',
         'returned_to',
+        'return_location',
         'condition',
         'remarks',
     ];
