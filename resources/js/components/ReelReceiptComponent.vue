@@ -190,16 +190,68 @@
       </div>
     </div>
 
-    <div class="row mb-3 g-3">
-      <div class="col-md-4">
-        <input v-model="reelSearch" type="text" class="form-control" placeholder="Search Reel No. (without RL)">
+    <div class="row mb-3 g-2 align-items-end" style="position: relative; z-index: 1070;">
+      <div class="col-md-2">
+        <label class="small text-muted">Reel No.</label>
+        <input v-model="reelSearch" type="text" class="form-control form-control-sm" placeholder="No RL...">
+      </div>
+      <div class="col-md-2">
+        <label class="small text-muted mb-1 ps-1">Quality</label>
+        <div class="searchable-select-container">
+          <input 
+            v-model="qualitySearch" 
+            type="text" 
+            class="form-control form-control-sm" 
+            placeholder="Search/Select..."
+            @focus="showQualityDrop = true"
+            @blur="handleBlur('quality')"
+          >
+          <div v-if="showQualityDrop" class="custom-dropdown shadow-sm">
+            <div class="dropdown-item-custom small" @mousedown="selectQuality('')">All Qualities</div>
+            <div v-for="q in filteredQualities" :key="q.id" class="dropdown-item-custom small" @mousedown="selectQuality(q)">
+              {{ q.quality }}
+            </div>
+            <div v-if="filteredQualities.length === 0" class="dropdown-item-custom disabled small text-muted">No matches</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <label class="small text-muted mb-1 ps-1">Supplier</label>
+        <div class="searchable-select-container">
+          <input 
+            v-model="supplierSearch" 
+            type="text" 
+            class="form-control form-control-sm" 
+            placeholder="Search/Select..."
+            @focus="showSupplierDrop = true"
+            @blur="handleBlur('supplier')"
+          >
+          <div v-if="showSupplierDrop" class="custom-dropdown shadow-sm">
+            <div class="dropdown-item-custom small" @mousedown="selectSupplier('')">All Suppliers</div>
+            <div v-for="s in filteredSuppliers" :key="s.id" class="dropdown-item-custom small" @mousedown="selectSupplier(s)">
+              {{ s.name }}
+            </div>
+            <div v-if="filteredSuppliers.length === 0" class="dropdown-item-custom disabled small text-muted">No matches</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <label class="small text-muted">From</label>
+        <input v-model="filters.date_from" type="date" class="form-control form-control-sm" @change="fetchReceipts">
+      </div>
+      <div class="col-md-2">
+        <label class="small text-muted">To</label>
+        <input v-model="filters.date_to" type="date" class="form-control form-control-sm" @change="fetchReceipts">
+      </div>
+      <div class="col-md-2">
+        <button @click="clearFilters" class="btn btn-sm btn-outline-secondary w-100">Clear</button>
       </div>
     </div>
     <table class="table table-striped table-sticky-header">
       <thead>
         <tr>
           <th width="50"><input type="checkbox" @change="toggleSelectAll" :checked="allSelected"></th>
-          <th>ID</th>
+          <th>S. No.</th>
           <th>Reel No.</th>
           <th>Date</th>
           <th class="text-start">Supplier</th>
@@ -212,21 +264,21 @@
         </tr>
       </thead>
       <tbody>
-        <template v-for="r in receiptList" :key="r.id + '-' + (resolvePaperQuality(r.reel)?.id || 'none')">
-          <tr>
-            <td><input type="checkbox" :value="r.id" v-model="selectedReceipts"></td>
-            <td>{{ r.id }}</td>
+        <tr v-for="(r, index) in receiptList" :key="r.id">
+          <td><input type="checkbox" :value="r.id" v-model="selectedReceipts"></td>
+            <td>{{ pagination.total - ((pagination.current_page - 1) * pagination.per_page) - index }}</td>
             <td class="text-center">
-              <a href="#" @click.prevent="showHistory(r.reel.reel_no)" class="d-block text-decoration-none">
+              <a v-if="r.reel" href="#" @click.prevent="showHistory(r.reel.reel_no)" class="d-block text-decoration-none">
                 <div>{{ getReelPrefix(r.reel.reel_no) }}</div>
                 <div>{{ getReelSerial(r.reel.reel_no) }}</div>
               </a>
+              <span v-else>N/A</span>
             </td>
             <td>{{ formatDate(r.receiving_date) }}</td>
-            <td class="text-start">{{ r.reel.supplier ? r.reel.supplier.name : 'N/A' }}</td>
-            <td class="text-start">{{ r.reel.paper_quality_display }}</td>
-            <td>{{ formatReelSize(r.reel.reel_size) }}</td>
-            <td class="text-center">{{ formatWeightKg(r.reel.original_weight) }}</td>
+            <td class="text-start">{{ r.reel?.supplier ? r.reel.supplier.name : 'N/A' }}</td>
+            <td class="text-start">{{ r.reel?.paper_quality_display }}</td>
+            <td>{{ formatReelSize(r.reel?.reel_size) }}</td>
+            <td class="text-center">{{ formatWeightKg(r.reel?.original_weight) }}</td>
             <td class="text-center">{{ formatRate(r.rate_per_kg) }}</td>
             <td>{{ r.qc_status }}</td>
             <td style="min-width: 230px;">
@@ -235,7 +287,7 @@
               <button @click="deleteReceipt(r)" class="btn btn-sm btn-danger">Delete</button>
             </td>
           </tr>
-        </template>
+
       </tbody>
     </table>
 
@@ -325,7 +377,18 @@ export default {
         last_page: 1,
         per_page: 50,
         total: 0
-      }
+      },
+      filters: {
+        quality_id: '',
+        supplier_id: '',
+        date_from: '',
+        date_to: ''
+      },
+      qualitySearch: '',
+      supplierSearch: '',
+      showQualityDrop: false,
+      showSupplierDrop: false,
+      searchTimeout: null
     };
   },
   computed: {
@@ -345,11 +408,26 @@ export default {
         pages.push(i);
       }
       return pages;
+    },
+    filteredQualities() {
+      if (!this.qualitySearch) return this.qualities;
+      const search = this.qualitySearch.toLowerCase();
+      return this.qualities.filter(q => 
+        (q.quality && q.quality.toLowerCase().includes(search)) || 
+        (q.gsm_range && q.gsm_range.toLowerCase().includes(search))
+      );
+    },
+    filteredSuppliers() {
+      if (!this.supplierSearch) return this.suppliers;
+      const search = this.supplierSearch.toLowerCase();
+      return this.suppliers.filter(s => 
+        s.name && s.name.toLowerCase().includes(search)
+      );
     }
   },
   watch: {
     reelSearch() {
-      this.fetchReceipts({ reel_no: this.reelSearch || undefined });
+      this.debouncedFetch();
     }
   },
   mounted() {
@@ -758,21 +836,18 @@ export default {
       return `${name}${gsm}`;
     },
     fetchReceipts(params = {}) {
-      axios.get('/api/reel-receipts', { params }).then(response => {
+      // Merge with active filters
+      const queryParams = {
+        ...this.filters,
+        ...params
+      };
+      if (this.reelSearch) {
+        queryParams.reel_no = this.reelSearch;
+      }
+      
+      axios.get('/api/reel-receipts', { params: queryParams }).then(response => {
         if (response.data.data && Array.isArray(response.data.data)) {
-          this.receipts = reactive(response.data.data.map(item => {
-            item = reactive(item);
-            if (item.reel) {
-              item.reel = reactive(item.reel);
-              if (item.reel.paperQuality) {
-                item.reel.paperQuality = reactive(item.reel.paperQuality);
-              }
-              if (item.reel.supplier) {
-                item.reel.supplier = reactive(item.reel.supplier);
-              }
-            }
-            return item;
-          }));
+          this.receipts = response.data.data;
           this.pagination = {
             current_page: response.data.current_page,
             last_page: response.data.last_page,
@@ -796,6 +871,65 @@ export default {
         alert('Failed to load receipts. Please check your connection.');
         this.receipts = reactive([]);
       });
+    },
+    debouncedFetch() {
+      if (this.searchTimeout) {
+        clearTimeout(this.searchTimeout);
+      }
+      this.searchTimeout = setTimeout(() => {
+        this.fetchReceipts();
+      }, 500);
+    },
+    selectQuality(q) {
+      if (!q) {
+        this.filters.quality_id = '';
+        this.qualitySearch = '';
+      } else {
+        this.filters.quality_id = q.id;
+        this.qualitySearch = q.quality;
+      }
+      this.showQualityDrop = false;
+      this.fetchReceipts();
+    },
+    selectSupplier(s) {
+      if (!s) {
+        this.filters.supplier_id = '';
+        this.supplierSearch = '';
+      } else {
+        this.filters.supplier_id = s.id;
+        this.supplierSearch = s.name;
+      }
+      this.showSupplierDrop = false;
+      this.fetchReceipts();
+    },
+    handleBlur(type) {
+      setTimeout(() => {
+        if (type === 'quality') {
+          this.showQualityDrop = false;
+          if (this.filters.quality_id) {
+            const q = this.qualities.find(item => item.id == this.filters.quality_id);
+            if (q) this.qualitySearch = q.quality;
+          }
+        } else if (type === 'supplier') {
+          this.showSupplierDrop = false;
+          if (this.filters.supplier_id) {
+            const s = this.suppliers.find(item => item.id == this.filters.supplier_id);
+            if (s) this.supplierSearch = s.name;
+          }
+        }
+      }, 200);
+    },
+    clearFilters() {
+      this.filters = {
+        quality_id: '',
+        supplier_id: '',
+        date_from: '',
+        date_to: ''
+      };
+      this.reelSearch = '';
+      this.qualitySearch = '';
+      this.supplierSearch = '';
+      this.fetchReceipts();
     },
     goToPage(page) {
       if (page < 1 || page > this.pagination.last_page) return;
@@ -1195,6 +1329,39 @@ export default {
 </script>
 
 <style scoped>
+.searchable-select-container {
+  position: relative;
+  z-index: 1060;
+}
+
+.custom-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 2000;
+  background: white;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  max-height: 250px;
+  overflow-y: auto;
+  margin-top: 2px;
+}
+
+.dropdown-item-custom {
+  padding: 6px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f1f1;
+}
+
+.dropdown-item-custom:hover {
+  background-color: #f8f9fa;
+  color: #0d6efd;
+}
+
+.dropdown-item-custom:last-child {
+  border-bottom: none;
+}
 .table-sticky-header thead th {
   position: sticky;
   top: 0;

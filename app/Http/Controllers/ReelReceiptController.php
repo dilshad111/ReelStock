@@ -13,57 +13,54 @@ class ReelReceiptController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = ReelReceipt::query();
+            $query = ReelReceipt::with(['reel.paperQuality', 'reel.supplier']);
 
-            if ($request->has('reel_no')) {
+            if ($request->filled('reel_no')) {
                 $query->whereHas('reel', function ($q) use ($request) {
                     $q->where('reel_no', 'like', '%' . $request->reel_no . '%');
                 });
             }
 
-            if ($request->has('supplier')) {
+            if ($request->filled('supplier_id')) {
+                $query->whereHas('reel', function ($q) use ($request) {
+                    $q->where('supplier_id', $request->supplier_id);
+                });
+            }
+
+            if ($request->filled('supplier')) {
                 $query->whereHas('reel.supplier', function ($q) use ($request) {
                     $q->where('name', 'like', '%' . $request->supplier . '%');
                 });
             }
 
-            if ($request->has('date_from') && $request->has('date_to')) {
+            if ($request->filled('quality_id')) {
+                $query->whereHas('reel', function ($q) use ($request) {
+                    $q->where('paper_quality_id', $request->quality_id);
+                });
+            }
+
+            if ($request->filled('date_from') && $request->filled('date_to')) {
                 $query->whereBetween('receiving_date', [$request->date_from, $request->date_to]);
             }
 
-            if ($request->has('orderBy') && $request->orderBy === 'id' && $request->has('sort') && $request->sort === 'desc') {
-                $query->orderBy('id', 'desc');
-            } else {
-                $query->orderBy('id', 'desc');
-            }
+            $query->orderBy('id', 'desc');
 
             if ($request->has('limit')) {
                 $query->limit($request->limit);
             }
 
-            $prefix = Setting::where('key', 'reel_no_prefix')->value('value') ?? 'RL2026';
+            $prefix = Setting::where('key', 'reel_no_prefix')->value('value') ?? 'RL111';
 
             $receipts = $query->paginate(50);
 
-            // Manually include reel data
-            $receipts->getCollection()->transform(function ($receipt) {
-                $reel = Reel::with('paperQuality', 'supplier')->find($receipt->reel_id);
-                $receiptArray = $receipt->toArray();
-                if ($reel) {
-                    $reelArray = $reel->toArray();
-                    // Concatenate quality and gsm_range
-                    if ($reel->paperQuality) {
-                        $quality = $reel->paperQuality->quality ?? $reel->paperQuality->item_code ?? '';
-                        $gsm = $reel->paperQuality->gsm_range ? ' ' . $reel->paperQuality->gsm_range : '';
-                        $reelArray['paper_quality_display'] = $quality . $gsm;
-                    } else {
-                        $reelArray['paper_quality_display'] = 'N/A';
-                    }
-                    $receiptArray['reel'] = $reelArray;
-                } else {
-                    $receiptArray['reel'] = null;
+            // Add the paper_quality_display property to each reel
+            $receipts->getCollection()->each(function ($receipt) {
+                if ($receipt->reel) {
+                    $reel = $receipt->reel;
+                    $quality = $reel->paperQuality ? ($reel->paperQuality->quality ?? $reel->paperQuality->item_code ?? '') : 'N/A';
+                    $gsm = ($reel->paperQuality && $reel->paperQuality->gsm_range) ? ' ' . $reel->paperQuality->gsm_range : '';
+                    $reel->paper_quality_display = ($quality === 'N/A') ? 'N/A' : ($quality . $gsm);
                 }
-                return $receiptArray;
             });
 
             $response = $receipts->toArray();

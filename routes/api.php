@@ -66,6 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Reports
     Route::get('reports/monthly-consumption', [MonthlyConsumptionReportController::class, 'index']);
     Route::get('reports/reel-stock', [ReelStockReportController::class, 'index']);
+    Route::get('reports/reel-stock/sizes', [ReelStockReportController::class, 'getAvailableSizes']);
     Route::get('reports/reel-stock/{reel_no}/history', [ReelStockReportController::class, 'getReelHistory']);
     Route::get('reports/reel-receipt', [ReelReceiptReportController::class, 'index']);
     Route::get('reports/monthly-closing', [MonthlyClosingReportController::class, 'index']);

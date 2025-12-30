@@ -5,16 +5,29 @@
                 <h5 class="mb-0 fw-bold text-primary">
                     <i class="bi bi-clock-history me-2"></i>User Activity / Audit Logs
                 </h5>
-                <div class="d-flex gap-2">
-                    <select v-model="filters.event" class="form-select form-select-sm" style="width: 150px;" @change="fetchAudits">
-                        <option value="">All Events</option>
-                        <option value="created">Created</option>
-                        <option value="updated">Updated</option>
-                        <option value="deleted">Deleted</option>
-                    </select>
-                    <button class="btn btn-sm btn-outline-secondary" @click="fetchAudits">
-                        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
-                    </button>
+                <div class="d-flex gap-2 flex-wrap justify-content-end align-items-center">
+                    <div style="width: 120px;">
+                        <label class="small text-muted d-block mb-1" style="font-size: 10px;">Event</label>
+                        <select v-model="filters.event" class="form-select form-select-sm" @change="fetchAudits">
+                            <option value="">All Events</option>
+                            <option value="created">Created</option>
+                            <option value="updated">Updated</option>
+                            <option value="deleted">Deleted</option>
+                        </select>
+                    </div>
+                    <div style="width: 140px;">
+                        <label class="small text-muted d-block mb-1" style="font-size: 10px;">Module</label>
+                        <input v-model="filters.auditable_type" type="text" class="form-control form-control-sm" placeholder="e.g. Reel..." @input="debouncedFetch">
+                    </div>
+                    <div style="width: 140px;">
+                        <label class="small text-muted d-block mb-1" style="font-size: 10px;">User</label>
+                        <input v-model="filters.user_search" type="text" class="form-control form-control-sm" placeholder="Name/Email..." @input="debouncedFetch">
+                    </div>
+                    <div class="pt-3">
+                        <button class="btn btn-sm btn-outline-secondary" @click="fetchAudits">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="card-body p-0">
@@ -175,8 +188,10 @@ export default {
             filters: {
                 event: '',
                 auditable_type: '',
-                user_id: ''
+                user_id: '',
+                user_search: ''
             },
+            searchTimeout: null,
             pagination: {},
             selectedAudit: null,
             modal: null
@@ -209,6 +224,14 @@ export default {
             } finally {
                 this.loading = false;
             }
+        },
+        debouncedFetch() {
+            if (this.searchTimeout) {
+                clearTimeout(this.searchTimeout);
+            }
+            this.searchTimeout = setTimeout(() => {
+                this.fetchAudits();
+            }, 500);
         },
         changePage(page) {
             if (page >= 1 && page <= this.pagination.last_page) {

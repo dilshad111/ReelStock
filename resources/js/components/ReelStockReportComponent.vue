@@ -14,31 +14,69 @@
         </button>
       </div>
     </div>
-    <div class="row mb-3 g-3">
-      <div class="col-md-3">
-        <label>Filter by Quality</label>
-        <select v-model="selectedQuality" @change="fetchReport" class="form-control">
-          <option value="">All Qualities</option>
-          <option v-for="quality in qualities" :key="quality.id" :value="quality.id">{{ quality.quality }} ({{ quality.gsm_range }})</option>
-        </select>
-      </div>
-      <div class="col-md-2">
-        <label>Filter by Reel Size</label>
-        <select v-model="selectedSize" @change="fetchReport" class="form-control">
-          <option value="">All Sizes</option>
-          <option v-for="size in sizes" :key="size.id" :value="size.id">{{ size.name }}</option>
-        </select>
-      </div>
-      <div class="col-md-3 col-sm-4">
-        <label>Balance Weight Min (kg)</label>
-        <input v-model="balanceMin" type="number" min="0" step="0.01" class="form-control" placeholder="Min">
-      </div>
-      <div class="col-md-3 col-sm-4">
-        <label>Balance Weight Max (kg)</label>
-        <input v-model="balanceMax" type="number" min="0" step="0.01" class="form-control" placeholder="Max">
-      </div>
-      <div class="col-md-2 d-flex align-items-end">
-        <button @click="fetchReport" class="btn btn-primary w-100">Apply Filters</button>
+    <div class="card shadow-sm border-0 mb-3" style="overflow: visible !important; position: relative; z-index: 1070;">
+      <div class="card-body p-2" style="overflow: visible !important;">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-3">
+            <label class="small text-muted mb-1 ps-1">Quality</label>
+            <div class="searchable-select-container">
+              <input 
+                v-model="qualitySearch" 
+                type="text" 
+                class="form-control form-control-sm" 
+                placeholder="Search/Select Quality..."
+                @focus="showQualityDrop = true"
+                @blur="handleBlur('quality')"
+              >
+              <div v-if="showQualityDrop" class="custom-dropdown shadow-sm">
+                <div class="dropdown-item-custom small" @mousedown="selectQuality('')">All Qualities</div>
+                <div v-for="q in filteredQualities" :key="q.id" class="dropdown-item-custom small" @mousedown="selectQuality(q)">
+                  {{ q.quality }} {{ q.gsm_range ? '(' + q.gsm_range + ')' : '' }}
+                </div>
+                <div v-if="filteredQualities.length === 0" class="dropdown-item-custom disabled small text-muted">No matches</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <label class="small text-muted mb-1 ps-1">Supplier</label>
+            <div class="searchable-select-container">
+              <input 
+                v-model="supplierSearch" 
+                type="text" 
+                class="form-control form-control-sm" 
+                placeholder="Search/Select Supplier..."
+                @focus="showSupplierDrop = true"
+                @blur="handleBlur('supplier')"
+              >
+              <div v-if="showSupplierDrop" class="custom-dropdown shadow-sm">
+                <div class="dropdown-item-custom small" @mousedown="selectSupplier('')">All Suppliers</div>
+                <div v-for="s in filteredSuppliers" :key="s.id" :value="s.id" class="dropdown-item-custom small" @mousedown="selectSupplier(s)">
+                  {{ s.name }}
+                </div>
+                <div v-if="filteredSuppliers.length === 0" class="dropdown-item-custom disabled small text-muted">No matches</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <label class="small text-muted mb-1 ps-1">Size</label>
+            <select v-model="selectedSize" @change="fetchReport" class="form-select form-select-sm">
+              <option value="">All Sizes</option>
+              <option v-for="size in sizes" :key="size.id" :value="size.id">{{ size.name }}</option>
+            </select>
+          </div>
+          <div class="col-md-1">
+            <label class="small text-muted mb-1 ps-1">Min Wt</label>
+            <input v-model="balanceMin" type="number" step="0.01" class="form-control form-control-sm" placeholder="Min">
+          </div>
+          <div class="col-md-1">
+            <label class="small text-muted mb-1 ps-1">Max Wt</label>
+            <input v-model="balanceMax" type="number" step="0.01" class="form-control form-control-sm" placeholder="Max">
+          </div>
+          <div class="col-md-3 d-flex gap-1 justify-content-end">
+            <button @click="fetchReport" class="btn btn-primary btn-sm px-3">Apply</button>
+            <button @click="clearAllFilters" class="btn btn-outline-secondary btn-sm">Clear</button>
+          </div>
+        </div>
       </div>
     </div>
     <table v-if="report.length" class="table table-striped align-middle table-sticky-header">
@@ -107,8 +145,14 @@ export default {
       report: [],
       qualities: [],
       sizes: [],
+      suppliers: [],
       selectedQuality: '',
       selectedSize: '',
+      selectedSupplier: '',
+      qualitySearch: '',
+      supplierSearch: '',
+      showQualityDrop: false,
+      showSupplierDrop: false,
       balanceMin: '',
       balanceMax: '',
       companyName: 'QUALITY CARTONS (PVT.) LTD.',
@@ -119,6 +163,7 @@ export default {
   mounted() {
     this.fetchQualities();
     this.fetchSizes();
+    this.fetchSuppliers();
     this.fetchReport();
     this.fetchCompanySettings();
   },
@@ -134,6 +179,24 @@ export default {
     },
     totalAmount() {
       return this.report.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+    },
+    filteredQualities() {
+      const search = (this.qualitySearch || '').toLowerCase();
+      // If we have an exact match selected and not searching, show all
+      if (!this.showQualityDrop && this.selectedQuality) return this.qualities;
+      
+      return this.qualities.filter(q => 
+        (q.quality && q.quality.toLowerCase().includes(search)) || 
+        (q.gsm_range && q.gsm_range.toLowerCase().includes(search))
+      );
+    },
+    filteredSuppliers() {
+      const search = (this.supplierSearch || '').toLowerCase();
+      if (!this.showSupplierDrop && this.selectedSupplier) return this.suppliers;
+
+      return this.suppliers.filter(s => 
+        s.name && s.name.toLowerCase().includes(search)
+      );
     }
   },
   methods: {
@@ -194,18 +257,24 @@ export default {
         console.error('Error fetching qualities:', error);
       });
     },
+    fetchSuppliers() {
+      axios.get('/api/suppliers').then(response => {
+        this.suppliers = response.data;
+      }).catch(error => {
+        console.error('Error fetching suppliers:', error);
+      });
+    },
     fetchSizes() {
-      axios.get('/api/reel-receipts').then(response => {
-        // Extract unique reel sizes from receipts (response.data is paginated)
-        const receipts = response.data.data || response.data || [];
-        const uniqueSizes = [...new Set(receipts.map(r => r.reel?.reel_size).filter(size => size))].sort((a, b) => {
-          const numA = parseFloat(a);
-          const numB = parseFloat(b);
-          if (Number.isFinite(numA) && Number.isFinite(numB)) {
-            return numA - numB;
-          }
-          return String(a).localeCompare(String(b));
-        });
+      let url = '/api/reports/reel-stock/sizes';
+      const params = [];
+      if (this.selectedSupplier) {
+        params.push('supplier=' + this.selectedSupplier);
+      }
+      if (params.length > 0) {
+        url += '?' + params.join('&');
+      }
+      axios.get(url).then(response => {
+        const uniqueSizes = response.data || [];
         // Convert to the expected format with id and name, and store the actual size
         this.sizes = uniqueSizes.map((size, index) => ({
           id: index + 1,
@@ -228,6 +297,9 @@ export default {
           params.push('size=' + selectedSizeObj.reel_size);
         }
       }
+      if (this.selectedSupplier) {
+        params.push('supplier=' + this.selectedSupplier);
+      }
       if (this.balanceMin !== '') {
         params.push('balance_min=' + this.balanceMin);
       }
@@ -242,6 +314,63 @@ export default {
       }).catch(error => {
         console.error('Error fetching report:', error);
       });
+    },
+    selectQuality(q) {
+      if (!q) {
+        this.selectedQuality = '';
+        this.qualitySearch = '';
+      } else {
+        this.selectedQuality = q.id;
+        this.qualitySearch = `${q.quality} (${q.gsm_range})`;
+      }
+      this.showQualityDrop = false;
+      this.fetchReport();
+    },
+    selectSupplier(s) {
+      if (!s) {
+        this.selectedSupplier = '';
+        this.supplierSearch = '';
+      } else {
+        this.selectedSupplier = s.id;
+        this.supplierSearch = s.name;
+      }
+      this.showSupplierDrop = false;
+      this.fetchSizes(); // Refresh sizes when supplier changes
+      this.fetchReport();
+    },
+    handleBlur(type) {
+      // Use timeout to allow click event on dropdown items to fire first
+      setTimeout(() => {
+        if (type === 'quality') {
+          this.showQualityDrop = false;
+          // If search text doesn't match selected, reset or clear
+          if (this.selectedQuality) {
+            const q = this.qualities.find(item => item.id == this.selectedQuality);
+            if (q) {
+              this.qualitySearch = `${q.quality} (${q.gsm_range})`;
+            }
+          }
+        } else if (type === 'supplier') {
+          this.showSupplierDrop = false;
+          if (this.selectedSupplier) {
+            const s = this.suppliers.find(item => item.id == this.selectedSupplier);
+            if (s) {
+              this.supplierSearch = s.name;
+            }
+          }
+        }
+      }, 200);
+    },
+    clearAllFilters() {
+      this.selectedQuality = '';
+      this.qualitySearch = '';
+      this.selectedSupplier = '';
+      this.supplierSearch = '';
+      this.selectedSize = '';
+      this.balanceMin = '';
+      this.balanceMax = '';
+      this.fetchSizes();
+      this.fetchReport();
     },
     showHistory(reelNo) {
       axios.get(`/api/reports/reel-stock/${reelNo}/history`).then(response => {
@@ -292,6 +421,9 @@ export default {
       if (this.selectedSize) {
         filename += '_reel_size_' + this.selectedSize;
       }
+      if (this.selectedSupplier) {
+        filename += '_supplier_' + this.selectedSupplier;
+      }
       if (this.balanceMin !== '') {
         filename += '_balance_min_' + this.balanceMin;
       }
@@ -322,6 +454,12 @@ export default {
         const size = this.sizes.find(s => s.id === this.selectedSize);
         if (size) {
           filters.push(`Reel Size: ${size.name}`);
+        }
+      }
+      if (this.selectedSupplier) {
+        const supplier = this.suppliers.find(s => s.id === this.selectedSupplier);
+        if (supplier) {
+          filters.push(`Supplier: ${supplier.name}`);
         }
       }
       if (this.balanceMin !== '' || this.balanceMax !== '') {
@@ -598,6 +736,40 @@ export default {
 </script>
 
 <style scoped>
+.searchable-select-container {
+  position: relative;
+  z-index: 1060;
+}
+
+.custom-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 2000;
+  background: white;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  max-height: 250px;
+  overflow-y: auto;
+  margin-top: 2px;
+}
+
+.dropdown-item-custom {
+  padding: 6px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f1f1;
+}
+
+.dropdown-item-custom:hover {
+  background-color: #f8f9fa;
+  color: #0d6efd;
+}
+
+.dropdown-item-custom:last-child {
+  border-bottom: none;
+}
+
 .table.table-striped.align-middle td,
 .table.table-striped.align-middle th {
   padding: 4px 6px;

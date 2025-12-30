@@ -7,6 +7,34 @@ use App\Models\Reel;
 
 class ReelStockReportController extends Controller
 {
+    public function getAvailableSizes(Request $request)
+    {
+        $query = Reel::query();
+
+        if ($request->has('supplier') && $request->supplier !== '') {
+            $query->where('supplier_id', $request->supplier);
+        }
+
+        // Only show sizes for reels currently in stock
+        // Stock is defined as balance_weight > 0 (or original_weight > 0 if balance_weight is null)
+        $query->where(function ($q) {
+            $q->where('balance_weight', '>', 0)
+              ->orWhere(function ($inner) {
+                  $inner->whereNull('balance_weight')
+                        ->where('original_weight', '>', 0);
+              });
+        });
+
+        $sizes = $query->distinct()->pluck('reel_size')->filter()->values();
+
+        // Sort numerically
+        $sortedSizes = $sizes->sort(function($a, $b) {
+            return (float)$a <=> (float)$b;
+        })->values();
+
+        return response()->json($sortedSizes);
+    }
+
     public function index(Request $request)
     {
         $query = Reel::with(['paperQuality', 'supplier', 'receipts' => function ($q) {
@@ -21,6 +49,10 @@ class ReelStockReportController extends Controller
 
         if ($request->has('size') && $request->size !== '') {
             $query->where('reel_size', $request->size);
+        }
+
+        if ($request->has('supplier') && $request->supplier !== '') {
+            $query->where('supplier_id', $request->supplier);
         }
 
         if ($request->filled('balance_min')) {
