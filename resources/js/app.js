@@ -17,6 +17,7 @@ const PERMISSION_KEY_MAP = {
     cartons: 'cartons',
     customers: 'cartons',
     'sketch-generator': 'cartons',
+    'reel-stock-count': 'reel_stock',
     reports: null,
     users: null,
     'user-rights': null,
@@ -47,6 +48,7 @@ const VIEW_ORDER = [
     'reel-stock',
     'reel-receipt',
     'monthly-closing',
+    'reel-stock-count',
     'cartons',
     'customers',
     'sketch-generator',
@@ -54,7 +56,8 @@ const VIEW_ORDER = [
     'users',
     'user-rights',
     'audit-log',
-    'best-ui'
+    'best-ui',
+    'profile'
 ];
 
 const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
@@ -71,12 +74,14 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     cartons: 'cartons',
     customers: 'customers',
     'sketch-generator': 'sketch-generator',
+    'reel-stock-count': 'reel-stock-count',
     reports: 'reports',
     users: 'users',
     'user-rights': 'user-rights',
     'audit-log': 'audit-log',
     'best-ui': 'best-ui',
-    setup: 'setup'
+    setup: 'setup',
+    profile: 'profile'
 });
 
 const VALID_VIEWS = new Set(Object.keys(VIEW_TO_ROUTE_SEGMENT));
@@ -428,6 +433,9 @@ import ScrollToTopComponent from './components/ScrollToTopComponent.vue';
 import SetupComponent from './components/SetupComponent.vue';
 import BestUiShowcaseComponent from './components/BestUiShowcaseComponent.vue';
 
+import ProfileComponent from './components/ProfileComponent.vue';
+import ReelStockCountReportComponent from './components/ReelStockCountReportComponent.vue';
+
 app.component('supplier-component', SupplierComponent);
 app.component('paper-quality-component', PaperQualityComponent);
 app.component('dashboard-component', DashboardComponent);
@@ -449,7 +457,9 @@ app.component('reports-component', ReportsComponent);
 app.component('theme-selector-component', ThemeSelectorComponent);
 app.component('scroll-to-top-component', ScrollToTopComponent);
 app.component('setup-component', SetupComponent);
+app.component('reel-stock-count-report-component', ReelStockCountReportComponent);
 app.component('best-ui-showcase-component', BestUiShowcaseComponent);
+app.component('profile-component', ProfileComponent);
 
 /**
  * The following block of code may be used to automatically register your

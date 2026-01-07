@@ -80,6 +80,7 @@
             <table class="table table-bordered">
               <thead>
                 <tr>
+                  <th>Reel No.</th>
                   <th>Size (inches)</th>
                   <th>Weight (kg)</th>
                   <th style="width: 170px;">Actions</th>
@@ -87,6 +88,7 @@
               </thead>
               <tbody>
                 <tr v-for="(reel, index) in bulkData.reels" :key="index">
+                  <td class="align-middle text-center fw-bold">{{ getCalculatedReelNo(index) }}</td>
                   <td><input v-model="reel.reel_size" type="number" step="0.01" class="form-control" required></td>
                   <td><input v-model="reel.reel_weight" type="number" step="0.01" class="form-control" required></td>
                   <td><button @click="removeReelRow(index)" type="button" class="btn btn-sm btn-danger">Remove</button></td>
@@ -184,6 +186,10 @@
           </template>
           <div class="d-flex align-items-center gap-2 mt-3">
             <button type="submit" class="btn btn-success">{{ isBulk ? 'Save Bulk' : (editing ? 'Update' : 'Save') }}</button>
+            <div v-if="isBulk" class="ms-2">
+              <strong>Total Weight: </strong>
+              <span class="badge bg-info text-dark" style="font-size: 1rem;">{{ totalBulkWeight.toLocaleString() }} kg</span>
+            </div>
             <button @click="cancel" type="button" class="btn btn-secondary">Cancel</button>
           </div>
         </form>
@@ -247,7 +253,7 @@
         <button @click="clearFilters" class="btn btn-sm btn-outline-secondary w-100">Clear</button>
       </div>
     </div>
-    <table class="table table-striped table-sticky-header">
+    <table class="table table-striped table-sticky-header table-sm text-nowrap small">
       <thead>
         <tr>
           <th width="50"><input type="checkbox" @change="toggleSelectAll" :checked="allSelected"></th>
@@ -409,6 +415,12 @@ export default {
       }
       return pages;
     },
+    totalBulkWeight() {
+      if (!this.bulkData || !this.bulkData.reels) return 0;
+      return this.bulkData.reels.reduce((total, reel) => {
+        return total + (parseFloat(reel.reel_weight) || 0);
+      }, 0);
+    },
     filteredQualities() {
       if (!this.qualitySearch) return this.qualities;
       const search = this.qualitySearch.toLowerCase();
@@ -506,7 +518,7 @@ export default {
       if (Number.isNaN(numericSize)) {
         return `${size}"`;
       }
-      return `${Math.round(numericSize)}"`;
+      return `${numericSize.toFixed(2)}"`;
     },
     formatWeightKg(weight) {
       if (weight === null || weight === undefined || weight === '') {
@@ -1102,6 +1114,12 @@ export default {
       const nextNum = Number(this.pendingNextNumber ?? this.reelNextNumber) || 1;
       this.receipt.reel_no = prefix + nextNum.toString().padStart(padding, '0');
     },
+    getCalculatedReelNo(index) {
+      const prefix = this.reelPrefix || 'RL111';
+      const padding = Number(this.reelPadding) > 0 ? Number(this.reelPadding) : 3;
+      const nextNum = (Number(this.pendingNextNumber ?? this.reelNextNumber) || 1) + index;
+      return prefix + nextNum.toString().padStart(padding, '0');
+    },
     advanceReelNumber(count = 1) {
       const increment = Number.isFinite(count) && count > 0 ? Math.floor(count) : 1;
       const current = Number(this.pendingNextNumber ?? this.reelNextNumber) || 1;
@@ -1329,6 +1347,16 @@ export default {
 </script>
 
 <style scoped>
+.text-nowrap {
+  white-space: nowrap !important;
+}
+.table-sm td, .table-sm th {
+  padding: 0.3rem;
+  font-size: 0.85rem;
+}
+.small {
+  font-size: 0.85rem;
+}
 .searchable-select-container {
   position: relative;
   z-index: 1060;

@@ -36,14 +36,16 @@
       <thead>
         <tr>
           <th>Paper Quality with GSM</th>
+          <th class="text-center">Size</th>
           <th class="text-center">No of Reels Used</th>
           <th class="text-center">Weight Kg Used</th>
           <th v-if="canSeeAmounts" class="text-end">Consumption Amount</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="item in report" :key="item.paper_quality_with_gsm">
+        <tr v-for="item in report" :key="item.paper_quality_with_gsm + item.reel_size">
           <td>{{ item.paper_quality_with_gsm }}</td>
+          <td class="text-center">{{ formatReelSize(item.reel_size) }}</td>
           <td class="text-center fw-bold">{{ formatInteger(item.no_of_reels_used) }}</td>
           <td class="text-center">{{ formatInteger(item.weight_kg_used) }}</td>
           <td v-if="canSeeAmounts" class="text-end">{{ formatAmount(item.consumption_amount_pkr) }}</td>
@@ -51,6 +53,7 @@
         <!-- Subtotal Row -->
         <tr class="table-info fw-bold">
           <td><strong>TOTAL</strong></td>
+          <td></td>
           <td class="text-center fw-bold">{{ formatInteger(totalReelsUsed) }}</td>
           <td class="text-center">{{ formatInteger(totalWeightUsed) }}</td>
           <td v-if="canSeeAmounts" class="text-end">{{ formatAmount(totalAmount) }}</td>
@@ -227,17 +230,18 @@ export default {
     },
     generateCSV() {
       const headers = this.canSeeAmounts
-        ? ['Paper Quality with GSM', 'No of Reels Used', 'Weight Kg Used', 'Consumption Amount']
-        : ['Paper Quality with GSM', 'No of Reels Used', 'Weight Kg Used'];
+        ? ['Paper Quality with GSM', 'Size', 'No of Reels Used', 'Weight Kg Used', 'Consumption Amount']
+        : ['Paper Quality with GSM', 'Size', 'No of Reels Used', 'Weight Kg Used'];
       const rows = this.report.map(item => [
         item.paper_quality_with_gsm,
+        this.formatReelSize(item.reel_size),
         this.toInteger(item.no_of_reels_used),
         this.toInteger(item.weight_kg_used),
         ...(this.canSeeAmounts ? [this.toAmount(item.consumption_amount_pkr)] : [])
       ]);
       
       // Add total row
-      const totalRow = ['TOTAL', this.toInteger(this.totalReelsUsed), this.toInteger(this.totalWeightUsed)];
+      const totalRow = ['TOTAL', '', this.toInteger(this.totalReelsUsed), this.toInteger(this.totalWeightUsed)];
       if (this.canSeeAmounts) {
         totalRow.push(this.toAmount(this.totalAmount));
       }
@@ -254,7 +258,8 @@ export default {
         <table>
           <thead>
             <tr>
-              <th style="width: 45%;">Paper Quality with GSM</th>
+              <th style="width: 35%;">Paper Quality with GSM</th>
+              <th style="width: 10%;">Size</th>
               <th style="width: 16%;">No of Reels Used</th>
               <th style="width: 18%;">Weight Kg Used</th>
               ${amountHeader}
@@ -264,6 +269,7 @@ export default {
             ${this.report.map(item => `
               <tr>
                 <td>${item.paper_quality_with_gsm}</td>
+                <td style="text-align: center;">${this.formatReelSize(item.reel_size)}</td>
                 <td style="text-align: center; font-weight: bold;">${this.formatInteger(item.no_of_reels_used)}</td>
                 <td style="text-align: center;">${this.formatInteger(item.weight_kg_used)}</td>
                 ${this.canSeeAmounts ? `<td style="text-align: right;">${this.formatAmount(item.consumption_amount_pkr)}</td>` : ''}
@@ -271,6 +277,7 @@ export default {
             `).join('')}
             <tr class="total-row">
               <td><strong>TOTAL</strong></td>
+              <td></td>
               <td style="text-align: center;"><strong>${this.formatInteger(this.totalReelsUsed)}</strong></td>
               <td style="text-align: center;"><strong>${this.formatInteger(this.totalWeightUsed)}</strong></td>
               ${this.canSeeAmounts ? `<td style="text-align: right;"><strong>${this.formatAmount(this.totalAmount)}</strong></td>` : ''}
@@ -286,6 +293,16 @@ export default {
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const year = date.getFullYear();
       return `${day}/${month}/${year}`;
+    },
+    formatReelSize(size) {
+      if (size === null || size === undefined || size === '') {
+        return 'N/A';
+      }
+      const numericSize = Number(size);
+      if (Number.isNaN(numericSize)) {
+        return `${size}"`;
+      }
+      return `${numericSize.toFixed(2)}"`;
     },
     toInteger(value) {
       const num = Number(value);

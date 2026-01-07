@@ -1,13 +1,9 @@
 <template>
-  <div class="container">
+  <div class="container-fluid small">
     <div class="mb-2">
       <h2 class="mb-0"><i class="bi bi-arrow-left-right"></i> Paper Reel Issue</h2>
     </div>
     <div class="mb-3">
-      <button @click="toggleForm" class="btn btn-primary me-2">
-        <i class="bi" :class="showForm ? 'bi-dash-circle' : 'bi-plus-circle'"></i>
-        {{ showForm ? 'Close Issue Form' : 'Issue Reel' }}
-      </button>
       <button @click="printTable" class="btn btn-secondary">Print Tables</button>
     </div>
 
@@ -98,23 +94,41 @@
 
     <div class="row">
       <div class="col-12">
-        <div class="row g-3 align-items-end mb-3">
-          <div class="col-md-4 col-sm-6">
-            <label class="form-label">Search Reel No.</label>
-            <input v-model.trim="issueSearch" type="text" class="form-control" placeholder="Enter reel number to filter">
+        <div class="row g-2 align-items-end mb-3">
+          <div class="col-md-3 col-sm-6">
+            <label class="form-label mb-1">Search Reel No.</label>
+            <input v-model.trim="issueSearch" type="text" class="form-control form-control-sm" placeholder="Search...">
+          </div>
+          <div class="col-md-3 col-sm-6">
+            <label class="form-label mb-1">From Date</label>
+            <input v-model="filters.date_from" type="date" class="form-control form-control-sm" @change="fetchIssues(1)">
+          </div>
+          <div class="col-md-3 col-sm-6">
+            <label class="form-label mb-1">To Date</label>
+            <input v-model="filters.date_to" type="date" class="form-control form-control-sm" @change="fetchIssues(1)">
+          </div>
+          <div class="col-md-3 col-sm-6 text-end">
+            <button @click="clearFilters" class="btn btn-sm btn-outline-secondary w-100">Clear Filters</button>
           </div>
         </div>
-        <h4>Issues</h4>
-        <table class="table table-striped">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h4 class="mb-0">Issues</h4>
+          <button @click="toggleForm" class="btn btn-primary btn-sm">
+            <i class="bi" :class="showForm ? 'bi-dash-circle' : 'bi-plus-circle'"></i>
+            {{ showForm ? 'Close Form' : 'New Reel Issue' }}
+          </button>
+        </div>
+        <table class="table table-striped table-sm text-nowrap">
           <thead>
-            <tr>
+            <tr class="table-dark">
               <th>Reel No.</th>
               <th>Quality</th>
-              <th>Issue Date</th>
-              <th>Quantity Issued</th>
-              <th>Return to Stock</th>
-              <th>Return Location</th>
-              <th>Net Consumed</th>
+              <th class="text-center">Size</th>
+              <th class="text-center">Issue Date</th>
+              <th class="text-end">Quantity Issued</th>
+              <th class="text-end">Return to Stock</th>
+              <th>Location</th>
+              <th class="text-end">Net Consumed</th>
               <th>Issued To</th>
               <th class="text-center">Actions</th>
             </tr>
@@ -123,19 +137,43 @@
             <tr v-for="i in filteredIssues" :key="i.id">
               <td>{{ i.reel.reel_no }}</td>
               <td>{{ getQuality(i.reel) }}</td>
-              <td>{{ i.issue_date }}</td>
-              <td>{{ formatNumber(i.quantity_issued) }} kg</td>
-              <td>{{ formatNumber(i.return_to_stock_weight || 0) }} kg</td>
+              <td class="text-center">{{ formatReelSize(i.reel.reel_size) }}</td>
+              <td class="text-center">{{ formatDate(i.issue_date) }}</td>
+              <td class="text-end">{{ formatNumber(i.quantity_issued) }} kg</td>
+              <td class="text-end">{{ formatNumber(i.return_to_stock_weight || 0) }} kg</td>
               <td>{{ i.return_location || '-' }}</td>
-              <td>{{ formatNumber(i.net_consumed_weight || 0) }} kg</td>
+              <td class="text-end">{{ formatNumber(i.net_consumed_weight || 0) }} kg</td>
               <td>{{ i.issued_to }}</td>
-              <td class="text-center" style="min-width: 150px;">
-                <button class="btn btn-sm btn-warning me-1" @click="editIssue(i)">Edit</button>
-                <button class="btn btn-sm btn-danger" @click="deleteIssue(i)">Delete</button>
+              <td class="text-center">
+                <button class="btn btn-xxs btn-warning me-1" @click="editIssue(i)">Edit</button>
+                <button class="btn btn-xxs btn-danger" @click="deleteIssue(i)">Delete</button>
               </td>
             </tr>
           </tbody>
         </table>
+
+        <!-- Pagination -->
+        <div class="d-flex justify-content-center mt-3" v-if="pagination.last_page > 1">
+          <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm">
+              <li class="page-item" :class="{ disabled: pagination.current_page == 1 }">
+                <a class="page-link" href="#" @click.prevent="fetchIssues(1)">First</a>
+              </li>
+              <li class="page-item" :class="{ disabled: pagination.current_page == 1 }">
+                <a class="page-link" href="#" @click.prevent="fetchIssues(pagination.current_page - 1)">Previous</a>
+              </li>
+              <li v-for="page in pages" :key="page" class="page-item" :class="{ active: page == pagination.current_page }">
+                <a class="page-link" href="#" @click.prevent="fetchIssues(page)">{{ page }}</a>
+              </li>
+              <li class="page-item" :class="{ disabled: pagination.current_page == pagination.last_page }">
+                <a class="page-link" href="#" @click.prevent="fetchIssues(pagination.current_page + 1)">Next</a>
+              </li>
+              <li class="page-item" :class="{ disabled: pagination.current_page == pagination.last_page }">
+                <a class="page-link" href="#" @click.prevent="fetchIssues(pagination.last_page)">Last</a>
+              </li>
+            </ul>
+          </nav>
+        </div>
       </div>
     </div>
   </div>
@@ -165,7 +203,17 @@ export default {
       issueSearch: '',
       companyLogo: window.location.origin + '/images/quality-cartons-logo.svg',
       companyName: 'QUALITY CARTONS (PVT.) LTD.',
-      companyAddress: 'Plot# 46, Sector 24, Korangi Industrial Area Karachi'
+      companyAddress: 'Plot# 46, Sector 24, Korangi Industrial Area Karachi',
+      pagination: {
+        current_page: 1,
+        last_page: 1,
+        per_page: 50,
+        total: 0
+      },
+      filters: {
+        date_from: '',
+        date_to: ''
+      }
     };
   },
   mounted() {
@@ -191,13 +239,44 @@ export default {
       }
       const term = this.issueSearch.trim().toLowerCase();
       return this.issues.filter(issue => issue?.reel?.reel_no?.toLowerCase().includes(term));
+    },
+    pages() {
+      const current = this.pagination.current_page;
+      const last = this.pagination.last_page;
+      let start = Math.max(1, current - 2);
+      let end = Math.min(last, current + 2);
+      let pages = [];
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      return pages;
     }
   },
   methods: {
-    fetchIssues() {
-      axios.get('/api/reel-issues').then(response => {
-        this.issues = response.data;
+    fetchIssues(page = 1) {
+      let url = `/api/reel-issues?page=${page}`;
+      if (this.filters.date_from) url += `&date_from=${this.filters.date_from}`;
+      if (this.filters.date_to) url += `&date_to=${this.filters.date_to}`;
+      
+      axios.get(url).then(response => {
+        if (response.data && response.data.data) {
+          this.issues = response.data.data;
+          this.pagination = {
+            current_page: response.data.current_page,
+            last_page: response.data.last_page,
+            per_page: response.data.per_page,
+            total: response.data.total
+          };
+        } else {
+          this.issues = response.data;
+        }
       });
+    },
+    clearFilters() {
+      this.filters.date_from = '';
+      this.filters.date_to = '';
+      this.issueSearch = '';
+      this.fetchIssues(1);
     },
     fetchSettings() {
       axios.get('/api/setup/settings').then(response => {
@@ -288,7 +367,7 @@ export default {
 
       request.then(() => {
         alert('Issue saved successfully.');
-        this.fetchIssues();
+        this.fetchIssues(this.pagination.current_page);
         this.cancel();
       }).catch(error => {
         const message = error.response?.data?.error || 'Failed to save issue.';
@@ -350,7 +429,7 @@ export default {
           if (this.editingIssueId === issue.id) {
             this.cancel();
           }
-          this.fetchIssues();
+          this.fetchIssues(this.pagination.current_page);
         })
         .catch(error => {
           const message = error.response?.data?.error || 'Failed to delete issue.';
@@ -387,6 +466,16 @@ export default {
     getSupplierName(reel) {
       if (!reel || !reel.supplier) return 'N/A';
       return reel.supplier.name || 'N/A';
+    },
+    formatReelSize(size) {
+      if (size === null || size === undefined || size === '') {
+        return 'N/A';
+      }
+      const numericSize = Number(size);
+      if (Number.isNaN(numericSize)) {
+        return `${size}"`;
+      }
+      return `${numericSize.toFixed(2)}"`;
     },
     formatNumber(value) {
       const number = Number(value);
@@ -477,5 +566,26 @@ export default {
 </script>
 
 <style scoped>
-/* Add styles if needed */
+/* Use smaller font sizes */
+.small {
+  font-size: 0.85rem;
+}
+.table-sm td, .table-sm th {
+  padding: 0.3rem;
+  font-size: 0.8rem;
+}
+.text-nowrap {
+  white-space: nowrap !important;
+}
+.btn-xxs {
+  padding: 0.1rem 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1;
+  border-radius: 0.15rem;
+}
+.form-control-sm {
+  height: calc(1.5em + 0.5rem + 2px);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+}
 </style>

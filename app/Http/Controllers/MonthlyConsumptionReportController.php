@@ -93,6 +93,7 @@ class MonthlyConsumptionReportController extends Controller
 
             return [
                 'paper_quality_with_gsm' => $item->quality . ' (' . $item->gsm_range . ')',
+                'reel_size' => $item->reel_size,
                 'no_of_reels_used' => (int) $item->no_of_reels_used,
                 'weight_kg_used' => $netWeight,
                 'consumption_amount_pkr' => $netAmount,

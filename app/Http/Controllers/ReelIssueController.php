@@ -10,9 +10,23 @@ use Illuminate\Support\Facades\DB;
 
 class ReelIssueController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(ReelIssue::with('reel.paperQuality')->get());
+        $query = ReelIssue::with('reel.paperQuality');
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('issue_date', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('issue_date', '<=', $request->date_to);
+        }
+
+        $issues = $query->orderBy('issue_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->paginate(50);
+            
+        return response()->json($issues);
     }
 
     public function store(Request $request)

@@ -283,7 +283,7 @@ export default {
           item.reel_no || 'N/A',
           item.supplier || 'N/A',
           this.formatQuality(item),
-          item.reel_size || 'N/A',
+          this.formatReelSize(item.reel_size),
           this.formatNumber(item.weight, false)
         ];
         if (this.canSeeAmounts) {
@@ -379,7 +379,7 @@ export default {
       if (Number.isNaN(numeric)) {
         return `${value}`;
       }
-      return `${Math.round(numeric)}"`;
+      return `${numeric.toFixed(2)}"`;
     },
     formatWeight(value) {
       if (value === null || value === undefined || value === '') {

@@ -308,7 +308,7 @@
             top: 0;
             left: 0;
             right: 0;
-            z-index: 1000;
+            z-index: 2000;
             background-color: var(--navbar-bg);
         }
 
@@ -369,6 +369,7 @@
                                     <li v-if="!permissionsLoaded || canView('reel-stock')"><button class="dropdown-item" @click="setView('reel-stock')">Reel Stock</button></li>
                                     <li v-if="!permissionsLoaded || canView('reel-receipt')"><button class="dropdown-item" @click="setView('reel-receipt')">Reel Received Report</button></li>
                                     <li v-if="!permissionsLoaded || canView('monthly-closing')"><button class="dropdown-item" @click="setView('monthly-closing')">Monthly Closing Stock</button></li>
+                                    <li v-if="!permissionsLoaded || canView('reel-stock-count')"><button class="dropdown-item" @click="setView('reel-stock-count')">Reel Stock Count</button></li>
                                 </ul>
                             </li>
                             <li class="nav-item dropdown" v-if="!permissionsLoaded || canView('cartons')">
@@ -409,9 +410,9 @@
                             </li>
                         </ul>
                         <div class="d-flex align-items-center">
-                            <span class="text-white me-3">
+                            <button class="btn btn-link text-white me-3 text-decoration-none shadow-none p-0" @click="setView('profile')">
                                 <i class="bi bi-person-circle me-2"></i>Welcome, @{{ user.name }}
-                            </span>
+                            </button>
                             <div class="me-2">
                                 <theme-selector-component></theme-selector-component>
                             </div>
@@ -435,6 +436,7 @@
                 <reel-stock-report-component v-else-if="currentView === 'reel-stock'" :user="user" :can-see-amounts="canSeeAmounts('reel-stock')"></reel-stock-report-component>
                 <reel-receipt-report-component v-else-if="currentView === 'reel-receipt'" :user="user" :can-see-amounts="canSeeAmounts('reel-receipt')"></reel-receipt-report-component>
                 <monthly-closing-report-component v-else-if="currentView === 'monthly-closing'" :user="user" :can-see-amounts="canSeeAmounts('monthly-closing')"></monthly-closing-report-component>
+                <reel-stock-count-report-component v-else-if="currentView === 'reel-stock-count'" :user="user"></reel-stock-count-report-component>
                 <cartons-component v-else-if="currentView === 'cartons'" :user="user"></cartons-component>
                 <customer-component v-else-if="currentView === 'customers'" :user="user"></customer-component>
                 <sketch-generator-component v-else-if="currentView === 'sketch-generator'" :user="user"></sketch-generator-component>
@@ -443,6 +445,7 @@
                 <user-rights-component v-else-if="currentView === 'user-rights'" :user="user"></user-rights-component>
                 <audit-log-component v-else-if="currentView === 'audit-log'" :user="user"></audit-log-component>
                 <setup-component v-else-if="currentView === 'setup'" :user="user"></setup-component>
+                <profile-component v-else-if="currentView === 'profile'" :user="user"></profile-component>
                 <best-ui-showcase-component v-else-if="currentView === 'best-ui'"></best-ui-showcase-component>
                 <!-- Add other components here -->
                 <div v-else>

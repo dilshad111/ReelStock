@@ -15,15 +15,22 @@ class ReelStockReportController extends Controller
             $query->where('supplier_id', $request->supplier);
         }
 
-        // Only show sizes for reels currently in stock
-        // Stock is defined as balance_weight > 0 (or original_weight > 0 if balance_weight is null)
-        $query->where(function ($q) {
-            $q->where('balance_weight', '>', 0)
-              ->orWhere(function ($inner) {
-                  $inner->whereNull('balance_weight')
-                        ->where('original_weight', '>', 0);
-              });
-        });
+        if ($request->has('quality') && $request->quality !== '') {
+            $query->where('paper_quality_id', $request->quality);
+        }
+
+        if ($request->has('status') && $request->status !== '') {
+            $query->where('status', $request->status);
+        } else {
+            // Default: Only show sizes for reels currently in stock
+            $query->where(function ($q) {
+                $q->where('balance_weight', '>', 0)
+                  ->orWhere(function ($inner) {
+                      $inner->whereNull('balance_weight')
+                            ->where('original_weight', '>', 0);
+                  });
+            });
+        }
 
         $sizes = $query->distinct()->pluck('reel_size')->filter()->values();
 
@@ -33,6 +40,70 @@ class ReelStockReportController extends Controller
         })->values();
 
         return response()->json($sortedSizes);
+    }
+
+    public function getAvailableQualities(Request $request)
+    {
+        $query = Reel::query();
+
+        if ($request->has('supplier') && $request->supplier !== '') {
+            $query->where('supplier_id', $request->supplier);
+        }
+
+        if ($request->has('size') && $request->size !== '') {
+            $query->where('reel_size', $request->size);
+        }
+
+        if ($request->has('status') && $request->status !== '') {
+            $query->where('status', $request->status);
+        } else {
+            // Default: Only show qualities for reels currently in stock
+            $query->where(function ($q) {
+                $q->where('balance_weight', '>', 0)
+                  ->orWhere(function ($inner) {
+                      $inner->whereNull('balance_weight')
+                            ->where('original_weight', '>', 0);
+                  });
+            });
+        }
+
+        $qualityIds = $query->distinct()->pluck('paper_quality_id')->filter()->values();
+        
+        $qualities = \App\Models\PaperQuality::whereIn('id', $qualityIds)->get();
+
+        return response()->json($qualities);
+    }
+
+    public function getAvailableSuppliers(Request $request)
+    {
+        $query = Reel::query();
+
+        if ($request->has('quality') && $request->quality !== '') {
+            $query->where('paper_quality_id', $request->quality);
+        }
+
+        if ($request->has('size') && $request->size !== '') {
+            $query->where('reel_size', $request->size);
+        }
+
+        if ($request->has('status') && $request->status !== '') {
+            $query->where('status', $request->status);
+        } else {
+            // Default: Only show suppliers for reels currently in stock
+            $query->where(function ($q) {
+                $q->where('balance_weight', '>', 0)
+                  ->orWhere(function ($inner) {
+                      $inner->whereNull('balance_weight')
+                            ->where('original_weight', '>', 0);
+                  });
+            });
+        }
+
+        $supplierIds = $query->distinct()->pluck('supplier_id')->filter()->values();
+        
+        $suppliers = \App\Models\Supplier::whereIn('id', $supplierIds)->get();
+
+        return response()->json($suppliers);
     }
 
     public function index(Request $request)
@@ -53,6 +124,20 @@ class ReelStockReportController extends Controller
 
         if ($request->has('supplier') && $request->supplier !== '') {
             $query->where('supplier_id', $request->supplier);
+        }
+
+        if ($request->has('status') && $request->status !== '') {
+            $query->where('status', $request->status);
+        } else {
+            // Default: Only show reels currently in stock (in_stock or partially_used)
+            // or those with balance_weight > 0 if status is not explicitly "fully_used"
+            $query->where(function ($q) {
+                $q->where('balance_weight', '>', 0)
+                  ->orWhere(function ($inner) {
+                      $inner->whereNull('balance_weight')
+                            ->where('original_weight', '>', 0);
+                  });
+            });
         }
 
         if ($request->filled('balance_min')) {
@@ -80,17 +165,25 @@ class ReelStockReportController extends Controller
             $ratePerKg = $latestReceipt->rate_per_kg ?? 0;
             $balanceWeight = $reel->balance_weight ?? $reel->original_weight;
             $amount = $balanceWeight * $ratePerKg;
+            
+            // Format status for display
+            $displayStatus = str_replace('_', ' ', ucfirst($reel->status));
+            if ($reel->status === 'in_stock') $displayStatus = 'In Stock';
+            if ($reel->status === 'partially_used') $displayStatus = 'Partially Used';
+            if ($reel->status === 'fully_used') $displayStatus = 'Fully Used';
+
             return [
                 'reel_no' => $reel->reel_no,
-                'quality' => $reel->paperQuality->quality . ' (' . $reel->paperQuality->gsm_range . ')',
+                'quality' => $reel->paperQuality ? ($reel->paperQuality->quality . ' (' . $reel->paperQuality->gsm_range . ')') : 'N/A',
                 'reel_size' => $reel->reel_size,
-                'supplier' => $reel->supplier->name,
+                'supplier' => $reel->supplier ? $reel->supplier->name : 'N/A',
                 'original_weight' => $reel->original_weight,
                 'consumed_weight' => $reel->original_weight - ($reel->balance_weight ?? $reel->original_weight),
                 'balance_weight' => $balanceWeight,
                 'rate_per_kg' => $ratePerKg,
                 'amount' => $amount,
-                'status' => $reel->status,
+                'status' => $displayStatus,
+                'raw_status' => $reel->status,
             ];
         });
 
@@ -180,5 +273,51 @@ class ReelStockReportController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+    public function getReelStockCount(Request $request)
+    {
+        $query = Reel::with(['paperQuality']);
+
+        if ($request->has('quality') && $request->quality !== '') {
+            $query->where('paper_quality_id', $request->quality);
+        }
+
+        if ($request->has('size') && $request->size !== '') {
+            $query->where('reel_size', $request->size);
+        }
+
+        // Only show reels currently in stock
+        $query->where(function ($q) {
+            $q->where('balance_weight', '>', 0)
+              ->orWhere(function ($inner) {
+                  $inner->whereNull('balance_weight')
+                        ->where('original_weight', '>', 0);
+              });
+        });
+
+        $reels = $query->get();
+
+        $grouped = $reels->groupBy(function($reel) {
+            return $reel->paper_quality_id . '_' . $reel->reel_size;
+        })->map(function($group) {
+            $first = $group->first();
+            return [
+                'quality_id' => $first->paper_quality_id,
+                'quality_name' => $first->paperQuality->quality . ' (' . $first->paperQuality->gsm_range . ')',
+                'reel_size' => (float)$first->reel_size,
+                'no_of_reels' => $group->count(),
+                'total_balance_weight' => (float)$group->sum(function($reel) {
+                    return $reel->balance_weight ?? $reel->original_weight;
+                }),
+            ];
+        })->values();
+
+        // Sort by quality name then by size
+        $sorted = $grouped->sortBy([
+            ['quality_name', 'asc'],
+            ['reel_size', 'asc'],
+        ])->values();
+
+        return response()->json($sorted);
     }
 }

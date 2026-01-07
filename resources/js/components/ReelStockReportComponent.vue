@@ -17,14 +17,14 @@
     <div class="card shadow-sm border-0 mb-3" style="overflow: visible !important; position: relative; z-index: 1070;">
       <div class="card-body p-2" style="overflow: visible !important;">
         <div class="row g-2 align-items-end">
-          <div class="col-md-3">
+          <div class="col-md-2">
             <label class="small text-muted mb-1 ps-1">Quality</label>
             <div class="searchable-select-container">
               <input 
                 v-model="qualitySearch" 
                 type="text" 
                 class="form-control form-control-sm" 
-                placeholder="Search/Select Quality..."
+                placeholder="Search Quality..."
                 @focus="showQualityDrop = true"
                 @blur="handleBlur('quality')"
               >
@@ -44,7 +44,7 @@
                 v-model="supplierSearch" 
                 type="text" 
                 class="form-control form-control-sm" 
-                placeholder="Search/Select Supplier..."
+                placeholder="Search Supplier..."
                 @focus="showSupplierDrop = true"
                 @blur="handleBlur('supplier')"
               >
@@ -58,10 +58,19 @@
             </div>
           </div>
           <div class="col-md-2">
+            <label class="small text-muted mb-1 ps-1">Status</label>
+            <select v-model="selectedStatus" @change="handleStatusChange" class="form-select form-select-sm">
+              <option value="">In Stock (All)</option>
+              <option value="in_stock">In Stock (Fresh)</option>
+              <option value="partially_used">Partially Used</option>
+              <option value="fully_used">Fully Used</option>
+            </select>
+          </div>
+          <div class="col-md-1">
             <label class="small text-muted mb-1 ps-1">Size</label>
-            <select v-model="selectedSize" @change="fetchReport" class="form-select form-select-sm">
-              <option value="">All Sizes</option>
-              <option v-for="size in sizes" :key="size.id" :value="size.id">{{ size.name }}</option>
+            <select v-model="selectedSize" @change="handleSizeChange" class="form-select form-select-sm">
+              <option value="">All</option>
+              <option v-for="size in sizes" :key="size" :value="size">{{ size }}"</option>
             </select>
           </div>
           <div class="col-md-1">
@@ -149,6 +158,7 @@ export default {
       selectedQuality: '',
       selectedSize: '',
       selectedSupplier: '',
+      selectedStatus: '',
       qualitySearch: '',
       supplierSearch: '',
       showQualityDrop: false,
@@ -236,7 +246,7 @@ export default {
       if (!Number.isFinite(size)) {
         return value ? `${value}”` : '';
       }
-      return `${Math.round(size)}”`;
+      return `${size.toFixed(2)}”`;
     },
     getReelPrefix(reelNo) {
       if (!reelNo || reelNo.length <= 6) {
@@ -251,14 +261,28 @@ export default {
       return reelNo.substring(6);
     },
     fetchQualities() {
-      axios.get('/api/paper-qualities').then(response => {
+      let url = '/api/reports/reel-stock/qualities';
+      const params = [];
+      if (this.selectedSupplier) params.push('supplier=' + this.selectedSupplier);
+      if (this.selectedSize) params.push('size=' + this.selectedSize);
+      if (this.selectedStatus) params.push('status=' + this.selectedStatus);
+      if (params.length > 0) url += '?' + params.join('&');
+
+      axios.get(url).then(response => {
         this.qualities = response.data;
       }).catch(error => {
         console.error('Error fetching qualities:', error);
       });
     },
     fetchSuppliers() {
-      axios.get('/api/suppliers').then(response => {
+      let url = '/api/reports/reel-stock/suppliers';
+      const params = [];
+      if (this.selectedQuality) params.push('quality=' + this.selectedQuality);
+      if (this.selectedSize) params.push('size=' + this.selectedSize);
+      if (this.selectedStatus) params.push('status=' + this.selectedStatus);
+      if (params.length > 0) url += '?' + params.join('&');
+
+      axios.get(url).then(response => {
         this.suppliers = response.data;
       }).catch(error => {
         console.error('Error fetching suppliers:', error);
@@ -267,20 +291,14 @@ export default {
     fetchSizes() {
       let url = '/api/reports/reel-stock/sizes';
       const params = [];
-      if (this.selectedSupplier) {
-        params.push('supplier=' + this.selectedSupplier);
-      }
-      if (params.length > 0) {
-        url += '?' + params.join('&');
-      }
+      if (this.selectedSupplier) params.push('supplier=' + this.selectedSupplier);
+      if (this.selectedQuality) params.push('quality=' + this.selectedQuality);
+      if (this.selectedStatus) params.push('status=' + this.selectedStatus);
+      
+      if (params.length > 0) url += '?' + params.join('&');
+
       axios.get(url).then(response => {
-        const uniqueSizes = response.data || [];
-        // Convert to the expected format with id and name, and store the actual size
-        this.sizes = uniqueSizes.map((size, index) => ({
-          id: index + 1,
-          name: size + ' inches',
-          reel_size: size
-        }));
+        this.sizes = response.data || [];
       }).catch(error => {
         console.error('Error fetching sizes:', error);
       });
@@ -292,13 +310,13 @@ export default {
         params.push('quality=' + this.selectedQuality);
       }
       if (this.selectedSize) {
-        const selectedSizeObj = this.sizes.find(s => s.id == this.selectedSize);
-        if (selectedSizeObj) {
-          params.push('size=' + selectedSizeObj.reel_size);
-        }
+        params.push('size=' + this.selectedSize);
       }
       if (this.selectedSupplier) {
         params.push('supplier=' + this.selectedSupplier);
+      }
+      if (this.selectedStatus) {
+        params.push('status=' + this.selectedStatus);
       }
       if (this.balanceMin !== '') {
         params.push('balance_min=' + this.balanceMin);
@@ -310,7 +328,7 @@ export default {
         url += '?' + params.join('&');
       }
       axios.get(url).then(response => {
-        this.report = response.data.filter(item => item.balance_weight > 0);
+        this.report = response.data;
       }).catch(error => {
         console.error('Error fetching report:', error);
       });
@@ -324,6 +342,8 @@ export default {
         this.qualitySearch = `${q.quality} (${q.gsm_range})`;
       }
       this.showQualityDrop = false;
+      this.fetchSuppliers();
+      this.fetchSizes();
       this.fetchReport();
     },
     selectSupplier(s) {
@@ -335,7 +355,19 @@ export default {
         this.supplierSearch = s.name;
       }
       this.showSupplierDrop = false;
-      this.fetchSizes(); // Refresh sizes when supplier changes
+      this.fetchQualities();
+      this.fetchSizes();
+      this.fetchReport();
+    },
+    handleSizeChange() {
+      this.fetchQualities();
+      this.fetchSuppliers();
+      this.fetchReport();
+    },
+    handleStatusChange() {
+      this.fetchQualities();
+      this.fetchSuppliers();
+      this.fetchSizes();
       this.fetchReport();
     },
     handleBlur(type) {
@@ -367,8 +399,11 @@ export default {
       this.selectedSupplier = '';
       this.supplierSearch = '';
       this.selectedSize = '';
+      this.selectedStatus = '';
       this.balanceMin = '';
       this.balanceMax = '';
+      this.fetchQualities();
+      this.fetchSuppliers();
       this.fetchSizes();
       this.fetchReport();
     },
@@ -406,8 +441,7 @@ export default {
       return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
     },
     getSizeName(reelSize) {
-      const size = this.sizes.find(s => s.reel_size == reelSize);
-      return size ? size.name : reelSize + ' inches';
+      return reelSize + ' inches';
     },
     exportToExcel() {
       const csvContent = this.generateCSV();
@@ -430,7 +464,10 @@ export default {
       if (this.balanceMax !== '') {
         filename += '_balance_max_' + this.balanceMax;
       }
-      if (!this.selectedQuality && !this.selectedSize) {
+      if (this.selectedStatus) {
+        filename += '_status_' + this.selectedStatus;
+      }
+      if (!this.selectedQuality && !this.selectedSize && !this.selectedSupplier && !this.selectedStatus) {
         filename += '_all';
       }
       filename += '.csv';
@@ -451,10 +488,7 @@ export default {
         }
       }
       if (this.selectedSize) {
-        const size = this.sizes.find(s => s.id === this.selectedSize);
-        if (size) {
-          filters.push(`Reel Size: ${size.name}`);
-        }
+        filters.push(`Reel Size: ${this.selectedSize} inches`);
       }
       if (this.selectedSupplier) {
         const supplier = this.suppliers.find(s => s.id === this.selectedSupplier);
@@ -464,6 +498,14 @@ export default {
       }
       if (this.balanceMin !== '' || this.balanceMax !== '') {
         filters.push(`Balance: ${this.balanceMin || 'any'} to ${this.balanceMax || 'any'} kg`);
+      }
+      if (this.selectedStatus) {
+        const statusMap = {
+          'in_stock': 'In Stock (Fresh)',
+          'partially_used': 'Partially Used',
+          'fully_used': 'Fully Used'
+        };
+        filters.push(`Status: ${statusMap[this.selectedStatus] || this.selectedStatus}`);
       }
 
       printWindow.document.write(`

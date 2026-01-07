@@ -54,10 +54,7 @@ class MonthlyClosingReportController extends Controller
             foreach ($reelsAtDate as $reel) {
                 $sizeValue = (float) $reel->reel_size;
 
-                // Only include reels within the defined size range
-                if ($sizeValue < 20 || $sizeValue > 55) {
-                    continue;
-                }
+
 
                 // Calculate closing balance as of target date
                 $issuesForReel = $issuesByReel->get($reel->id, collect());
@@ -106,11 +103,21 @@ class MonthlyClosingReportController extends Controller
                 }
             }
 
-            // Define reel size columns from 20" through 55"
-            $allSizes = [];
-            for ($size = 20; $size <= 55; $size++) {
-                $allSizes[] = $size . '"';
+            // Get all unique sizes that have weights in the qualitySizeData
+            $allSizesSet = [];
+            foreach ($qualitySizeData as $quality => $sizes) {
+                foreach ($sizes as $sizeKey => $weight) {
+                    $allSizesSet[$sizeKey] = true;
+                }
             }
+            $allSizes = array_keys($allSizesSet);
+
+            // Sort sizes numerically
+            usort($allSizes, function($a, $b) {
+                $numA = (float) rtrim($a, '"');
+                $numB = (float) rtrim($b, '"');
+                return $numA <=> $numB;
+            });
 
             // Format data for frontend
             $pivotData = [];
@@ -134,12 +141,14 @@ class MonthlyClosingReportController extends Controller
             }
 
             // Add totals row
-            $totalsRow = ['quality' => 'TOTAL'];
-            foreach ($allSizes as $size) {
-                $totalsRow[$size] = $totalBySize[$size] ?? 0;
+            if (!empty($pivotData)) {
+                $totalsRow = ['quality' => 'TOTAL'];
+                foreach ($allSizes as $size) {
+                    $totalsRow[$size] = $totalBySize[$size] ?? 0;
+                }
+                $totalsRow['total'] = $grandTotal;
+                $pivotData[] = $totalsRow;
             }
-            $totalsRow['total'] = $grandTotal;
-            $pivotData[] = $totalsRow;
 
             return response()->json([
                 'date' => $date,

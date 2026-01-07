@@ -36,6 +36,7 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 Route::middleware('auth:sanctum')->get('/user', [AuthController::class, 'user']);
+Route::middleware('auth:sanctum')->post('/user/profile', [AuthController::class, 'updateProfile']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -67,7 +68,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('reports/monthly-consumption', [MonthlyConsumptionReportController::class, 'index']);
     Route::get('reports/reel-stock', [ReelStockReportController::class, 'index']);
     Route::get('reports/reel-stock/sizes', [ReelStockReportController::class, 'getAvailableSizes']);
+    Route::get('reports/reel-stock/qualities', [ReelStockReportController::class, 'getAvailableQualities']);
+    Route::get('reports/reel-stock/suppliers', [ReelStockReportController::class, 'getAvailableSuppliers']);
     Route::get('reports/reel-stock/{reel_no}/history', [ReelStockReportController::class, 'getReelHistory']);
+    Route::get('reports/reel-stock-count', [ReelStockReportController::class, 'getReelStockCount']);
     Route::get('reports/reel-receipt', [ReelReceiptReportController::class, 'index']);
     Route::get('reports/monthly-closing', [MonthlyClosingReportController::class, 'index']);
     Route::get('reports/audits', [AuditController::class, 'index']);
