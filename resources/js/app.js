@@ -18,10 +18,12 @@ const PERMISSION_KEY_MAP = {
     customers: 'cartons',
     'sketch-generator': 'cartons',
     'reel-stock-count': 'reel_stock',
+    'usage-intelligence': 'monthly_consumption',
     reports: null,
     users: null,
     'user-rights': null,
     'audit-log': null,
+    'old-reels': 'reel_stock',
     'best-ui': null
 };
 
@@ -49,6 +51,7 @@ const VIEW_ORDER = [
     'reel-receipt',
     'monthly-closing',
     'reel-stock-count',
+    'usage-intelligence',
     'cartons',
     'customers',
     'sketch-generator',
@@ -57,6 +60,7 @@ const VIEW_ORDER = [
     'user-rights',
     'audit-log',
     'best-ui',
+    'old-reels',
     'profile'
 ];
 
@@ -75,12 +79,14 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     customers: 'customers',
     'sketch-generator': 'sketch-generator',
     'reel-stock-count': 'reel-stock-count',
+    'usage-intelligence': 'usage-intelligence',
     reports: 'reports',
     users: 'users',
     'user-rights': 'user-rights',
     'audit-log': 'audit-log',
     'best-ui': 'best-ui',
     setup: 'setup',
+    'old-reels': 'old-reels',
     profile: 'profile'
 });
 
@@ -193,7 +199,8 @@ const app = createApp({
             initialRouteView: null,
             basePath: '',
             idleTimer: null,
-            idleTimeout: 3600000 // 1 hour in milliseconds
+            idleTimeout: 3600000, // 1 hour in milliseconds
+            isSidebarCollapsed: false
         };
 
     },
@@ -435,6 +442,9 @@ import BestUiShowcaseComponent from './components/BestUiShowcaseComponent.vue';
 
 import ProfileComponent from './components/ProfileComponent.vue';
 import ReelStockCountReportComponent from './components/ReelStockCountReportComponent.vue';
+import UsageIntelligenceReportComponent from './components/UsageIntelligenceReportComponent.vue';
+
+import OldReelsReportComponent from './components/OldReelsReportComponent.vue';
 
 app.component('supplier-component', SupplierComponent);
 app.component('paper-quality-component', PaperQualityComponent);
@@ -458,8 +468,10 @@ app.component('theme-selector-component', ThemeSelectorComponent);
 app.component('scroll-to-top-component', ScrollToTopComponent);
 app.component('setup-component', SetupComponent);
 app.component('reel-stock-count-report-component', ReelStockCountReportComponent);
+app.component('usage-intelligence-report-component', UsageIntelligenceReportComponent);
 app.component('best-ui-showcase-component', BestUiShowcaseComponent);
 app.component('profile-component', ProfileComponent);
+app.component('old-reels-report-component', OldReelsReportComponent);
 
 /**
  * The following block of code may be used to automatically register your
@@ -472,5 +484,9 @@ app.component('profile-component', ProfileComponent);
 // Object.entries(import.meta.glob('./**/*.vue', { eager: true })).forEach(([path, definition]) => {
 //     app.component(path.split('/').pop().replace(/\.\w+$/, ''), definition.default);
 // });
+import ElementPlus from 'element-plus';
+import 'element-plus/dist/index.css';
+
+app.use(ElementPlus);
 
 app.mount('#app');

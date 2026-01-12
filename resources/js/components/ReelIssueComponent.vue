@@ -97,7 +97,7 @@
         <div class="row g-2 align-items-end mb-3">
           <div class="col-md-3 col-sm-6">
             <label class="form-label mb-1">Search Reel No.</label>
-            <input v-model.trim="issueSearch" type="text" class="form-control form-control-sm" placeholder="Search...">
+            <input v-model.trim="issueSearch" type="text" class="form-control form-control-sm" placeholder="Search..." @input="handleSearch">
           </div>
           <div class="col-md-3 col-sm-6">
             <label class="form-label mb-1">From Date</label>
@@ -213,7 +213,8 @@ export default {
       filters: {
         date_from: '',
         date_to: ''
-      }
+      },
+      searchTimeout: null,
     };
   },
   mounted() {
@@ -234,11 +235,7 @@ export default {
       return this.editingIssueId !== null;
     },
     filteredIssues() {
-      if (!this.issueSearch) {
-        return this.issues;
-      }
-      const term = this.issueSearch.trim().toLowerCase();
-      return this.issues.filter(issue => issue?.reel?.reel_no?.toLowerCase().includes(term));
+      return this.issues;
     },
     pages() {
       const current = this.pagination.current_page;
@@ -257,6 +254,7 @@ export default {
       let url = `/api/reel-issues?page=${page}`;
       if (this.filters.date_from) url += `&date_from=${this.filters.date_from}`;
       if (this.filters.date_to) url += `&date_to=${this.filters.date_to}`;
+      if (this.issueSearch) url += `&search=${encodeURIComponent(this.issueSearch)}`;
       
       axios.get(url).then(response => {
         if (response.data && response.data.data) {
@@ -277,6 +275,12 @@ export default {
       this.filters.date_to = '';
       this.issueSearch = '';
       this.fetchIssues(1);
+    },
+    handleSearch() {
+      if (this.searchTimeout) clearTimeout(this.searchTimeout);
+      this.searchTimeout = setTimeout(() => {
+        this.fetchIssues(1);
+      }, 500);
     },
     fetchSettings() {
       axios.get('/api/setup/settings').then(response => {

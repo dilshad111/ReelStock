@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\PaperQuality;
 use App\Models\Reel;
 use App\Models\ReelIssue;
+use App\Models\ReelReceipt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -13,128 +15,303 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // Fetch real data from database, excluding fully used reels
-        $reels = \App\Models\Reel::with('paperQuality', 'supplier')
-            ->where(function ($query) {
-                $query->whereNull('balance_weight')
-                      ->orWhere('balance_weight', '>', 0);
-            })
+        $timeRange = $request->get('range', 30);
+        $startDate = now()->subDays($timeRange)->startOfDay();
+
+        // 1. STOCK OVERVIEW (Real-time Godown Stock)
+        $currentStockReels = Reel::with(['paperQuality', 'supplier'])
             ->where(function ($query) {
                 $query->whereNull('status')
                       ->orWhere('status', '!=', 'fully_used');
             })
+            ->where(function ($query) {
+                $query->whereNull('balance_weight')
+                      ->orWhere('balance_weight', '>', 0);
+            })
             ->get();
 
-        // Calculate totals
-        $totalReels = $reels->count();
-        $totalOriginalWeight = $reels->sum('original_weight');
-        $totalBalanceWeight = $reels->sum(function ($reel) {
-            return $reel->balance_weight ?? $reel->original_weight;
+        // Current Reel Stock by Quality
+        $stockByQuality = $currentStockReels->groupBy('paper_quality_id')->map(function ($group) {
+            $quality = $group->first()->paperQuality;
+            return [
+                'name' => $quality ? $quality->quality . ' (' . $quality->gsm_range . ')' : 'Unknown',
+                'count' => $group->count(),
+                'weight' => $group->sum(function($r) { return $r->balance_weight ?? $r->original_weight; })
+            ];
+        })->values();
+
+        // Current Reel Stock by Size / GSM (Aggregation)
+        $stockBySizeGsm = $currentStockReels->map(function ($reel) {
+            $gsm = $reel->receipts->first()->gsm ?? ($reel->paperQuality->gsm_range ?? 'N/A');
+            return [
+                'label' => $reel->reel_size . '" / ' . $gsm . ' GSM',
+                'weight' => $reel->balance_weight ?? $reel->original_weight
+            ];
+        })->groupBy('label')->map(function ($group, $label) {
+            return [
+                'label' => $label,
+                'weight' => $group->sum('weight'),
+                'count' => $group->count()
+            ];
+        })->values()->sortByDesc('weight')->take(10)->values();
+
+        // Total Available Reel Weight
+        $totalStockWeight = $currentStockReels->sum(function($r) { return $r->balance_weight ?? $r->original_weight; });
+
+        // Stock Status: Full vs Partial
+        $fullReels = $currentStockReels->filter(function($r) {
+            return is_null($r->balance_weight) || $r->balance_weight == $r->original_weight;
         });
-        $totalConsumedWeight = $reels->sum(function ($reel) {
-            $balance = $reel->balance_weight ?? $reel->original_weight;
-            return $reel->original_weight - $balance;
+        $partialReels = $currentStockReels->filter(function($r) {
+            return !is_null($r->balance_weight) && $r->balance_weight < $r->original_weight && $r->balance_weight > 0;
         });
 
-        // Aggregate stock by quality
-        $stockByQuality = [];
-        foreach ($reels->groupBy('paper_quality_id') as $qualityId => $qualityReels) {
-            $quality = $qualityReels->first()->paperQuality;
-            if ($quality) {
-                $stockByQuality[] = [
-                    'quality' => $quality->quality . ' (' . $quality->gsm_range . ')',
-                    'count' => $qualityReels->count(),
-                    'weight' => $qualityReels->sum(function ($reel) {
-                        return $reel->balance_weight ?? $reel->original_weight;
-                    }),
-                    'original_weight' => $qualityReels->sum('original_weight'),
-                    'consumed_weight' => $qualityReels->sum(function ($reel) {
-                        $balance = $reel->balance_weight ?? $reel->original_weight;
-                        return $reel->original_weight - $balance;
-                    })
-                ];
-            }
-        }
+        $stockStatusDistribution = [
+            ['label' => 'Full Reels', 'value' => $fullReels->count()],
+            ['label' => 'Partial Reels', 'value' => $partialReels->count()],
+        ];
 
-        // Calculate efficiency
-        $efficiency = $totalConsumedWeight > 0 ? ($totalConsumedWeight / $totalOriginalWeight) * 100 : 0;
+        // Supplier-wise Current Stock
+        $stockBySupplier = $currentStockReels->groupBy('supplier_id')->map(function ($group) {
+            $supplierName = $group->first()->supplier->name ?? 'Unknown';
+            return [
+                'supplier' => $supplierName,
+                'weight' => $group->sum(function($r) { return $r->balance_weight ?? $r->original_weight; })
+            ];
+        })->values()->sortByDesc('weight')->values();
 
-        // Get recent supplier updates (last 5 receipts)
-        $recentReceipts = \App\Models\ReelReceipt::with('reel.supplier', 'reel.paperQuality')
-            ->orderBy('receiving_date', 'desc')
-            ->limit(5)
-            ->get()
-            ->map(function ($receipt) {
-                return [
-                    'name' => $receipt->reel->supplier->name ?? 'Unknown',
-                    'quality' => $receipt->reel->paperQuality->quality ?? 'Unknown',
-                    'receiving_date' => $receipt->receiving_date,
-                    'original_weight' => $receipt->reel->original_weight
-                ];
+        // 2. RECEIVING (INWARD) ANALYSIS
+        $receivedData = \App\Models\ReelReceipt::with(['reel.supplier', 'reel.paperQuality'])
+            ->where('receiving_date', '>=', $startDate)
+            ->get();
+
+        $receivedOverTime = $receivedData->groupBy(function($r) {
+            return date('Y-m-d', strtotime($r->receiving_date));
+        })->map(function($group) {
+            return $group->sum(function($r) { return $r->reel->original_weight; });
+        });
+
+        $receivedBySupplier = $receivedData->groupBy(function($r) {
+            return $r->reel->supplier->name ?? 'Unknown';
+        })->map(function($group) {
+            return $group->sum(function($r) { return $r->reel->original_weight; });
+        });
+
+        $receivedByQuality = $receivedData->groupBy(function($r) {
+            return $r->reel->paperQuality->quality ?? 'Unknown';
+        })->map(function($group) {
+            return $group->sum(function($r) { return $r->reel->original_weight; });
+        });
+
+        // 3. ISSUE / CONSUMPTION ANALYSIS
+        $issuedData = ReelIssue::with(['reel.paperQuality'])
+            ->where('issue_date', '>=', $startDate)
+            ->get();
+
+        $issuedOverTime = $issuedData->groupBy(function($r) {
+            return date('Y-m-d', strtotime($r->issue_date));
+        })->map(function($group) {
+            return $group->sum('quantity_issued');
+        });
+
+        $issuedByQuality = $issuedData->groupBy(function($r) {
+            return $r->reel->paperQuality->quality ?? 'Unknown';
+        })->map(function($group) {
+            return $group->sum('quantity_issued');
+        });
+
+        $issuedBySize = $issuedData->groupBy(function($r) {
+            return $r->reel->reel_size;
+        })->map(function($group) {
+            return $group->sum('quantity_issued');
+        });
+
+        $issueVsReturn = $issuedData->groupBy(function($r) {
+            return date('Y-m-d', strtotime($r->issue_date));
+        })->map(function($group) {
+            return [
+                'issued' => $group->sum('quantity_issued'),
+                'returned' => $group->sum('return_to_stock_weight')
+            ];
+        });
+
+        // 4. PARTIAL REEL RETURN TRACKING
+        $partialReturnsOverTime = $issuedData->where('return_to_stock_weight', '>', 0)
+            ->groupBy(function($r) {
+                return date('Y-m-d', strtotime($r->issue_date));
+            })->map(function($group) {
+                return $group->count();
             });
 
-        // Check for low stock alerts (reels with balance weight < 50kg)
-        $lowStockReels = $reels->filter(function ($reel) {
-            return ($reel->balance_weight ?? $reel->original_weight) < 50;
-        })->groupBy('paper_quality_id');
-
-        $lowStockAlerts = [];
-        foreach ($lowStockReels as $qualityId => $qualityReels) {
-            $quality = $qualityReels->first()->paperQuality;
-            if ($quality) {
-                $lowStockAlerts[] = [
-                    'quality' => $quality->quality . ' (' . $quality->gsm_range . ')',
-                    'count' => $qualityReels->count(),
-                    'status' => 'Low Stock'
-                ];
-            }
-        }
-
-        // Sample consumption data for charts (last 7 days)
-        $consumptionData = [];
-        $qualities = $stockByQuality;
-        for ($i = 6; $i >= 0; $i--) {
-            $date = date('Y-m-d', strtotime("-{$i} days"));
-            foreach ($qualities as $quality) {
-                $consumptionData[] = [
-                    'date' => $date,
-                    'quality' => $quality['quality'],
-                    'total_consumed' => rand(10, 50)
-                ];
-            }
-        }
-
-        // Sample monthly consumption
-        $monthlyData = [];
-        for ($i = 2; $i >= 0; $i--) {
-            $month = date('Y-m', strtotime("-{$i} months"));
-            $monthlyData[] = [
-                'month' => $month,
-                'total_consumed' => rand(1000, 1500)
+        $topRemainingReels = $currentStockReels->sortByDesc(function($r) {
+            return $r->balance_weight ?? 0;
+        })->take(10)->map(function($r) {
+            return [
+                'reel_no' => $r->reel_no,
+                'weight' => $r->balance_weight ?? $r->original_weight
             ];
-        }
+        })->values();
 
-        // Sample stock movement
-        $movementData = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $movementData[] = [
-                'date' => date('Y-m-d', strtotime("-{$i} days")),
-                'added_weight' => rand(-100, 200)
+        // 5. SUPPLIER RETURN / REJECTION TRACKING
+        $supplierReturns = \App\Models\ReelReturn::with(['reel.supplier', 'returnToSupplier'])
+            ->where('return_date', '>=', $startDate)
+            ->get();
+
+        $supplierReturnsOverTime = $supplierReturns->groupBy(function($r) {
+            return date('Y-m-d', strtotime($r->return_date));
+        })->map(function($group) {
+            return $group->count();
+        });
+
+        $supplierReturnWeight = $supplierReturns->groupBy(function($r) {
+            return $r->returnToSupplier->name ?? 'Unknown';
+        })->map(function($group) {
+            return $group->sum('remaining_weight');
+        });
+
+        $returnReasons = $supplierReturns->groupBy('condition')->map(function($group) {
+            return $group->count();
+        });
+
+        $supplierRejectionRate = $receivedData->groupBy(function($r) {
+            return $r->reel->supplier->name ?? 'Unknown';
+        })->map(function($group, $supplier) use ($supplierReturns) {
+            $totalReceived = $group->count();
+            $totalReturned = $supplierReturns->where('returnToSupplier.name', $supplier)->count();
+            return $totalReceived > 0 ? round(($totalReturned / $totalReceived) * 100, 2) : 0;
+        });
+
+        // 6. QUALITY CONTROL & TRACEABILITY
+        $qualityIssueVsReturn = $issuedData->groupBy(function($r) {
+            return $r->reel->paperQuality->quality ?? 'Unknown';
+        })->map(function($group) {
+            return [
+                'issued' => $group->sum('quantity_issued'),
+                'returned' => $group->sum('return_to_stock_weight')
             ];
+        });
+
+        // 7. NEW KPI SUMMARY & LOCATION BREAKDOWN
+        $now = now();
+        $startOfMonth = $now->copy()->startOfMonth();
+
+        // 1st Card: No. of Reels available in Stock
+        $reelsInStockCount = $currentStockReels->count();
+
+        // 2nd Card: Weight (Kg) of Reels available in Stock
+        // (totalStockWeight is already calculated above)
+
+        // 3rd Card: No. of Reels Used in Current Month
+        $reelsUsedThisMonthCount = ReelIssue::where('issue_date', '>=', $startOfMonth)
+            ->count();
+
+        // 4th Card: Weight (Kg) of Reels Used in Current Month
+        $weightUsedThisMonth = ReelIssue::where('issue_date', '>=', $startOfMonth)
+            ->sum('net_consumed_weight');
+
+        // Alerts & Action Helpers
+        $lowStockAlerts = PaperQuality::all()->map(function($quality) use ($currentStockReels) {
+            $stock = $currentStockReels->where('paper_quality_id', $quality->id);
+            $weight = $stock->sum(function($r) { return $r->balance_weight ?? $r->original_weight; });
+            return [
+                'quality' => $quality->quality,
+                'weight' => $weight,
+                'is_low' => $weight < 1000 // Threshold: 1000kg
+            ];
+        })->where('is_low', true)->values();
+
+        $partialPendingClosure = $partialReels->count();
+
+        $supplierReturnsGroup = $supplierReturns->where('return_date', '>=', $startOfMonth)
+            ->groupBy(function($r) { return $r->returnToSupplier->name ?? 'Unknown'; })
+            ->map(function($group) { return $group->count(); })
+            ->sortByDesc(function($val) { return $val; });
+            
+        $supplierHighestReturns = $supplierReturnsGroup->keys()->first() ?? 'None';
+
+        // Factory and Godown Breakdown
+        // Logic: Check latest return for location, default to GoDown
+        $reelsWithReturns = Reel::whereIn('id', $currentStockReels->pluck('id'))
+            ->with(['returns' => function($q) {
+                $q->where('returned_to', 'stock')->orderBy('return_date', 'desc')->orderBy('id', 'desc');
+            }])->get();
+
+        $factoryCount = 0;
+        $factoryWeight = 0;
+        $godownCount = 0;
+        $godownWeight = 0;
+
+        foreach ($currentStockReels as $reel) {
+            $reelWithRet = $reelsWithReturns->firstWhere('id', $reel->id);
+            $latestReturn = $reelWithRet ? $reelWithRet->returns->first() : null;
+            $location = $latestReturn ? $latestReturn->return_location : 'GoDown';
+            
+            $weight = $reel->balance_weight ?? $reel->original_weight;
+
+            if ($location === 'Factory') {
+                $factoryCount++;
+                $factoryWeight += $weight;
+            } else {
+                $godownCount++;
+                $godownWeight += $weight;
+            }
         }
 
         return response()->json([
-            'stock_by_quality' => $stockByQuality,
-            'total_reels_in_stock' => $totalReels,
-            'total_weight_in_stock' => $totalBalanceWeight,
-            'total_original_weight' => $totalOriginalWeight,
-            'total_consumed_weight' => $totalConsumedWeight,
-            'efficiency_percentage' => round($efficiency, 1),
-            'supplier_updates' => $recentReceipts,
-            'low_stock_alerts' => $lowStockAlerts,
-            'consumption_data' => $consumptionData,
-            'monthly_consumption' => $monthlyData,
-            'stock_movement' => $movementData,
+            'kpis' => [
+                'reels_in_stock' => $reelsInStockCount,
+                'weight_in_stock' => round($totalStockWeight, 2),
+                'reels_used_month' => $reelsUsedThisMonthCount,
+                'weight_used_month' => round($weightUsedThisMonth, 2),
+            ],
+            'location_breakdown' => [
+                'factory' => [
+                    'count' => $factoryCount,
+                    'weight' => round($factoryWeight, 2),
+                ],
+                'godown' => [
+                    'count' => $godownCount,
+                    'weight' => round($godownWeight, 2),
+                ]
+            ],
+            'stock_overview' => [
+                'by_quality' => $stockByQuality,
+                'by_size_gsm' => $stockBySizeGsm,
+                'total_weight' => round($totalStockWeight, 2),
+                'status_distribution' => $stockStatusDistribution,
+                'by_supplier' => $stockBySupplier
+            ],
+            'receiving_analysis' => [
+                'over_time' => $receivedOverTime,
+                'by_supplier' => $receivedBySupplier,
+                'by_quality' => $receivedByQuality
+            ],
+            'consumption_analysis' => [
+                'over_time' => $issuedOverTime,
+                'by_quality' => $issuedByQuality,
+                'by_size' => $issuedBySize,
+                'issue_vs_return' => $issueVsReturn
+            ],
+            'partial_reel_tracking' => [
+                'returns_over_time' => $partialReturnsOverTime,
+                'open_partials_count' => $partialPendingClosure,
+                'top_remaining' => $topRemainingReels
+            ],
+            'supplier_return_tracking' => [
+                'over_time' => $supplierReturnsOverTime,
+                'by_supplier' => $supplierReturnWeight,
+                'reasons' => $returnReasons,
+                'rejection_rate' => $supplierRejectionRate
+            ],
+            'quality_control' => [
+                'issue_vs_return' => $qualityIssueVsReturn,
+            ],
+            'alerts' => [
+                'low_stock' => $lowStockAlerts,
+                'partial_pending' => $partialPendingClosure,
+                'returned_not_adjusted' => $partialReels->count(), // Using partial reels as a proxy for unadjusted in stock
+                'highest_return_supplier' => $supplierHighestReturns
+            ],
             'last_updated' => now()->toISOString(),
         ]);
     }

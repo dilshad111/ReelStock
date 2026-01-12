@@ -14,6 +14,13 @@ class ReelIssueController extends Controller
     {
         $query = ReelIssue::with('reel.paperQuality');
 
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->whereHas('reel', function ($q) use ($searchTerm) {
+                $q->where('reel_no', 'like', "%{$searchTerm}%");
+            });
+        }
+
         if ($request->filled('date_from')) {
             $query->whereDate('issue_date', '>=', $request->date_from);
         }

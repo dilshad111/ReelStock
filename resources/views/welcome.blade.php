@@ -24,6 +24,7 @@
             --navbar-bg: #343a40;
             --card-bg: #ffffff;
             --border-color: #dee2e6;
+            --menu-text-color: #f8f9fa;
         }
 
         /* Modern Theme (Premium Glassmorphism) */
@@ -43,6 +44,7 @@
             --border-color: rgba(255, 255, 255, 0.5);
             --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --glass-border: 1px solid rgba(255, 255, 255, 0.5);
+            --menu-text-color: #334155;
         }
 
         /* Modern Theme Overrides */
@@ -295,26 +297,276 @@
             --border-color: #e8ecf1;
         }
 
-        /* Sidebar styles */
-        .main-content {
-            padding: 20px;
-            padding-top: 100px;
+        /* Sidebar Layout */
+        .app-wrapper {
+            display: flex;
             min-height: 100vh;
-            position: relative;
         }
 
-        .top-navbar {
+        .sidebar-el {
+            width: 260px;
+            height: 100vh;
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
             z-index: 2000;
-            background-color: var(--navbar-bg);
+            background: #0f172a !important; /* Deep Premium Slate */
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 25px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .sidebar-el.is-collapsed {
+            width: 64px;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            margin-left: 260px;
+            padding: 24px;
+            padding-top: 80px;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar-el.is-collapsed + .main-container .main-content {
+            margin-left: 64px;
+        }
+
+        .top-navbar-fixed {
+            position: fixed;
+            top: 0;
+            left: 260px;
+            right: 0;
+            height: 64px;
+            background: var(--bg-color);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar-el.is-collapsed + .main-container .top-navbar-fixed {
+            left: 64px;
+        }
+
+        .sidebar-logo {
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(0,0,0,0.2);
+            height: 64px;
+        }
+
+        .sidebar-menu-el {
+            border-right: none !important;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .sidebar-menu-el .bi {
+            font-size: 1.1rem;
+            vertical-align: middle;
+            transition: transform 0.2s;
+        }
+
+        .sidebar-menu-el .el-menu-item:hover .bi {
+            transform: scale(1.1);
+        }
+
+        /* Icon Colors */
+        .icon-dashboard { color: #4dabf7 !important; }
+        .icon-suppliers { color: #ff922b !important; }
+        .icon-paper { color: #51cf66 !important; }
+        .icon-reports { color: #cc5de8 !important; }
+        .icon-cartons { color: #ff6b6b !important; }
+        .icon-users { color: #20c997 !important; }
+        .icon-setup { color: #868e96 !important; }
+
+        .navbar-brand-el {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        [data-theme="modern"] .top-navbar-fixed {
+            background-color: var(--navbar-bg) !important;
+            border-bottom: var(--glass-border) !important;
+            box-shadow: var(--glass-shadow);
+        }
+
+        .sidebar-menu-el .el-menu-item,
+        .sidebar-menu-el .el-sub-menu__title {
+            height: 50px !important;
+            line-height: 50px !important;
+            color: #E2E8F0 !important; /* Brighter Slate 200 */
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .sidebar-menu-el .el-menu-item:hover,
+        .sidebar-menu-el .el-sub-menu__title:hover {
+            background-color: rgba(99, 102, 241, 0.2) !important;
+            color: #ffffff !important;
+        }
+
+        .sidebar-menu-el .el-menu-item.is-active {
+            color: #ffffff !important;
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.3) 0%, transparent 100%) !important;
+            border-left: 4px solid #818cf8 !important; /* Brighter Indigo */
+        }
+
+        /* Ensure icon visibility */
+        .sidebar-menu-el .bi {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        /* Ensure submenu items are also clearly visible */
+        .sidebar-menu-el .el-menu .el-menu-item {
+            background-color: transparent !important;
+            padding-left: 50px !important;
+            color: #CBD5E1 !important; /* Slate 300 */
+        }
+
+        .sidebar-menu-el .el-menu .el-menu-item:hover {
+            color: #ffffff !important;
+            background-color: rgba(255, 255, 255, 0.05) !important;
+        }
+
+        /* Expansion Arrow Color */
+        .sidebar-menu-el .el-sub-menu__icon-arrow {
+            color: #ffffff !important;
+            font-weight: bold;
+        }
+
+        .el-menu--collapse .el-sub-menu__icon-arrow {
+            display: none !important;
+        }
+
+        /* Fixed: Flyout Menu visibility (when sidebar is collapsed) */
+        .el-menu--popup {
+            background-color: #0f172a !important; /* Match sidebar background */
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            min-width: 180px !important;
+        }
+
+        .el-menu--popup .el-menu-item {
+            color: #E2E8F0 !important;
+            font-size: 14px !important;
+            height: 45px !important;
+            line-height: 45px !important;
+        }
+
+        .el-menu--popup .el-menu-item:hover {
+            color: #ffffff !important;
+            background-color: rgba(99, 102, 241, 0.2) !important;
+        }
+
+        .sidebar-logo .navbar-brand-el {
+            transition: opacity 0.2s;
+        }
+
+        .sidebar-el.is-collapsed .sidebar-logo .navbar-brand-el {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .menu-toggle-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-color);
+            cursor: pointer;
+            padding: 0;
+            margin-right: 20px;
+            display: flex;
+            align-items: center;
+            transition: color 0.2s;
+        }
+
+        .menu-toggle-btn:hover {
+            color: var(--primary-color);
+        }
+
+        .footer-sidebar {
+            background: var(--bg-color);
+            border-top: 1px solid var(--border-color);
+            padding: 12px;
+        }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(0,0,0,0.1);
+        }
+
+        .user-dropdown-link {
+            display: flex;
+            align-items: center;
+            color: #E2E8F0;
+            text-decoration: none;
+            cursor: pointer;
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .user-dropdown-link:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        .x-small {
+            font-size: 10px;
+        }
+
+        .el-dropdown-menu.user-dropdown-style {
+            background-color: #0f172a !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            padding: 8px 0;
+            box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .user-dropdown-style .el-dropdown-menu__item {
+            color: #E2E8F0 !important;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+        }
+
+        .user-dropdown-style .el-dropdown-menu__item:hover {
+            background-color: rgba(99, 102, 241, 0.2) !important;
+            color: #fff !important;
+        }
+
+        .user-dropdown-style .el-dropdown-menu__item.text-danger:hover {
+            background-color: rgba(239, 68, 68, 0.2) !important;
         }
 
         .btn {
             font-size: 12px !important;
             white-space: nowrap !important;
+        }
+
+        /* Adjust el-menu sub-menu display */
+        .el-menu--horizontal > .el-sub-menu .el-sub-menu__title {
+            height: 60px !important;
+            line-height: 60px !important;
+        }
+        .el-menu--horizontal > .el-menu-item {
+            height: 60px !important;
+            line-height: 60px !important;
         }
     </style>
     @vite(['resources/js/app.js'])
@@ -327,105 +579,127 @@
         <div v-else-if="!user">
             <login-component @logged-in="user = $event; checkAuth()"></login-component>
         </div>
-        <div v-else>
-            <nav class="navbar navbar-expand-lg navbar-dark top-navbar">
-                <div class="container-fluid">
-                    <a class="navbar-brand" href="#">
-                        <img src="/images/quality-cartons-logo.svg" alt="Quality Cartons Logo" width="32" height="32" class="d-inline-block align-text-top me-2">
-                        QUALITY CARTONS (PVT.) LTD.
-                    </a>
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNavbar" aria-controls="topNavbar" aria-expanded="false" aria-label="Toggle navigation">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <div class="collapse navbar-collapse" id="topNavbar">
-                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                            <li class="nav-item" v-if="!permissionsLoaded || canView('dashboard')">
-                                <button class="nav-link btn btn-link" :class="{ active: currentView === 'dashboard' }" @click="setView('dashboard')">
-                                    Dashboard
-                                </button>
-                            </li>
-                            <li class="nav-item" v-if="!permissionsLoaded || canView('suppliers')">
-                                <button class="nav-link btn btn-link" :class="{ active: currentView === 'suppliers' }" @click="setView('suppliers')">
-                                    Suppliers
-                                </button>
-                            </li>
-                            <li class="nav-item dropdown">
-                                <button class="nav-link btn btn-link dropdown-toggle" id="paperDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Paper
-                                </button>
-                                <ul class="dropdown-menu" aria-labelledby="paperDropdown">
-                                    <li><button class="dropdown-item" @click="setView('qualities')">Paper Qualities</button></li>
-                                    <li v-if="!permissionsLoaded || canView('receipts')"><button class="dropdown-item" @click="setView('receipts')">Receipts</button></li>
-                                    <li v-if="!permissionsLoaded || canView('issues')"><button class="dropdown-item" @click="setView('issues')">Reel Issue</button></li>
-                                    <li v-if="!permissionsLoaded || canView('return-supplier')"><button class="dropdown-item" @click="setView('return-supplier')">Reel Return to Supplier</button></li>
-                                </ul>
-                            </li>
-                            <li class="nav-item dropdown">
-                                <button class="nav-link btn btn-link dropdown-toggle" id="reportsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Reports
-                                </button>
-                                <ul class="dropdown-menu" aria-labelledby="reportsDropdown">
-                                    <li v-if="!permissionsLoaded || canView('monthly-consumption')"><button class="dropdown-item" @click="setView('monthly-consumption')">Monthly Consumption</button></li>
-                                    <li v-if="!permissionsLoaded || canView('reel-stock')"><button class="dropdown-item" @click="setView('reel-stock')">Reel Stock</button></li>
-                                    <li v-if="!permissionsLoaded || canView('reel-receipt')"><button class="dropdown-item" @click="setView('reel-receipt')">Reel Received Report</button></li>
-                                    <li v-if="!permissionsLoaded || canView('monthly-closing')"><button class="dropdown-item" @click="setView('monthly-closing')">Monthly Closing Stock</button></li>
-                                    <li v-if="!permissionsLoaded || canView('reel-stock-count')"><button class="dropdown-item" @click="setView('reel-stock-count')">Reel Stock Count</button></li>
-                                </ul>
-                            </li>
-                            <li class="nav-item dropdown" v-if="!permissionsLoaded || canView('cartons')">
-                                <button class="nav-link btn btn-link dropdown-toggle" id="cartonsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Cartons
-                                </button>
-                                <ul class="dropdown-menu" aria-labelledby="cartonsDropdown">
-                                    <li><button class="dropdown-item" @click="setView('customers')">Customers</button></li>
-                                    <li><button class="dropdown-item" @click="setView('sketch-generator')">Sketch Generator</button></li>
-                                </ul>
-                            </li>
-                            <li class="nav-item dropdown" v-if="user.role.name === 'Admin' || user.email === 'superadmin@qc.com'">
-                                <button class="nav-link btn btn-link dropdown-toggle" id="usersDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Users
-                                </button>
-                                <ul class="dropdown-menu" aria-labelledby="usersDropdown">
-                                    <li>
-                                        <button class="dropdown-item" :class="{ active: currentView === 'users' }" @click="setView('users')">
-                                            Manage Users
-                                        </button>
-                                    </li>
-                                    <li>
-                                        <button class="dropdown-item" :class="{ active: currentView === 'user-rights' }" @click="setView('user-rights')">
-                                            User Rights
-                                        </button>
-                                    </li>
-                                    <li>
-                                        <button class="dropdown-item" :class="{ active: currentView === 'audit-log' }" @click="setView('audit-log')">
-                                            Audit Logs
-                                        </button>
-                                    </li>
-                                </ul>
-                            </li>
-                            <li class="nav-item" v-if="user.role.name === 'Admin' || user.email === 'superadmin@qc.com'">
-                                <button class="nav-link btn btn-link" :class="{ active: currentView === 'setup' }" @click="setView('setup')">
-                                    Setup
-                                </button>
-                            </li>
-                        </ul>
-                        <div class="d-flex align-items-center">
-                            <button class="btn btn-link text-white me-3 text-decoration-none shadow-none p-0" @click="setView('profile')">
-                                <i class="bi bi-person-circle me-2"></i>Welcome, @{{ user.name }}
-                            </button>
-                            <div class="me-2">
-                                <theme-selector-component></theme-selector-component>
-                            </div>
-                            <button @click="logout" class="btn btn-sm btn-outline-light">
-                                <i class="bi bi-box-arrow-right me-1"></i>Logout
-                            </button>
-                        </div>
-                    </div>
+        <div v-else class="app-wrapper">
+            <!-- Sidebar -->
+            <aside class="sidebar-el" :class="{ 'is-collapsed': isSidebarCollapsed }">
+                <div class="sidebar-logo">
+                    <img src="/images/quality-cartons-logo.svg" alt="Logo" width="32" height="32" class="me-2" style="min-width: 32px;">
+                    <span class="navbar-brand-el" v-show="!isSidebarCollapsed">REELSTOCK</span>
                 </div>
-            </nav>
 
-            <!-- Main Content -->
-            <div class="main-content">
+                <el-menu
+                    :default-active="currentView"
+                    class="sidebar-menu-el"
+                    background-color="transparent"
+                    text-color="#E2E8F0"
+                    active-text-color="#ffffff"
+                    @select="setView"
+                    :collapse="isSidebarCollapsed"
+                    :collapse-transition="false"
+                >
+                    <el-menu-item index="dashboard" v-if="!permissionsLoaded || canView('dashboard')">
+                        <i class="bi bi-speedometer2 me-2 icon-dashboard"></i> 
+                        <span>Dashboard</span>
+                    </el-menu-item>
+                    
+                    <el-menu-item index="suppliers" v-if="!permissionsLoaded || canView('suppliers')">
+                        <i class="bi bi-truck me-2 icon-suppliers"></i>
+                        <span>Suppliers</span>
+                    </el-menu-item>
+
+                    <el-sub-menu index="paper">
+                        <template #title>
+                            <i class="bi bi-file-earmark-text me-2 icon-paper"></i>
+                            <span>Paper</span>
+                        </template>
+                        <el-menu-item index="qualities">Paper Qualities</el-menu-item>
+                        <el-menu-item index="receipts" v-if="!permissionsLoaded || canView('receipts')">Receipts</el-menu-item>
+                        <el-menu-item index="issues" v-if="!permissionsLoaded || canView('issues')">Reel Issue</el-menu-item>
+                        <el-menu-item index="return-supplier" v-if="!permissionsLoaded || canView('return-supplier')">Return to Supp.</el-menu-item>
+                    </el-sub-menu>
+
+                    <el-sub-menu index="reports">
+                        <template #title>
+                            <i class="bi bi-graph-up me-2 icon-reports"></i>
+                            <span>Reports</span>
+                        </template>
+                        <el-menu-item index="monthly-consumption" v-if="!permissionsLoaded || canView('monthly-consumption')">Monthly Cons.</el-menu-item>
+                        <el-menu-item index="reel-stock" v-if="!permissionsLoaded || canView('reel-stock')">Reel Stock</el-menu-item>
+                        <el-menu-item index="reel-receipt" v-if="!permissionsLoaded || canView('reel-receipt')">Reel Received</el-menu-item>
+                        <el-menu-item index="monthly-closing" v-if="!permissionsLoaded || canView('monthly-closing')">Monthly Closing</el-menu-item>
+                        <el-menu-item index="reel-stock-count" v-if="!permissionsLoaded || canView('reel-stock-count')">Stock Count</el-menu-item>
+                        <el-menu-item index="usage-intelligence" v-if="!permissionsLoaded || canView('usage-intelligence')">Usage Intel.</el-menu-item>
+                        <el-menu-item index="old-reels" v-if="!permissionsLoaded || canView('old-reels')">Old Reels Report</el-menu-item>
+                    </el-sub-menu>
+
+                    <el-sub-menu index="cartons" v-if="!permissionsLoaded || canView('cartons')">
+                        <template #title>
+                            <i class="bi bi-box me-2 icon-cartons"></i>
+                            <span>Cartons</span>
+                        </template>
+                        <el-menu-item index="customers">Customers</el-menu-item>
+                        <el-menu-item index="sketch-generator">Sketch Gen.</el-menu-item>
+                    </el-sub-menu>
+
+                    <el-sub-menu index="users" v-if="user.role.name === 'Admin' || user.email === 'superadmin@qc.com'">
+                        <template #title>
+                            <i class="bi bi-people me-2 icon-users"></i>
+                            <span>Users</span>
+                        </template>
+                        <el-menu-item index="users">Manage Users</el-menu-item>
+                        <el-menu-item index="user-rights">User Rights</el-menu-item>
+                        <el-menu-item index="audit-log">Audit Logs</el-menu-item>
+                    </el-sub-menu>
+
+                    <el-menu-item index="setup" v-if="user.role.name === 'Admin' || user.email === 'superadmin@qc.com'">
+                        <i class="bi bi-gear me-2 icon-setup"></i>
+                        <span>Setup</span>
+                    </el-menu-item>
+                </el-menu>
+
+                <!-- Sidebar User Footer -->
+                <div class="sidebar-footer">
+                    <el-dropdown trigger="hover" placement="top-start" style="width: 100%;">
+                        <div class="user-dropdown-link">
+                            <i class="bi bi-person-circle fs-5 me-2" style="color: #818cf8; min-width: 24px;"></i>
+                            <div class="flex-grow-1 overflow-hidden" v-show="!isSidebarCollapsed">
+                                <p class="mb-0 small fw-bold text-truncate">@{{ user.name }}</p>
+                                <p class="mb-0 x-small text-muted text-truncate">@{{ user.email }}</p>
+                            </div>
+                            <i class="bi bi-chevron-up small ms-1 opacity-50" v-show="!isSidebarCollapsed"></i>
+                        </div>
+                        <template #dropdown>
+                            <el-dropdown-menu class="user-dropdown-style">
+                                <el-dropdown-item @click="setView('profile')">
+                                    <i class="bi bi-person me-2"></i> My Profile
+                                </el-dropdown-item>
+                                <el-dropdown-item divided @click="logout" class="text-danger">
+                                    <i class="bi bi-box-arrow-right me-2"></i> Logout
+                                </el-dropdown-item>
+                            </el-dropdown-menu>
+                        </template>
+                    </el-dropdown>
+                </div>
+            </aside>
+
+            <div class="main-container flex-grow-1">
+                <!-- Top Header -->
+                <header class="top-navbar-fixed d-flex justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <button class="menu-toggle-btn" @click="isSidebarCollapsed = !isSidebarCollapsed">
+                            <i class="bi" :class="isSidebarCollapsed ? 'bi-text-indent-left' : 'bi-text-indent-right'"></i>
+                        </button>
+                        <h5 class="mb-0 fw-bold text-muted text-uppercase small">
+                            <i class="bi bi-chevron-right me-1"></i> @{{ currentView.replace('-', ' ') }}
+                        </h5>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <theme-selector-component></theme-selector-component>
+                    </div>
+                </header>
+
+                <!-- Main Content Area -->
+                <main class="main-content">
                 <dashboard-component v-if="currentView === 'dashboard'" :user="user" :can-view-dashboard="canView('dashboard')" :can-see-amounts="canSeeAmounts('dashboard')"></dashboard-component>
                 <supplier-component v-else-if="currentView === 'suppliers'" :user="user"></supplier-component>
                 <paper-quality-component v-else-if="currentView === 'qualities'" :user="user"></paper-quality-component>
@@ -437,6 +711,8 @@
                 <reel-receipt-report-component v-else-if="currentView === 'reel-receipt'" :user="user" :can-see-amounts="canSeeAmounts('reel-receipt')"></reel-receipt-report-component>
                 <monthly-closing-report-component v-else-if="currentView === 'monthly-closing'" :user="user" :can-see-amounts="canSeeAmounts('monthly-closing')"></monthly-closing-report-component>
                 <reel-stock-count-report-component v-else-if="currentView === 'reel-stock-count'" :user="user"></reel-stock-count-report-component>
+                <usage-intelligence-report-component v-else-if="currentView === 'usage-intelligence'" :user="user"></usage-intelligence-report-component>
+                <old-reels-report-component v-else-if="currentView === 'old-reels'" :user="user" :can-see-amounts="canSeeAmounts('old-reels')"></old-reels-report-component>
                 <cartons-component v-else-if="currentView === 'cartons'" :user="user"></cartons-component>
                 <customer-component v-else-if="currentView === 'customers'" :user="user"></customer-component>
                 <sketch-generator-component v-else-if="currentView === 'sketch-generator'" :user="user"></sketch-generator-component>
@@ -453,15 +729,15 @@
                     <p>Component for @{{ currentView }} will be added here.</p>
                     <p>Debug: Current view is "@{{ currentView }}"</p>
                 </div>
+                </main>
+
+                <footer class="footer-sidebar text-center py-3 mt-auto">
+                    <p class="mb-0 small text-muted">Developed by DILSHAD KB &copy; 2026 SACHAAN TECHSOL. | Contact: 0300-2566358</p>
+                </footer>
             </div>
         </div>
         <scroll-to-top-component></scroll-to-top-component>
     </div>
-    <footer class="bg-dark text-white text-center py-3 mt-5">
-        <div class="container">
-            <p class="mb-0">This software is developed by DILSHAD KB &copy; 2026 SACHAAN TECHSOL. All rights reserved. | Contact: 0300-2566358</p>
-        </div>
-    </footer>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

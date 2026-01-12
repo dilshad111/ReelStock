@@ -17,6 +17,7 @@
         "vue": "^3.2.37"
     },
     "dependencies": {
+        "element-plus": "^2.13.1",
         "xlsx": "^0.18.5"
     }
 }

@@ -19,6 +19,8 @@ use App\Http\Controllers\UserPermissionController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\AuditController;
+use App\Http\Controllers\ReelUsageReportController;
+use App\Http\Controllers\OldReelsReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -75,6 +77,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('reports/reel-receipt', [ReelReceiptReportController::class, 'index']);
     Route::get('reports/monthly-closing', [MonthlyClosingReportController::class, 'index']);
     Route::get('reports/audits', [AuditController::class, 'index']);
+    Route::get('reports/usage-intelligence', [ReelUsageReportController::class, 'usageIntelligence']);
+    Route::get('reports/predictive-analytics', [ReelUsageReportController::class, 'predictiveAnalytics']);
+    Route::get('reports/old-reels', [OldReelsReportController::class, 'index']);
 
     // Dashboard
     Route::get('dashboard', [DashboardController::class, 'index']);
