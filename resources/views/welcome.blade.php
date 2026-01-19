@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
         /* CSS Custom Properties for Themes */
         :root {
@@ -568,6 +569,30 @@
             height: 60px !important;
             line-height: 60px !important;
         }
+
+        /* Time and Notification Styles */
+        .time-display {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 6px 16px;
+            border-radius: 50px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            display: flex;
+            align-items: center;
+        }
+        
+        .notification-bell-btn {
+            position: relative;
+            transition: all 0.3s;
+        }
+        
+        .notification-bell-btn:hover {
+            transform: scale(1.1);
+            color: var(--primary-color) !important;
+        }
+        
+        .animate__infinite {
+            animation-iteration-count: infinite;
+        }
     </style>
     @vite(['resources/js/app.js'])
 </head>
@@ -616,6 +641,7 @@
                         <el-menu-item index="receipts" v-if="!permissionsLoaded || canView('receipts')">Receipts</el-menu-item>
                         <el-menu-item index="issues" v-if="!permissionsLoaded || canView('issues')">Reel Issue</el-menu-item>
                         <el-menu-item index="return-supplier" v-if="!permissionsLoaded || canView('return-supplier')">Return to Supp.</el-menu-item>
+                        <el-menu-item index="stock-alerts" v-if="!permissionsLoaded || canView('stock-alerts')">Stock Alerts</el-menu-item>
                     </el-sub-menu>
 
                     <el-sub-menu index="reports">
@@ -694,6 +720,15 @@
                         </h5>
                     </div>
                     <div class="d-flex align-items-center gap-3">
+                        <div class="time-display me-3 d-none d-md-block">
+                            <i class="bi bi-clock me-1 text-primary"></i>
+                            <span class="fw-bold text-muted small">@{{ currentTime }}</span>
+                        </div>
+                        <el-badge :value="triggeredCount" class="item" :hidden="triggeredCount === 0">
+                            <el-button circle @click="setView('stock-alerts')" class="notification-bell-btn">
+                                <i class="bi" :class="triggeredCount > 0 ? 'bi-bell-fill text-danger animate__animated animate__swing animate__infinite' : 'bi-bell'"></i>
+                            </el-button>
+                        </el-badge>
                         <theme-selector-component></theme-selector-component>
                     </div>
                 </header>
@@ -722,6 +757,7 @@
                 <audit-log-component v-else-if="currentView === 'audit-log'" :user="user"></audit-log-component>
                 <setup-component v-else-if="currentView === 'setup'" :user="user"></setup-component>
                 <profile-component v-else-if="currentView === 'profile'" :user="user"></profile-component>
+                <stock-alert-component v-else-if="currentView === 'stock-alerts'" :user="user" @update-triggered-count="triggeredCount = $event"></stock-alert-component>
                 <best-ui-showcase-component v-else-if="currentView === 'best-ui'"></best-ui-showcase-component>
                 <!-- Add other components here -->
                 <div v-else>

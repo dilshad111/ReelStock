@@ -24,7 +24,8 @@ const PERMISSION_KEY_MAP = {
     'user-rights': null,
     'audit-log': null,
     'old-reels': 'reel_stock',
-    'best-ui': null
+    'best-ui': null,
+    'stock-alerts': 'reel_stock'
 };
 
 const PERMISSION_KEYS = [
@@ -61,6 +62,7 @@ const VIEW_ORDER = [
     'audit-log',
     'best-ui',
     'old-reels',
+    'stock-alerts',
     'profile'
 ];
 
@@ -87,6 +89,7 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     'best-ui': 'best-ui',
     setup: 'setup',
     'old-reels': 'old-reels',
+    'stock-alerts': 'stock-alerts',
     profile: 'profile'
 });
 
@@ -200,7 +203,9 @@ const app = createApp({
             basePath: '',
             idleTimer: null,
             idleTimeout: 3600000, // 1 hour in milliseconds
-            isSidebarCollapsed: false
+            isSidebarCollapsed: false,
+            currentTime: new Date().toLocaleString(),
+            triggeredCount: 0
         };
 
     },
@@ -229,6 +234,29 @@ const app = createApp({
         window.addEventListener('keydown', this.resetIdleTimer);
         window.addEventListener('mousedown', this.resetIdleTimer);
         window.addEventListener('scroll', this.resetIdleTimer);
+
+        if (this.user) {
+            this.fetchTriggeredCount();
+        }
+
+        // Periodic check for stock alerts (every 2 minutes)
+        setInterval(() => {
+            if (this.user) this.fetchTriggeredCount();
+        }, 120000);
+
+        // Live time updater
+        setInterval(() => {
+            this.currentTime = new Date().toLocaleString('en-US', {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+        }, 1000);
     },
 
     beforeUnmount() {
@@ -412,6 +440,13 @@ const app = createApp({
                 }
             }
             return 'dashboard';
+        },
+        fetchTriggeredCount() {
+            axios.get('/api/stock-alerts/triggered').then(response => {
+                this.triggeredCount = response.data.length;
+            }).catch(error => {
+                console.error('Error fetching triggered alerts:', error);
+            });
         }
     }
 
@@ -445,6 +480,7 @@ import ReelStockCountReportComponent from './components/ReelStockCountReportComp
 import UsageIntelligenceReportComponent from './components/UsageIntelligenceReportComponent.vue';
 
 import OldReelsReportComponent from './components/OldReelsReportComponent.vue';
+import StockAlertComponent from './components/StockAlertComponent.vue';
 
 app.component('supplier-component', SupplierComponent);
 app.component('paper-quality-component', PaperQualityComponent);
@@ -472,6 +508,7 @@ app.component('usage-intelligence-report-component', UsageIntelligenceReportComp
 app.component('best-ui-showcase-component', BestUiShowcaseComponent);
 app.component('profile-component', ProfileComponent);
 app.component('old-reels-report-component', OldReelsReportComponent);
+app.component('stock-alert-component', StockAlertComponent);
 
 /**
  * The following block of code may be used to automatically register your

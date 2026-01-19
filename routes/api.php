@@ -21,6 +21,7 @@ use App\Http\Controllers\SetupController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\ReelUsageReportController;
 use App\Http\Controllers\OldReelsReportController;
+use App\Http\Controllers\StockAlertController;
 
 /*
 |--------------------------------------------------------------------------
@@ -103,4 +104,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('tables', [SetupController::class, 'getTables']);
         Route::post('upload-logo', [SetupController::class, 'uploadLogo']);
     });
+
+    // Stock Alerts
+    Route::get('stock-alerts', [StockAlertController::class, 'index']);
+    Route::post('stock-alerts', [StockAlertController::class, 'store']);
+    Route::put('stock-alerts/{id}', [StockAlertController::class, 'update']);
+    Route::delete('stock-alerts/{id}', [StockAlertController::class, 'destroy']);
+    Route::post('stock-alerts/{id}/toggle', [StockAlertController::class, 'toggle']);
+    Route::get('stock-alerts/triggered', [StockAlertController::class, 'getTriggeredAlerts']);
 });
