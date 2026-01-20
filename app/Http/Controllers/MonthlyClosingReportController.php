@@ -17,16 +17,24 @@ class MonthlyClosingReportController extends Controller
             // Return data for a specific date
             $targetDate = Carbon::parse($date);
 
-            // Get reels that have been received on or before the target date
+            // Get reels that existed on or before the target date
+            // Include reels if they have at least one receipt on/before target date,
+            // OR if they were created in the system on/before target date (fallback)
             $reelsAtDate = DB::table('reels')
-                ->join('reel_receipts', 'reels.id', '=', 'reel_receipts.reel_id')
+                ->where(function ($query) use ($targetDate) {
+                    $query->whereDate('reels.created_at', '<=', $targetDate->toDateString())
+                        ->orWhereExists(function ($sub) use ($targetDate) {
+                            $sub->select(DB::raw(1))
+                                ->from('reel_receipts')
+                                ->whereColumn('reel_receipts.reel_id', 'reels.id')
+                                ->whereNotNull('reel_receipts.receiving_date')
+                                ->whereDate('reel_receipts.receiving_date', '<=', $targetDate->toDateString());
+                        });
+                })
                 ->leftJoin('paper_qualities', 'reels.paper_quality_id', '=', 'paper_qualities.id')
                 ->leftJoin('suppliers', 'reels.supplier_id', '=', 'suppliers.id')
-                ->whereNotNull('reel_receipts.receiving_date')
-                ->whereDate('reel_receipts.receiving_date', '<=', $targetDate->toDateString())
                 ->select(
                     'reels.*',
-                    'reel_receipts.receiving_date',
                     'paper_qualities.quality',
                     'paper_qualities.gsm_range',
                     'suppliers.name as supplier_name'
@@ -34,17 +42,20 @@ class MonthlyClosingReportController extends Controller
                 ->get();
 
             // Pre-fetch issues and returns up to target date
+            // Include ID and created_at for stable sorting of same-day transactions
             $issuesByReel = DB::table('reel_issues')
                 ->where('issue_date', '<=', $targetDate->toDateString())
-                ->select('reel_id', 'issue_date', 'quantity_issued')
+                ->select('id', 'reel_id', 'issue_date', 'quantity_issued', 'net_consumed_weight', 'return_to_stock_weight', 'created_at')
                 ->orderBy('issue_date')
+                ->orderBy('id')
                 ->get()
                 ->groupBy('reel_id');
 
             $returnsByReel = DB::table('reel_returns')
                 ->where('return_date', '<=', $targetDate->toDateString())
-                ->select('reel_id', 'return_date', 'remaining_weight', 'returned_to')
+                ->select('id', 'reel_id', 'return_date', 'remaining_weight', 'returned_to', 'created_at')
                 ->orderBy('return_date')
+                ->orderBy('id')
                 ->get()
                 ->groupBy('reel_id');
 
@@ -54,41 +65,84 @@ class MonthlyClosingReportController extends Controller
             foreach ($reelsAtDate as $reel) {
                 $sizeValue = (float) $reel->reel_size;
 
-
-
-                // Calculate closing balance as of target date
-                $issuesForReel = $issuesByReel->get($reel->id, collect());
-                $closingBalance = $reel->original_weight ?? 0;
-
-                if ($returnsByReel->has($reel->id)) {
-                    $returns = $returnsByReel->get($reel->id);
-                    $latestReturn = $returns->last();
-                    
-                    // If the latest return was to supplier, the reel is no longer in stock
-                    if ($latestReturn->returned_to === 'supplier') {
-                        $closingBalance = 0;
-                    } else {
-                        // Latest return was to stock
-                        $closingBalance = $latestReturn->remaining_weight ?? 0;
-
-                        $issuesAfterReturn = $issuesForReel->filter(function ($issue) use ($latestReturn) {
-                            return Carbon::parse($issue->issue_date)->greaterThan(Carbon::parse($latestReturn->return_date));
-                        });
-
-                        $closingBalance -= $issuesAfterReturn->sum('quantity_issued');
+                // Calculate closing balance as of target date by re-playing transactions
+                $closingBalance = (float) ($reel->original_weight ?? 0);
+                
+                $reelIssues = $issuesByReel->get($reel->id, collect());
+                $reelReturns = $returnsByReel->get($reel->id, collect());
+                
+                // Combine and sort all transactions
+                $transactions = collect();
+                foreach ($reelIssues as $issue) {
+                    // Use net_consumed_weight if it was recorded (it will be present for newer records)
+                    // If it's missing or zero (and there's a return_to_stock_weight), calculate it
+                    $consumed = (float)$issue->quantity_issued;
+                    if (property_exists($issue, 'net_consumed_weight') && $issue->net_consumed_weight !== null) {
+                        // Even if it's 0, it means nothing was consumed from that issue
+                        $consumed = (float)$issue->net_consumed_weight;
+                    } elseif (property_exists($issue, 'return_to_stock_weight') && (float)$issue->return_to_stock_weight > 0) {
+                        $consumed = max(0, (float)$issue->quantity_issued - (float)$issue->return_to_stock_weight);
                     }
-                } else {
-                    $closingBalance -= $issuesForReel->sum('quantity_issued');
+
+                    $transactions->push([
+                        'date' => $issue->issue_date,
+                        'created_at' => $issue->created_at,
+                        'id' => $issue->id,
+                        'type' => 'issue',
+                        'weight' => $consumed
+                    ]);
+                }
+                foreach ($reelReturns as $return) {
+                    $transactions->push([
+                        'date' => $return->return_date,
+                        'created_at' => $return->created_at,
+                        'id' => $return->id,
+                        'type' => 'return_' . $return->returned_to,
+                        'weight' => (float)$return->remaining_weight
+                    ]);
+                }
+                
+                // Sort by date, then by type (issues before returns on same day), then by ID
+                $sortedTransactions = $transactions->sort(function($a, $b) {
+                    if ($a['date'] !== $b['date']) {
+                        return strcmp($a['date'], $b['date']);
+                    }
+                    // For same day, issues usually happen before returns (especially auto-returns)
+                    if ($a['type'] !== $b['type']) {
+                        if ($a['type'] === 'issue') return -1;
+                        if ($b['type'] === 'issue') return 1;
+                    }
+                    return $a['id'] <=> $b['id'];
+                });
+                
+                foreach ($sortedTransactions as $tx) {
+                    if ($tx['type'] === 'issue') {
+                        $closingBalance -= $tx['weight'];
+                    } elseif ($tx['type'] === 'return_stock') {
+                        // Return to stock resets balance to the remaining weight recorded
+                        $closingBalance = $tx['weight'];
+                    } elseif ($tx['type'] === 'return_supplier') {
+                        // Return to supplier removes that weight from stock
+                        $closingBalance -= $tx['weight'];
+                    }
                 }
 
                 $closingBalance = max(0, $closingBalance);
+
+                // For current date, we can also cross-verify with live balance_weight if needed,
+                // but for historical dates we must rely on the calculation.
+                // If it's today, the live balance_weight is usually the most reliable.
+                if ($targetDate->isToday()) {
+                    // However, we still use the calculation to maintain consistency with historical reports.
+                    // If there's a big gap, it might indicate missing transaction records.
+                }
 
                 // Normalize size key (e.g., 20 -> 20")
                 $normalizedSize = rtrim(rtrim(number_format($sizeValue, 2, '.', ''), '0'), '.');
                 $sizeKey = $normalizedSize . '"';
 
                 // Only include reels with positive balance at target date
-                if ($closingBalance > 0) {
+                if ($closingBalance > 0.01) { // Use small threshold for floats
                     $qualityKey = ($reel->quality ?? 'Unknown') . ' (' . ($reel->gsm_range ?? 'Unknown') . ')';
 
                     if (!isset($qualitySizeData[$qualityKey])) {
