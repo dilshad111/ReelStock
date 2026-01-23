@@ -93,24 +93,24 @@ class MonthlyClosingReportController extends Controller
                     ]);
                 }
                 foreach ($reelReturns as $return) {
-                    $transactions->push([
-                        'date' => $return->return_date,
-                        'created_at' => $return->created_at,
-                        'id' => $return->id,
-                        'type' => 'return_' . $return->returned_to,
-                        'weight' => (float)$return->remaining_weight
-                    ]);
+                    if ($return->returned_to === 'supplier') {
+                        $transactions->push([
+                            'date' => $return->return_date,
+                            'created_at' => $return->created_at,
+                            'id' => $return->id,
+                            'type' => 'return_supplier',
+                            'weight' => (float)$return->remaining_weight
+                        ]);
+                    }
                 }
                 
-                // Sort by date, then by type (issues before returns on same day), then by ID
+                // Sort by date, then by creation time/ID for same-day transactions
                 $sortedTransactions = $transactions->sort(function($a, $b) {
                     if ($a['date'] !== $b['date']) {
                         return strcmp($a['date'], $b['date']);
                     }
-                    // For same day, issues usually happen before returns (especially auto-returns)
-                    if ($a['type'] !== $b['type']) {
-                        if ($a['type'] === 'issue') return -1;
-                        if ($b['type'] === 'issue') return 1;
+                    if (isset($a['created_at']) && isset($b['created_at']) && $a['created_at'] !== $b['created_at']) {
+                        return strcmp($a['created_at'], $b['created_at']);
                     }
                     return $a['id'] <=> $b['id'];
                 });
@@ -118,9 +118,6 @@ class MonthlyClosingReportController extends Controller
                 foreach ($sortedTransactions as $tx) {
                     if ($tx['type'] === 'issue') {
                         $closingBalance -= $tx['weight'];
-                    } elseif ($tx['type'] === 'return_stock') {
-                        // Return to stock resets balance to the remaining weight recorded
-                        $closingBalance = $tx['weight'];
                     } elseif ($tx['type'] === 'return_supplier') {
                         // Return to supplier removes that weight from stock
                         $closingBalance -= $tx['weight'];

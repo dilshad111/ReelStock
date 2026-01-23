@@ -729,6 +729,9 @@
                                 <i class="bi" :class="triggeredCount > 0 ? 'bi-bell-fill text-danger animate__animated animate__swing animate__infinite' : 'bi-bell'"></i>
                             </el-button>
                         </el-badge>
+                        <el-button circle @click="setView('reconciliation')" title="Stock Reconciliation">
+                            <i class="bi bi-arrow-repeat"></i>
+                        </el-button>
                         <theme-selector-component></theme-selector-component>
                     </div>
                 </header>
@@ -758,6 +761,7 @@
                 <setup-component v-else-if="currentView === 'setup'" :user="user"></setup-component>
                 <profile-component v-else-if="currentView === 'profile'" :user="user"></profile-component>
                 <stock-alert-component v-else-if="currentView === 'stock-alerts'" :user="user" @update-triggered-count="triggeredCount = $event"></stock-alert-component>
+                <reconciliation-component v-else-if="currentView === 'reconciliation'" :user="user"></reconciliation-component>
                 <best-ui-showcase-component v-else-if="currentView === 'best-ui'"></best-ui-showcase-component>
                 <!-- Add other components here -->
                 <div v-else>

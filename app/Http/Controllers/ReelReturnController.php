@@ -130,6 +130,9 @@ class ReelReturnController extends Controller
         }
 
         $this->updateReelStatus($reel);
+        
+        // Validate and sync balance with transaction history
+        $this->validateAndSyncBalance($reel);
         $reel->save();
 
         return response()->json($return->load('reel.paperQuality', 'reel.supplier'), 201);
@@ -186,6 +189,9 @@ class ReelReturnController extends Controller
 
             $reel->balance_weight = max($restoredBalance - $newWeight, 0);
             $this->updateReelStatus($reel);
+            
+            // Validate and sync balance with transaction history
+            $this->validateAndSyncBalance($reel);
             $reel->save();
 
             return response()->json($return->load('reel.paperQuality', 'reel.supplier'));
@@ -208,6 +214,9 @@ class ReelReturnController extends Controller
 
             $reel->balance_weight = min($reel->balance_weight + (float) $return->remaining_weight, $reel->original_weight);
             $this->updateReelStatus($reel);
+            
+            // Validate and sync balance with transaction history
+            $this->validateAndSyncBalance($reel);
             $reel->save();
 
             $return->delete();
@@ -317,5 +326,40 @@ class ReelReturnController extends Controller
         $reel->setAttribute('has_issue_history', $hasIssueHistory);
         $reel->setAttribute('already_in_stock', $alreadyInStock);
         return response()->json($reel);
+    }
+
+    /**
+     * Validate and synchronize balance_weight with transaction history
+     * This ensures the stored balance matches the calculated balance from all transactions
+     *
+     * @param Reel $reel
+     * @return bool Returns true if balance is synchronized, false if discrepancy detected
+     */
+    protected function validateAndSyncBalance(Reel $reel): bool
+    {
+        // Calculate balance from transaction history
+        $totalConsumed = $reel->issues()->sum('net_consumed_weight');
+        $calculatedBalance = $reel->original_weight - $totalConsumed;
+        
+        // Allow small floating-point differences (0.01 kg tolerance)
+        $difference = abs($calculatedBalance - $reel->balance_weight);
+        
+        if ($difference > 0.01) {
+            // Log the discrepancy
+            \Log::warning('Balance weight discrepancy detected in return operation', [
+                'reel_no' => $reel->reel_no,
+                'stored_balance' => $reel->balance_weight,
+                'calculated_balance' => $calculatedBalance,
+                'difference' => $difference,
+                'action' => 'auto_correcting'
+            ]);
+            
+            // Auto-correct the balance
+            $reel->balance_weight = max($calculatedBalance, 0);
+            
+            return false; // Indicates a discrepancy was found and fixed
+        }
+        
+        return true; // Balance is synchronized
     }
 }

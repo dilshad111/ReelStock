@@ -8,6 +8,15 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 class Kernel extends ConsoleKernel
 {
     /**
+     * The Artisan commands provided by your application.
+     *
+     * @var array
+     */
+    protected $commands = [
+        Commands\ReconcileReelBalances::class,
+    ];
+
+    /**
      * Define the application's command schedule.
      *
      * @param  \Illuminate\Console\Scheduling\Schedule  $schedule
@@ -15,7 +24,16 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        // Run daily reel balance reconciliation at 2:00 AM
+        $schedule->command('reels:reconcile --auto-fix')
+            ->dailyAt('02:00')
+            ->appendOutputTo(storage_path('logs/reel-reconciliation.log'));
+
+        // Generate weekly reconciliation report (Sundays at 23:00)
+        $schedule->command('reels:reconcile --report-only')
+            ->weeklyOn(0, '23:00')  // 0 = Sunday
+            ->appendOutputTo(storage_path('logs/reel-reconciliation-weekly.log'))
+            ->emailOutputTo('admin@example.com');  // Update with actual admin email
     }
 
     /**

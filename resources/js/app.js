@@ -25,7 +25,8 @@ const PERMISSION_KEY_MAP = {
     'audit-log': null,
     'old-reels': 'reel_stock',
     'best-ui': null,
-    'stock-alerts': 'reel_stock'
+    'stock-alerts': 'reel_stock',
+    'reconciliation': 'reel_stock'
 };
 
 const PERMISSION_KEYS = [
@@ -63,6 +64,7 @@ const VIEW_ORDER = [
     'best-ui',
     'old-reels',
     'stock-alerts',
+    'reconciliation',
     'profile'
 ];
 
@@ -90,6 +92,7 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     setup: 'setup',
     'old-reels': 'old-reels',
     'stock-alerts': 'stock-alerts',
+    'reconciliation': 'reconciliation',
     profile: 'profile'
 });
 
@@ -481,6 +484,7 @@ import UsageIntelligenceReportComponent from './components/UsageIntelligenceRepo
 
 import OldReelsReportComponent from './components/OldReelsReportComponent.vue';
 import StockAlertComponent from './components/StockAlertComponent.vue';
+import ReconciliationComponent from './components/ReconciliationComponent.vue';
 
 app.component('supplier-component', SupplierComponent);
 app.component('paper-quality-component', PaperQualityComponent);
@@ -509,6 +513,7 @@ app.component('best-ui-showcase-component', BestUiShowcaseComponent);
 app.component('profile-component', ProfileComponent);
 app.component('old-reels-report-component', OldReelsReportComponent);
 app.component('stock-alert-component', StockAlertComponent);
+app.component('reconciliation-component', ReconciliationComponent);
 
 /**
  * The following block of code may be used to automatically register your

@@ -22,6 +22,7 @@ use App\Http\Controllers\AuditController;
 use App\Http\Controllers\ReelUsageReportController;
 use App\Http\Controllers\OldReelsReportController;
 use App\Http\Controllers\StockAlertController;
+use App\Http\Controllers\ReconciliationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -112,4 +113,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('stock-alerts/{id}', [StockAlertController::class, 'destroy']);
     Route::post('stock-alerts/{id}/toggle', [StockAlertController::class, 'toggle']);
     Route::get('stock-alerts/triggered', [StockAlertController::class, 'getTriggeredAlerts']);
+
+    // Reconciliation
+    Route::post('reconciliation/run', [ReconciliationController::class, 'runFullReconciliation']);
+    Route::get('reconciliation/history', [ReconciliationController::class, 'getReconciliationHistory']);
+    Route::get('reconciliation/discrepancies', [ReconciliationController::class, 'getDiscrepancies']);
+    Route::post('reconciliation/reel/{id}', [ReconciliationController::class, 'reconcileSpecificReel']);
 });
