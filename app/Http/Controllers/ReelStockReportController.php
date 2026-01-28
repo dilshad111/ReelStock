@@ -23,13 +23,15 @@ class ReelStockReportController extends Controller
             $query->where('status', $request->status);
         } else {
             // Default: Only show sizes for reels currently in stock
-            $query->where(function ($q) {
-                $q->where('balance_weight', '>', 0)
-                  ->orWhere(function ($inner) {
-                      $inner->whereNull('balance_weight')
-                            ->where('original_weight', '>', 0);
+            // Exclude reels returned to supplier
+            $query->where('status', '!=', 'returned_to_supplier')
+                  ->where(function ($q) {
+                      $q->where('balance_weight', '>', 0)
+                        ->orWhere(function ($inner) {
+                            $inner->whereNull('balance_weight')
+                                  ->where('original_weight', '>', 0);
+                        });
                   });
-            });
         }
 
         $sizes = $query->distinct()->pluck('reel_size')->filter()->values();
@@ -58,13 +60,15 @@ class ReelStockReportController extends Controller
             $query->where('status', $request->status);
         } else {
             // Default: Only show qualities for reels currently in stock
-            $query->where(function ($q) {
-                $q->where('balance_weight', '>', 0)
-                  ->orWhere(function ($inner) {
-                      $inner->whereNull('balance_weight')
-                            ->where('original_weight', '>', 0);
+            // Exclude reels returned to supplier
+            $query->where('status', '!=', 'returned_to_supplier')
+                  ->where(function ($q) {
+                      $q->where('balance_weight', '>', 0)
+                        ->orWhere(function ($inner) {
+                            $inner->whereNull('balance_weight')
+                                  ->where('original_weight', '>', 0);
+                        });
                   });
-            });
         }
 
         $qualityIds = $query->distinct()->pluck('paper_quality_id')->filter()->values();
@@ -90,13 +94,15 @@ class ReelStockReportController extends Controller
             $query->where('status', $request->status);
         } else {
             // Default: Only show suppliers for reels currently in stock
-            $query->where(function ($q) {
-                $q->where('balance_weight', '>', 0)
-                  ->orWhere(function ($inner) {
-                      $inner->whereNull('balance_weight')
-                            ->where('original_weight', '>', 0);
+            // Exclude reels returned to supplier
+            $query->where('status', '!=', 'returned_to_supplier')
+                  ->where(function ($q) {
+                      $q->where('balance_weight', '>', 0)
+                        ->orWhere(function ($inner) {
+                            $inner->whereNull('balance_weight')
+                                  ->where('original_weight', '>', 0);
+                        });
                   });
-            });
         }
 
         $supplierIds = $query->distinct()->pluck('supplier_id')->filter()->values();
@@ -130,14 +136,15 @@ class ReelStockReportController extends Controller
             $query->where('status', $request->status);
         } else {
             // Default: Only show reels currently in stock (in_stock or partially_used)
-            // or those with balance_weight > 0 if status is not explicitly "fully_used"
-            $query->where(function ($q) {
-                $q->where('balance_weight', '>', 0)
-                  ->orWhere(function ($inner) {
-                      $inner->whereNull('balance_weight')
-                            ->where('original_weight', '>', 0);
+            // Exclude reels returned to supplier (they're no longer physically in warehouse)
+            $query->where('status', '!=', 'returned_to_supplier')
+                  ->where(function ($q) {
+                      $q->where('balance_weight', '>', 0)
+                        ->orWhere(function ($inner) {
+                            $inner->whereNull('balance_weight')
+                                  ->where('original_weight', '>', 0);
+                        });
                   });
-            });
         }
 
         if ($request->filled('balance_min')) {
@@ -260,6 +267,7 @@ class ReelStockReportController extends Controller
             return response()->json([
                 'reel' => [
                     'reel_no' => $reel->reel_no,
+                    'reel_size' => $reel->reel_size,
                     'quality' => $reel->paperQuality->quality . ' (' . $reel->paperQuality->gsm_range . ')',
                     'supplier' => $reel->supplier->name,
                     'original_weight' => $reel->original_weight,
@@ -287,13 +295,15 @@ class ReelStockReportController extends Controller
         }
 
         // Only show reels currently in stock
-        $query->where(function ($q) {
-            $q->where('balance_weight', '>', 0)
-              ->orWhere(function ($inner) {
-                  $inner->whereNull('balance_weight')
-                        ->where('original_weight', '>', 0);
+        // Exclude reels returned to supplier (they're no longer physically in warehouse)
+        $query->where('status', '!=', 'returned_to_supplier')
+              ->where(function ($q) {
+                  $q->where('balance_weight', '>', 0)
+                    ->orWhere(function ($inner) {
+                        $inner->whereNull('balance_weight')
+                              ->where('original_weight', '>', 0);
+                    });
               });
-        });
 
         $reels = $query->get();
 

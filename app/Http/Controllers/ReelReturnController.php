@@ -227,6 +227,19 @@ class ReelReturnController extends Controller
 
     protected function updateReelStatus(Reel $reel): void
     {
+        // First, check if reel was returned to supplier
+        // This takes priority over balance-based status
+        $supplierReturn = $reel->returns()
+            ->where('returned_to', 'supplier')
+            ->orderBy('return_date', 'desc')
+            ->first();
+        
+        if ($supplierReturn) {
+            $reel->status = 'returned_to_supplier';
+            return;
+        }
+        
+        // If not returned to supplier, set status based on balance
         if ($reel->balance_weight <= 0) {
             $reel->status = 'fully_used';
         } elseif ($reel->balance_weight < $reel->original_weight) {

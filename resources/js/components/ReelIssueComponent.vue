@@ -58,7 +58,7 @@
               </div>
               <div class="mb-3">
                 <label>Quantity Issued (kg)</label>
-                <input v-model.number="formData.quantity_issued" @input="normalizeQuantities" type="number" step="0.01" min="0" class="form-control" required>
+                <input v-model.number="formData.quantity_issued" type="number" step="0.01" class="form-control" readonly>
               </div>
               <div class="mb-3">
                 <label>Return to Stock (kg)</label>
@@ -135,7 +135,11 @@
           </thead>
           <tbody>
             <tr v-for="i in filteredIssues" :key="i.id">
-              <td>{{ i.reel.reel_no }}</td>
+              <td>
+                <a href="#" @click.prevent="viewHistory(i.reel.reel_no)" class="text-decoration-none">
+                  {{ i.reel.reel_no }}
+                </a>
+              </td>
               <td>{{ getQuality(i.reel) }}</td>
               <td class="text-center">{{ formatReelSize(i.reel.reel_size) }}</td>
               <td class="text-center">{{ formatDate(i.issue_date) }}</td>
@@ -487,6 +491,121 @@ export default {
         return '-';
       }
       return number.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    },
+    viewHistory(reelNo) {
+      if (!reelNo) return;
+      axios.get(`/api/reports/reel-stock/${reelNo}/history`).then(response => {
+        const reel = response.data.reel;
+        const history = response.data.history || [];
+        this.openHistoryWindow(reel, history);
+      }).catch(error => {
+        console.error('Error fetching history:', error);
+        alert('Error loading reel history');
+      });
+    },
+    openHistoryWindow(reel, history) {
+      const historyWindow = window.open('', '_blank');
+      if (!historyWindow) {
+        alert('Unable to open history window. Please allow pop-ups for this site.');
+        return;
+      }
+      historyWindow.document.write(this.generateHistoryHTML(reel, history));
+      historyWindow.document.close();
+    },
+    escapeHtml(value) {
+      if (value === null || value === undefined) return '';
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    },
+    formatWeight(value) {
+      if (value === null || value === undefined) return '-';
+      const num = Number(value);
+      if (Number.isNaN(num)) return '-';
+      return num >= 0 ? `${num.toFixed(2)}` : `(${Math.abs(num).toFixed(2)})`;
+    },
+    generateHistoryHTML(reel, history) {
+      if (!reel) return '<html><body><p>No history available.</p></body></html>';
+
+      const rows = history.length
+        ? history.map(entry => `
+          <tr>
+            <td>${this.escapeHtml(this.formatDate(entry.date))}</td>
+            <td>${this.escapeHtml(entry.type)}</td>
+            <td>${this.escapeHtml(entry.details)}</td>
+            <td style="text-align: right;">${this.escapeHtml(this.formatWeight(entry.weight))}</td>
+            <td style="text-align: right;">${this.escapeHtml(this.formatWeight(entry.balance))}</td>
+          </tr>
+        `).join('')
+        : '<tr><td colspan="5" style="text-align: center;">No history found.</td></tr>';
+
+      return `
+        <html>
+          <head>
+            <title>Reel History - ${this.escapeHtml(reel.reel_no)}</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+              h1 { margin-bottom: 20px; color: #000; }
+              h2 { margin-top: 30px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th, td { border: 1px solid #ccc; padding: 10px; font-size: 14px; }
+              th { background: #f5f5f5; font-weight: bold; text-align: left; }
+              .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 30px; }
+              .summary-card { border: 1px solid #ddd; padding: 12px; border-radius: 4px; background: #fafafa; }
+              .label { font-weight: bold; color: #555; font-size: 13px; margin-bottom: 4px; }
+              .value { font-size: 1.1em; font-weight: bold; color: #111; }
+              .meta { margin-top: 6px; color: #666; font-size: 0.9em; }
+            </style>
+          </head>
+          <body>
+            <h1>Reel History</h1>
+            <div class="summary-grid">
+              <div class="summary-card">
+                <div class="label">Reel No.</div>
+                <div class="value">${this.escapeHtml(reel.reel_no)}</div>
+                <div class="meta">Supplier: ${this.escapeHtml(reel.supplier)}</div>
+              </div>
+              <div class="summary-card">
+                <div class="label">Quality</div>
+                <div class="value">${this.escapeHtml(reel.quality)}</div>
+                <div class="meta">GSM: ${this.escapeHtml(reel.gsm ?? 'N/A')}</div>
+              </div>
+              <div class="summary-card">
+                <div class="label">Reel Size</div>
+                <div class="value">${this.escapeHtml(reel.reel_size ?? 'N/A')}"</div>
+              </div>
+              <div class="summary-card">
+                <div class="label">Original Weight</div>
+                <div class="value">${this.escapeHtml(this.formatWeight(reel.original_weight))} kg</div>
+                <div class="meta">Current Balance: ${this.escapeHtml(this.formatWeight(reel.current_balance ?? 0))} kg</div>
+              </div>
+              <div class="summary-card">
+                <div class="label">Bursting Strength</div>
+                <div class="value">${this.escapeHtml(reel.bursting_strength ?? 'N/A')}</div>
+              </div>
+            </div>
+
+            <h2>Consumption History</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Details</th>
+                  <th style="text-align: right;">Weight (kg)</th>
+                  <th style="text-align: right;">Balance (kg)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `;
     },
     printTable() {
       const printWindow = window.open('', '_blank');

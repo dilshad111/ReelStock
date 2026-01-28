@@ -721,6 +721,10 @@ export default {
               <div class="row">
                 <div class="col-md-8">
                   <dl class="row reel-metadata">
+                    <dt class="col-sm-4">Reel No.</dt>
+                    <dd class="col-sm-8">${reel.reel_no}</dd>
+                    <dt class="col-sm-4">Reel Size</dt>
+                    <dd class="col-sm-8">${this.formatReelSizeValue(reel.reel_size)}</dd>
                     <dt class="col-sm-4">Quality</dt>
                     <dd class="col-sm-8">${reel.quality}</dd>
                     <dt class="col-sm-4">Supplier</dt>

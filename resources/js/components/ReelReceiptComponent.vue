@@ -1134,6 +1134,7 @@ export default {
     },
     showHistory(reelNo) {
       axios.get(`/api/reports/reel-stock/${reelNo}/history`).then(response => {
+        // HMR Trigger Comment
         this.selectedReel = response.data.reel;
         this.history = Array.isArray(response.data.history) ? response.data.history : [];
         this.openHistoryWindow();
@@ -1211,6 +1212,10 @@ export default {
                 <div class="label">Quality</div>
                 <div class="value">${this.escapeHtml(this.selectedReel.quality)}</div>
                 <div class="meta">GSM: ${this.escapeHtml(this.selectedReel.gsm ?? 'N/A')}</div>
+              </div>
+              <div class="summary-card">
+                <div class="label">Reel Size</div>
+                <div class="value">${this.escapeHtml(this.selectedReel.reel_size ?? 'N/A')}"</div>
               </div>
               <div class="summary-card">
                 <div class="label">Original Weight</div>
