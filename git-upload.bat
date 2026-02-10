@@ -8,7 +8,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "Reel Stock Reconcilation"
+git commit -m "Correction in inventory"
 
 echo.
 echo Pushing to origin main...

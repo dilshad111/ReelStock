@@ -196,34 +196,33 @@ class ReelReceiptController extends Controller
 
     public function update(Request $request, $id)
     {
-        $receipt = ReelReceipt::findOrFail($id);
-        
-        // Update receipt fields
-        $receiptFields = ['receiving_date', 'received_by', 'gsm', 'bursting_strength', 'rate_per_kg', 'qc_status', 'remarks'];
-        $receiptData = $request->only($receiptFields);
-        $receipt->update($receiptData);
+        return DB::transaction(function () use ($request, $id) {
+            $receipt = ReelReceipt::with('reel')->findOrFail($id);
+            $reel = $receipt->reel;
 
-        // Update reel fields if provided
-        $reelFields = ['paper_quality_id', 'supplier_id', 'reel_size'];
-        $reelData = $request->only($reelFields);
-        if (!empty($reelData)) {
-            $receipt->reel->update($reelData);
-            
+            // Update receipt fields
+            $receiptFields = ['receiving_date', 'received_by', 'gsm', 'bursting_strength', 'rate_per_kg', 'qc_status', 'remarks'];
+            $receiptData = $request->only($receiptFields);
+            $receipt->update($receiptData);
+
+            // Update reel fields if provided
+            $reelFields = ['paper_quality_id', 'supplier_id', 'reel_size'];
+            $reelData = $request->only($reelFields);
+            if (!empty($reelData)) {
+                $reel->update($reelData);
+            }
+
             // Update reel weight if provided
             if ($request->has('reel_weight')) {
-                $receipt->reel->update([
-                    'original_weight' => $request->reel_weight,
-                    'balance_weight' => $request->reel_weight
-                ]);
+                $reel->original_weight = (float) $request->reel_weight;
+                $reel->save();
             }
-        }
 
-        // Update reel status if qc approved
-        if ($request->qc_status === 'approved' && $receipt->reel->status !== 'in_stock') {
-            $receipt->reel->update(['status' => 'in_stock']);
-        }
+            // Always sync balance and status after any potential change
+            $reel->syncBalance();
 
-        return response()->json($receipt->load('reel.paperQuality', 'reel.supplier'));
+            return response()->json($receipt->load('reel.paperQuality', 'reel.supplier'));
+        });
     }
 
     public function destroy($id)

@@ -20,13 +20,19 @@ class DashboardController extends Controller
 
         // 1. STOCK OVERVIEW (Real-time Godown Stock)
         $currentStockReels = Reel::with(['paperQuality', 'supplier'])
+            ->where('status', '!=', 'returned_to_supplier')
             ->where(function ($query) {
                 $query->whereNull('status')
                       ->orWhere('status', '!=', 'fully_used');
             })
             ->where(function ($query) {
-                $query->whereNull('balance_weight')
-                      ->orWhere('balance_weight', '>', 0);
+                $query->where(function ($q) {
+                    $q->whereNotNull('balance_weight')
+                      ->where('balance_weight', '>', 0);
+                })->orWhere(function ($q) {
+                    $q->whereNull('balance_weight')
+                      ->where('original_weight', '>', 0);
+                });
             })
             ->get();
 
