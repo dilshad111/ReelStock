@@ -1,12 +1,12 @@
 <template>
-    <div class="container-fluid">
+    <div class="audit-wrapper">
         <div class="card shadow-sm border-0 mb-4 h-100">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-0">
                 <h5 class="mb-0 fw-bold text-primary">
                     <i class="bi bi-clock-history me-2"></i>User Activity / Audit Logs
                 </h5>
                 <div class="d-flex gap-2 flex-wrap justify-content-end align-items-center">
-                    <div style="width: 120px;">
+                    <div style="width: 110px;">
                         <label class="small text-muted d-block mb-1" style="font-size: 10px;">Event</label>
                         <select v-model="filters.event" class="form-select form-select-sm" @change="fetchAudits">
                             <option value="">All Events</option>
@@ -15,11 +15,11 @@
                             <option value="deleted">Deleted</option>
                         </select>
                     </div>
-                    <div style="width: 140px;">
+                    <div style="width: 130px;">
                         <label class="small text-muted d-block mb-1" style="font-size: 10px;">Module</label>
                         <input v-model="filters.auditable_type" type="text" class="form-control form-control-sm" placeholder="e.g. Reel..." @input="debouncedFetch">
                     </div>
-                    <div style="width: 140px;">
+                    <div style="width: 130px;">
                         <label class="small text-muted d-block mb-1" style="font-size: 10px;">User</label>
                         <input v-model="filters.user_search" type="text" class="form-control form-control-sm" placeholder="Name/Email..." @input="debouncedFetch">
                     </div>
@@ -30,72 +30,84 @@
                     </div>
                 </div>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light text-muted small text-uppercase">
-                            <tr>
-                                <th class="ps-4">Date & Time</th>
-                                <th>User</th>
-                                <th>Event</th>
-                                <th>Module</th>
-                                <th>Details</th>
-                                <th class="pe-4 text-end">Device Info</th>
-                            </tr>
-                        </thead>
-                        <tbody class="border-top-0">
-                            <tr v-if="loading">
-                                <td colspan="6" class="text-center py-5">
-                                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-                                    <span class="text-muted">Loading logs...</span>
-                                </td>
-                            </tr>
-                            <tr v-else-if="audits.length === 0">
-                                <td colspan="6" class="text-center py-5 text-muted">
-                                    <i class="bi bi-inbox fs-2 d-block mb-2"></i>
-                                    No activity logs found.
-                                </td>
-                            </tr>
-                            <tr v-for="audit in audits" :key="audit.id">
-                                <td class="ps-4 small">
-                                    <div class="fw-bold">{{ formatDate(audit.created_at) }}</div>
-                                    <div class="text-muted">{{ formatTime(audit.created_at) }}</div>
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar-sm me-2 bg-soft-primary text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 14px;">
-                                            {{ audit.user ? audit.user.name.charAt(0) : 'S' }}
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold">{{ audit.user ? audit.user.name : 'System' }}</div>
-                                            <div class="text-muted small">{{ audit.user ? audit.user.email : '' }}</div>
-                                        </div>
+            <div class="card-body p-0" style="overflow: hidden;">
+                <table class="table table-hover align-middle mb-0 audit-table">
+                    <colgroup>
+                        <col style="width: 15%;">
+                        <col style="width: 15%;">
+                        <col style="width: 10%;">
+                        <col style="width: 25%;">
+                        <col style="width: 10%;">
+                        <col style="width: 25%;">
+                    </colgroup>
+                    <thead class="bg-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-3">Date & Time</th>
+                            <th>User</th>
+                            <th>Event</th>
+                            <th>Module</th>
+                            <th>Details</th>
+                            <th class="pe-3 text-end">Device Info</th>
+                        </tr>
+                    </thead>
+                    <tbody class="border-top-0">
+                        <tr v-if="loading">
+                            <td colspan="6" class="text-center py-5">
+                                <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                                <span class="text-muted">Loading logs...</span>
+                            </td>
+                        </tr>
+                        <tr v-else-if="audits.length === 0">
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                No activity logs found.
+                            </td>
+                        </tr>
+                        <tr v-for="audit in audits" :key="audit.id">
+                            <td class="ps-3 small">
+                                <div class="fw-bold">{{ formatDate(audit.created_at) }}</div>
+                                <div class="text-muted" style="font-size: 11px;">{{ formatTime(audit.created_at) }}</div>
+                            </td>
+                            <td class="cell-truncate">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-sm me-2 bg-soft-primary text-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 26px; height: 26px; font-size: 11px;">
+                                        {{ audit.user ? audit.user.name.charAt(0) : 'S' }}
                                     </div>
-                                </td>
-                                <td>
-                                    <span :class="getEventBadgeClass(audit.event)">
-                                        {{ audit.event.toUpperCase() }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="fw-medium text-dark">{{ formatModelName(audit.auditable_type) }}</div>
-                                    <div class="text-muted small">ID: {{ audit.auditable_id }}</div>
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-link text-decoration-none p-0" @click="showDetails(audit)">
-                                        View Changes <i class="bi bi-chevron-right small"></i>
-                                    </button>
-                                </td>
-                                <td class="pe-4 text-end small text-muted">
-                                    <div>IP: {{ audit.ip_address }}</div>
-                                    <div class="text-truncate" style="max-width: 150px;" :title="audit.user_agent">
-                                        {{ audit.user_agent }}
+                                    <div class="text-truncate">
+                                        <div class="fw-bold small text-truncate">{{ audit.user ? audit.user.name : 'System' }}</div>
                                     </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span :class="getEventBadgeClass(audit.event)" style="font-size: 11px;">
+                                    {{ audit.event.toUpperCase() }}
+                                </span>
+                            </td>
+                            <td class="cell-truncate">
+                                <div class="fw-medium text-dark small text-truncate">{{ formatModelName(audit.auditable_type) }}</div>
+                                <div class="text-muted text-truncate" style="font-size: 11px;">
+                                    <template v-if="audit.reel_no">
+                                        Reel #: {{ audit.reel_no }}
+                                    </template>
+                                    <template v-else>
+                                        ID: {{ audit.auditable_id }}
+                                    </template>
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-link text-decoration-none p-0" style="font-size: 12px;" @click="showDetails(audit)">
+                                    View <i class="bi bi-chevron-right small"></i>
+                                </button>
+                            </td>
+                            <td class="pe-3 text-end small text-muted">
+                                <div class="text-truncate" style="font-size: 11px;"><i class="bi bi-globe2 me-1"></i>{{ audit.ip_address }}</div>
+                                <div class="text-truncate" style="font-size: 11px;" :title="audit.user_agent">
+                                    <i class="bi bi-laptop me-1"></i>{{ audit.parsed_user_agent || 'Unknown' }}
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
             <div class="card-footer bg-white py-3 border-0 mt-auto" v-if="pagination.last_page > 1">
                 <nav aria-label="Page navigation">
@@ -314,6 +326,13 @@ export default {
 </script>
 
 <style scoped>
+.audit-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    padding: 0;
+}
+
 .bg-soft-primary { background-color: rgba(99, 102, 241, 0.1); }
 .bg-soft-success { background-color: rgba(16, 185, 129, 0.1); }
 .bg-soft-warning { background-color: rgba(245, 158, 11, 0.1); }
@@ -322,8 +341,29 @@ export default {
 
 .avatar-sm { font-weight: 600; font-family: sans-serif; }
 
-.table > :not(caption) > * > * {
-    padding: 1rem 0.5rem;
+/* Force table to fit within container — no horizontal scroll */
+.audit-table {
+    font-size: 12.5px;
+    width: 100%;
+    table-layout: fixed;
+    max-width: 100%;
+}
+
+.audit-table > :not(caption) > * > * {
+    padding: 0.4rem 0.35rem;
+}
+
+.audit-table th,
+.audit-table td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cell-truncate {
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 [data-theme="modern"] .card {

@@ -249,16 +249,14 @@ export default {
       return `${size.toFixed(2)}”`;
     },
     getReelPrefix(reelNo) {
-      if (!reelNo || reelNo.length <= 6) {
-        return reelNo || '';
-      }
-      return reelNo.substring(0, 6);
+      if (!reelNo) return '';
+      const match = reelNo.match(/^[a-zA-Z]+/);
+      return match ? match[0] : '';
     },
     getReelSerial(reelNo) {
-      if (!reelNo || reelNo.length <= 6) {
-        return '';
-      }
-      return reelNo.substring(6);
+      if (!reelNo) return '';
+      const match = reelNo.match(/[0-9]+$/);
+      return match ? match[0] : '';
     },
     fetchQualities() {
       let url = '/api/reports/reel-stock/qualities';
@@ -637,8 +635,10 @@ export default {
 
       const rows = this.report.map(item => {
         const reelNo = item.reel_no;
-        const prefix = reelNo.substring(0, 6);
-        const number = reelNo.substring(6);
+        const prefixMatch = reelNo.match(/^[a-zA-Z]+/);
+        const prefix = prefixMatch ? prefixMatch[0] : '';
+        const numberMatch = reelNo.match(/[0-9]+$/);
+        const number = numberMatch ? numberMatch[0] : '';
         const reelDisplay = number ? `${prefix}${number}` : prefix;
         const amountCell = this.canSeeAmounts
           ? `<td style="text-align: right;">${this.formatAmount(item.amount, false)}</td>`

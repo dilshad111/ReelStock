@@ -330,6 +330,7 @@
             padding: 24px;
             padding-top: 80px;
             transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-x: hidden;
         }
 
         .sidebar-el.is-collapsed + .main-container .main-content {

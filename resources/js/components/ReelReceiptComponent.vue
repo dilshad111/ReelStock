@@ -374,8 +374,8 @@ export default {
       selectedReel: null,
       history: [],
       reelSearch: '',
-      reelPrefix: 'RL111',
-      reelPadding: 3,
+      reelPrefix: 'RL',
+      reelPadding: 6,
       reelNextNumber: 1,
       pendingNextNumber: null,
       pagination: {
@@ -499,16 +499,14 @@ export default {
       });
     },
     getReelPrefix(reelNo) {
-      if (!reelNo) {
-        return '';
-      }
-      return reelNo.length > 6 ? reelNo.substring(0, 6) : reelNo;
+      if (!reelNo) return '';
+      const match = reelNo.match(/^[a-zA-Z]+/);
+      return match ? match[0] : '';
     },
     getReelSerial(reelNo) {
-      if (!reelNo || reelNo.length <= 6) {
-        return '';
-      }
-      return reelNo.substring(6);
+      if (!reelNo) return '';
+      const match = reelNo.match(/[0-9]+$/);
+      return match ? match[0] : '';
     },
     formatReelSize(size) {
       if (size === null || size === undefined || size === '') {
@@ -1109,14 +1107,14 @@ export default {
       this.selectedReceipts = [];
     },
     generateNextReelNo() {
-      const prefix = this.reelPrefix || 'RL111';
-      const padding = Number(this.reelPadding) > 0 ? Number(this.reelPadding) : 3;
+      const prefix = this.reelPrefix || 'RL';
+      const padding = Number(this.reelPadding) > 0 ? Number(this.reelPadding) : 6;
       const nextNum = Number(this.pendingNextNumber ?? this.reelNextNumber) || 1;
       this.receipt.reel_no = prefix + nextNum.toString().padStart(padding, '0');
     },
     getCalculatedReelNo(index) {
-      const prefix = this.reelPrefix || 'RL111';
-      const padding = Number(this.reelPadding) > 0 ? Number(this.reelPadding) : 3;
+      const prefix = this.reelPrefix || 'RL';
+      const padding = Number(this.reelPadding) > 0 ? Number(this.reelPadding) : 6;
       const nextNum = (Number(this.pendingNextNumber ?? this.reelNextNumber) || 1) + index;
       return prefix + nextNum.toString().padStart(padding, '0');
     },

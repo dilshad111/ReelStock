@@ -43,7 +43,7 @@
             <div class="card-body">
               <div class="mb-3">
                 <label for="reelPrefix" class="form-label">Reel Number Prefix</label>
-                <input type="text" class="form-control" id="reelPrefix" v-model="reelPrefix" placeholder="e.g. RL2026" required>
+                <input type="text" class="form-control" id="reelPrefix" v-model="reelPrefix" placeholder="e.g. RL" required>
                 <small class="form-text text-muted">The prefix part of the reel number</small>
               </div>
               <div class="mb-3">
@@ -109,8 +109,8 @@ export default {
   },
   data() {
     return {
-      reelPrefix: 'RL111',
-      reelPadding: 3,
+      reelPrefix: 'RL',
+      reelPadding: 6,
       reelNextNumber: 1,
       companyName: '',
       companyAddress: '',
@@ -141,8 +141,8 @@ export default {
     },
     fetchSettings() {
       axios.get('/api/setup/settings').then(response => {
-        this.reelPrefix = response.data.reel_no_prefix || 'RL111';
-        this.reelPadding = parseInt(response.data.reel_padding) || 3;
+        this.reelPrefix = response.data.reel_no_prefix || 'RL';
+        this.reelPadding = parseInt(response.data.reel_padding) || 6;
         this.reelNextNumber = parseInt(response.data.reel_next_number) || 1;
         this.companyName = response.data.company_name || '';
         this.companyAddress = response.data.company_address || '';

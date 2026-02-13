@@ -49,7 +49,7 @@ class ReelReceiptController extends Controller
                 $query->limit($request->limit);
             }
 
-            $prefix = Setting::where('key', 'reel_no_prefix')->value('value') ?? 'RL111';
+            $prefix = Setting::where('key', 'reel_no_prefix')->value('value') ?? 'RL';
 
             $receipts = $query->paginate(50);
 
@@ -90,8 +90,8 @@ class ReelReceiptController extends Controller
             ]);
 
             // Fetch reel settings
-            $prefix = Setting::where('key', 'reel_no_prefix')->value('value') ?? 'RL111';
-            $padding = (int) Setting::where('key', 'reel_padding')->value('value') ?: 3;
+            $prefix = Setting::where('key', 'reel_no_prefix')->value('value') ?? 'RL';
+            $padding = (int) Setting::where('key', 'reel_padding')->value('value') ?: 6;
             $currentNextNumber = (int) Setting::where('key', 'reel_next_number')->value('value') ?: 1;
 
             $nextNumber = $currentNextNumber;
@@ -148,8 +148,8 @@ class ReelReceiptController extends Controller
         ]);
 
         $receipts = [];
-        $prefix = Setting::where('key', 'reel_no_prefix')->value('value') ?? 'RL111';
-        $padding = (int) Setting::where('key', 'reel_padding')->value('value') ?: 3;
+        $prefix = Setting::where('key', 'reel_no_prefix')->value('value') ?? 'RL';
+        $padding = (int) Setting::where('key', 'reel_padding')->value('value') ?: 6;
         $currentNextNumber = (int) Setting::where('key', 'reel_next_number')->value('value') ?: 1;
         $nextId = $currentNextNumber;
 

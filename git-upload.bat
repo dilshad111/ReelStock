@@ -8,7 +8,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "Correction in inventory"
+git commit -m "Correction for Log but not Updated"
 
 echo.
 echo Pushing to origin main...
