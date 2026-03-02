@@ -9,7 +9,6 @@ use App\Models\Reel;
 use App\Models\ReelReceipt;
 use App\Models\ReelIssue;
 use App\Models\ReelReturn;
-use App\Models\Customer;
 use App\Models\Supplier;
 use App\Models\PaperQuality;
 
@@ -61,7 +60,6 @@ class SetupController extends Controller
         ReelIssue::truncate();
         ReelReturn::truncate();
         Reel::truncate();
-        Customer::truncate();
         Supplier::truncate();
         PaperQuality::truncate();
 
@@ -73,7 +71,7 @@ class SetupController extends Controller
     public function deleteTable(Request $request)
     {
         $request->validate([
-            'table' => 'required|string|in:reel_receipts,reel_issues,reel_returns,reels,customers,suppliers,paper_qualities',
+            'table' => 'required|string|in:reel_receipts,reel_issues,reel_returns,reels,suppliers,paper_qualities',
         ]);
 
         $table = $request->table;
@@ -92,7 +90,6 @@ class SetupController extends Controller
             'reel_issues',
             'reel_returns',
             'reels',
-            'customers',
             'suppliers',
             'paper_qualities',
         ];

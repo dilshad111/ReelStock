@@ -659,15 +659,6 @@
                         <el-menu-item index="old-reels" v-if="!permissionsLoaded || canView('old-reels')">Old Reels Report</el-menu-item>
                     </el-sub-menu>
 
-                    <el-sub-menu index="cartons" v-if="!permissionsLoaded || canView('cartons')">
-                        <template #title>
-                            <i class="bi bi-box me-2 icon-cartons"></i>
-                            <span>Cartons</span>
-                        </template>
-                        <el-menu-item index="customers">Customers</el-menu-item>
-                        <el-menu-item index="sketch-generator">Sketch Gen.</el-menu-item>
-                    </el-sub-menu>
-
                     <el-sub-menu index="users" v-if="user.role.name === 'Admin' || user.email === 'superadmin@qc.com'">
                         <template #title>
                             <i class="bi bi-people me-2 icon-users"></i>
@@ -752,9 +743,6 @@
                 <reel-stock-count-report-component v-else-if="currentView === 'reel-stock-count'" :user="user"></reel-stock-count-report-component>
                 <usage-intelligence-report-component v-else-if="currentView === 'usage-intelligence'" :user="user"></usage-intelligence-report-component>
                 <old-reels-report-component v-else-if="currentView === 'old-reels'" :user="user" :can-see-amounts="canSeeAmounts('old-reels')"></old-reels-report-component>
-                <cartons-component v-else-if="currentView === 'cartons'" :user="user"></cartons-component>
-                <customer-component v-else-if="currentView === 'customers'" :user="user"></customer-component>
-                <sketch-generator-component v-else-if="currentView === 'sketch-generator'" :user="user"></sketch-generator-component>
                 <reports-component v-else-if="currentView === 'reports'" :user="user"></reports-component>
                 <user-component v-else-if="currentView === 'users'" :user="user"></user-component>
                 <user-rights-component v-else-if="currentView === 'user-rights'" :user="user"></user-rights-component>

@@ -16,7 +16,6 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MonthlyClosingReportController;
 use App\Http\Controllers\UserPermissionController;
-use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\ReelUsageReportController;
@@ -89,12 +88,6 @@ Route::middleware('auth:sanctum')->group(function () {
     // User Permissions
     Route::get('user-permissions/{userId}', [UserPermissionController::class, 'getPermissions']);
     Route::post('user-permissions/{userId}', [UserPermissionController::class, 'updatePermissions']);
-
-    // Customers
-    Route::apiResource('customers', CustomerController::class);
-
-    // Carton Sketch
-    Route::post('carton-sketch/export-pdf', [CartonSketchController::class, 'exportPdf']);
 
     // Setup (Admin only)
     Route::prefix('setup')->group(function () {

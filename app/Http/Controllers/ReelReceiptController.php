@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Setting;
 use App\Models\Reel;
 use App\Models\ReelReceipt;
+use App\Services\ReelNumberService;
 
 class ReelReceiptController extends Controller
 {
@@ -89,39 +90,31 @@ class ReelReceiptController extends Controller
                 'remarks' => 'nullable|string',
             ]);
 
-            // Fetch reel settings
-            $prefix = Setting::where('key', 'reel_no_prefix')->value('value') ?? 'RL';
-            $padding = (int) Setting::where('key', 'reel_padding')->value('value') ?: 6;
-            $currentNextNumber = (int) Setting::where('key', 'reel_next_number')->value('value') ?: 1;
+            $receipt = DB::transaction(function () use ($request) {
+                // Generate reel number with row-level lock (prevents race conditions)
+                $reelNo = ReelNumberService::generateNextNumber();
 
-            $nextNumber = $currentNextNumber;
-            $reelNo = $prefix . str_pad($nextNumber, $padding, '0', STR_PAD_LEFT);
+                $reel = Reel::create([
+                    'reel_no' => $reelNo,
+                    'paper_quality_id' => $request->paper_quality_id,
+                    'supplier_id' => $request->supplier_id,
+                    'reel_size' => $request->reel_size,
+                    'original_weight' => $request->reel_weight,
+                    'balance_weight' => $request->reel_weight,
+                    'status' => 'in_stock',
+                ]);
 
-            $reel = Reel::create([
-                'reel_no' => $reelNo,
-                'paper_quality_id' => $request->paper_quality_id,
-                'supplier_id' => $request->supplier_id,
-                'reel_size' => $request->reel_size,
-                'original_weight' => $request->reel_weight,
-                'balance_weight' => $request->reel_weight,
-                'status' => $request->qc_status === 'approved' ? 'in_stock' : 'in_stock', // adjust status based on qc
-            ]);
-
-            $receipt = ReelReceipt::create([
-                'reel_id' => $reel->id,
-                'receiving_date' => $request->receiving_date,
-                'received_by' => $request->received_by,
-                'gsm' => $request->gsm,
-                'bursting_strength' => $request->bursting_strength,
-                'rate_per_kg' => $request->rate_per_kg,
-                'qc_status' => $request->qc_status,
-                'remarks' => $request->remarks,
-            ]);
-
-            Setting::updateOrCreate(
-                ['key' => 'reel_next_number'],
-                ['value' => (string) ($nextNumber + 1)]
-            );
+                return ReelReceipt::create([
+                    'reel_id' => $reel->id,
+                    'receiving_date' => $request->receiving_date,
+                    'received_by' => $request->received_by,
+                    'gsm' => $request->gsm,
+                    'bursting_strength' => $request->bursting_strength,
+                    'rate_per_kg' => $request->rate_per_kg,
+                    'qc_status' => $request->qc_status,
+                    'remarks' => $request->remarks,
+                ]);
+            });
 
             return response()->json($receipt->load('reel.paperQuality', 'reel.supplier'), 201);
         } catch (\Exception $e) {
@@ -147,45 +140,43 @@ class ReelReceiptController extends Controller
             'reels.*.reel_weight' => 'required|numeric|min:0',
         ]);
 
-        $receipts = [];
-        $prefix = Setting::where('key', 'reel_no_prefix')->value('value') ?? 'RL';
-        $padding = (int) Setting::where('key', 'reel_padding')->value('value') ?: 6;
-        $currentNextNumber = (int) Setting::where('key', 'reel_next_number')->value('value') ?: 1;
-        $nextId = $currentNextNumber;
+        $receipts = DB::transaction(function () use ($request) {
+            // Reserve all reel numbers at once with row-level lock
+            $reelNumbers = ReelNumberService::generateNextNumbers(count($request->reels));
+            $createdReceipts = [];
 
-        foreach ($request->reels as $reelData) {
-            $reelNo = $prefix . str_pad($nextId++, $padding, '0', STR_PAD_LEFT);
+            foreach ($request->reels as $index => $reelData) {
+                $reel = Reel::create([
+                    'reel_no' => $reelNumbers[$index],
+                    'paper_quality_id' => $request->common['paper_quality_id'],
+                    'supplier_id' => $request->common['supplier_id'],
+                    'reel_size' => $reelData['reel_size'],
+                    'original_weight' => $reelData['reel_weight'],
+                    'balance_weight' => $reelData['reel_weight'],
+                    'status' => 'in_stock',
+                ]);
 
-            $reel = Reel::create([
-                'reel_no' => $reelNo,
-                'paper_quality_id' => $request->common['paper_quality_id'],
-                'supplier_id' => $request->common['supplier_id'],
-                'reel_size' => $reelData['reel_size'],
-                'original_weight' => $reelData['reel_weight'],
-                'balance_weight' => $reelData['reel_weight'],
-                'status' => $request->common['qc_status'] === 'approved' ? 'in_stock' : 'in_stock',
-            ]);
+                $createdReceipts[] = ReelReceipt::create([
+                    'reel_id' => $reel->id,
+                    'receiving_date' => $request->common['receiving_date'],
+                    'received_by' => $request->common['received_by'],
+                    'gsm' => $request->common['gsm'],
+                    'bursting_strength' => $request->common['bursting_strength'],
+                    'rate_per_kg' => $request->common['rate_per_kg'],
+                    'qc_status' => $request->common['qc_status'],
+                    'remarks' => $request->common['remarks'],
+                ]);
+            }
 
-            $receipt = ReelReceipt::create([
-                'reel_id' => $reel->id,
-                'receiving_date' => $request->common['receiving_date'],
-                'received_by' => $request->common['received_by'],
-                'gsm' => $request->common['gsm'],
-                'bursting_strength' => $request->common['bursting_strength'],
-                'rate_per_kg' => $request->common['rate_per_kg'],
-                'qc_status' => $request->common['qc_status'],
-                'remarks' => $request->common['remarks'],
-            ]);
+            return $createdReceipts;
+        });
 
-            $receipts[] = $receipt;
-        }
-
-        Setting::updateOrCreate(
-            ['key' => 'reel_next_number'],
-            ['value' => (string) $nextId]
+        return response()->json(
+            ReelReceipt::with('reel.paperQuality', 'reel.supplier')
+                ->whereIn('id', array_column($receipts, 'id'))
+                ->get(),
+            201
         );
-
-        return response()->json(ReelReceipt::with('reel.paperQuality', 'reel.supplier')->whereIn('id', array_column($receipts, 'id'))->get(), 201);
     }
 
     public function show($id)

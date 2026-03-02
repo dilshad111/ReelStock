@@ -14,9 +14,6 @@ const PERMISSION_KEY_MAP = {
     'reel-stock': 'reel_stock',
     'reel-receipt': 'reel_receipt_report',
     'monthly-closing': 'monthly_closing',
-    cartons: 'cartons',
-    customers: 'cartons',
-    'sketch-generator': 'cartons',
     'reel-stock-count': 'reel_stock',
     'usage-intelligence': 'monthly_consumption',
     reports: null,
@@ -37,8 +34,7 @@ const PERMISSION_KEYS = [
     'monthly_consumption',
     'reel_stock',
     'reel_receipt_report',
-    'monthly_closing',
-    'cartons'
+    'monthly_closing'
 ];
 
 const VIEW_ORDER = [
@@ -54,9 +50,6 @@ const VIEW_ORDER = [
     'monthly-closing',
     'reel-stock-count',
     'usage-intelligence',
-    'cartons',
-    'customers',
-    'sketch-generator',
     'reports',
     'users',
     'user-rights',
@@ -79,9 +72,6 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     'reel-stock': 'reel-stock',
     'reel-receipt': 'reel-receipt',
     'monthly-closing': 'monthly-closing',
-    cartons: 'cartons',
-    customers: 'customers',
-    'sketch-generator': 'sketch-generator',
     'reel-stock-count': 'reel-stock-count',
     'usage-intelligence': 'usage-intelligence',
     reports: 'reports',
@@ -469,9 +459,6 @@ import MonthlyClosingReportComponent from './components/MonthlyClosingReportComp
 import UserComponent from './components/UserComponent.vue';
 import UserRightsComponent from './components/UserRightsComponent.vue';
 import AuditLogComponent from './components/AuditLogComponent.vue';
-import CartonsComponent from './components/CartonsComponent.vue';
-import CustomerComponent from './components/CustomerComponent.vue';
-import SketchGeneratorComponent from './components/SketchGeneratorComponent.vue';
 import ReportsComponent from './components/ReportsComponent.vue';
 import ThemeSelectorComponent from './components/ThemeSelectorComponent.vue';
 import ScrollToTopComponent from './components/ScrollToTopComponent.vue';
@@ -499,9 +486,6 @@ app.component('monthly-closing-report-component', MonthlyClosingReportComponent)
 app.component('user-component', UserComponent);
 app.component('user-rights-component', UserRightsComponent);
 app.component('audit-log-component', AuditLogComponent);
-app.component('cartons-component', CartonsComponent);
-app.component('customer-component', CustomerComponent);
-app.component('sketch-generator-component', SketchGeneratorComponent);
 app.component('login-component', LoginComponent);
 app.component('reports-component', ReportsComponent);
 app.component('theme-selector-component', ThemeSelectorComponent);

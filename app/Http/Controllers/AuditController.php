@@ -42,15 +42,16 @@ class AuditController extends Controller
 
         // Optional filtering by auditable_type
         if ($request->filled('auditable_type')) {
-            $query->where('auditable_type', 'like', '%' . $request->auditable_type . '%');
+            $searchTerm = str_replace(' ', '', $request->auditable_type);
+            $query->where('auditable_type', 'like', '%' . $searchTerm . '%');
         }
 
         // Optional filtering by user (search by name or email)
         if ($request->filled('user_search')) {
-            $search = $request->user_search;
+            $search = strtolower($request->user_search);
             $query->whereHas('user', function ($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                  ->orWhere('email', 'like', '%' . $search . '%');
+                $q->whereRaw('LOWER(name) like ?', ['%' . $search . '%'])
+                  ->orWhereRaw('LOWER(email) like ?', ['%' . $search . '%']);
             });
         }
 
@@ -168,6 +169,12 @@ class AuditController extends Controller
             $os = 'iOS';
         } elseif (preg_match('/Linux/i', $ua)) {
             $os = 'Linux';
+        }
+
+        // Add Device/PC Name guess if possible (basic heuristic)
+        $pcName = 'Unknown Device';
+        if (preg_match('/Windows NT \d+\.\d+; (Win64; x64|WOW64)(?:; Trident\/\d+\.\d+)?(?:; rv:\d+\.\d+)?\) (?:like Gecko)?(?:.*)/i', $ua)) {
+           // Not much info for PC name in UA, OS replaces it.
         }
 
         return $browser . ' / ' . $os;

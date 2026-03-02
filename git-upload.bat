@@ -8,7 +8,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "Correction for Log but not Updated"
+git commit -m "Reel Number Issue resolved multi user reel receipt & Customer, Carton Sketch Form Removed"
 
 echo.
 echo Pushing to origin main...
