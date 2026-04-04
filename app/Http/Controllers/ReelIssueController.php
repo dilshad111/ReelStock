@@ -205,30 +205,22 @@ class ReelIssueController extends Controller
     public function destroy($id)
     {
         return DB::transaction(function () use ($id) {
-            $issue = ReelIssue::with(['reel'])->lockForUpdate()->findOrFail($id);
-            $reel = $issue->reel;
+            $issue = ReelIssue::lockForUpdate()->findOrFail($id);
+            $reel = Reel::lockForUpdate()->findOrFail($issue->reel_id);
 
-            if (!$reel) {
-                return response()->json(['error' => 'Associated reel not found'], 404);
-            }
-
-            $oldNet = (float) $issue->net_consumed_weight;
-            $newBalance = min($reel->balance_weight + $oldNet, $reel->original_weight);
-            $reel->balance_weight = $newBalance;
-            $this->refreshReelStatus($reel);
-            
-            // Validate and sync balance with transaction history
-            $this->validateAndSyncBalance($reel);
-            $reel->save();
-
+            // Delete associated auto-return if it exists
             if ($issue->auto_return_id) {
-                $autoReturn = ReelReturn::lockForUpdate()->find($issue->auto_return_id);
-                if ($autoReturn) {
-                    $autoReturn->delete();
-                }
+                ReelReturn::where('id', $issue->auto_return_id)->delete();
             }
 
+            // Delete the issue itself before synchronizing balance
+            // This ensures logic in validateAndSyncBalance considers the issue gone
             $issue->delete();
+
+            // Refresh reel balance from the transaction history
+            $this->validateAndSyncBalance($reel);
+            $this->refreshReelStatus($reel);
+            $reel->save();
 
             return response()->json(['message' => 'Issue deleted successfully.']);
         });
@@ -265,7 +257,8 @@ class ReelIssueController extends Controller
     {
         // Calculate balance from transaction history
         $totalConsumed = $reel->issues()->sum('net_consumed_weight');
-        $calculatedBalance = $reel->original_weight - $totalConsumed;
+        $totalReturnedToSupplier = $reel->returns()->where('returned_to', 'supplier')->sum('remaining_weight');
+        $calculatedBalance = max($reel->original_weight - $totalConsumed - $totalReturnedToSupplier, 0);
         
         // Allow small floating-point differences (0.01 kg tolerance)
         $difference = abs($calculatedBalance - $reel->balance_weight);

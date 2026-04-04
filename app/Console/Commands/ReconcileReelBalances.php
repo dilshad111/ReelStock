@@ -155,21 +155,28 @@ class ReconcileReelBalances extends Command
     protected function findDiscrepancies()
     {
         return DB::table('reels as r')
-            ->leftJoin('reel_issues as ri', 'r.id', '=', 'ri.reel_id')
             ->select([
                 'r.id',
                 'r.reel_no',
                 'r.original_weight',
                 'r.balance_weight as current_balance',
                 'r.status as current_status',
-                DB::raw('(r.original_weight - COALESCE(SUM(ri.net_consumed_weight), 0)) as correct_balance'),
+                DB::raw("(r.original_weight - 
+                    COALESCE((SELECT SUM(net_consumed_weight) FROM reel_issues WHERE reel_id = r.id), 0) - 
+                    COALESCE((SELECT SUM(remaining_weight) FROM reel_returns WHERE reel_id = r.id AND returned_to = 'supplier'), 0)
+                ) as correct_balance"),
                 DB::raw("CASE 
-                    WHEN (r.original_weight - COALESCE(SUM(ri.net_consumed_weight), 0)) <= 0 THEN 'fully_used'
-                    WHEN (r.original_weight - COALESCE(SUM(ri.net_consumed_weight), 0)) < r.original_weight THEN 'partially_used'
+                    WHEN (r.original_weight - 
+                        COALESCE((SELECT SUM(net_consumed_weight) FROM reel_issues WHERE reel_id = r.id), 0) - 
+                        COALESCE((SELECT SUM(remaining_weight) FROM reel_returns WHERE reel_id = r.id AND returned_to = 'supplier'), 0)
+                    ) <= 0 THEN 'fully_used'
+                    WHEN (r.original_weight - 
+                        COALESCE((SELECT SUM(net_consumed_weight) FROM reel_issues WHERE reel_id = r.id), 0) - 
+                        COALESCE((SELECT SUM(remaining_weight) FROM reel_returns WHERE reel_id = r.id AND returned_to = 'supplier'), 0)
+                    ) < r.original_weight THEN 'partially_used'
                     ELSE 'in_stock'
                 END as correct_status"),
             ])
-            ->groupBy('r.id', 'r.reel_no', 'r.original_weight', 'r.balance_weight', 'r.status')
             ->havingRaw('ABS(r.balance_weight - correct_balance) > 0.01 OR r.status != correct_status')
             ->get()
             ->map(function ($item) {

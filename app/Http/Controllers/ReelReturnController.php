@@ -201,25 +201,20 @@ class ReelReturnController extends Controller
     public function destroy($id)
     {
         return DB::transaction(function () use ($id) {
-            $return = ReelReturn::with('reel')->lockForUpdate()->findOrFail($id);
+            $return = ReelReturn::lockForUpdate()->findOrFail($id);
+            $reel = Reel::lockForUpdate()->findOrFail($return->reel_id);
 
             if ($return->returned_to !== 'supplier') {
                 return response()->json(['error' => 'Only supplier returns can be deleted.'], 400);
             }
 
-            $reel = $return->reel;
-            if (!$reel) {
-                return response()->json(['error' => 'Associated reel not found.'], 404);
-            }
-
-            $reel->balance_weight = min($reel->balance_weight + (float) $return->remaining_weight, $reel->original_weight);
-            $this->updateReelStatus($reel);
-            
-            // Validate and sync balance with transaction history
-            $this->validateAndSyncBalance($reel);
-            $reel->save();
-
+            // Delete the return first so it's not included in the recalculation
             $return->delete();
+
+            // Synchronize balance from transaction history
+            $this->validateAndSyncBalance($reel);
+            $this->updateReelStatus($reel);
+            $reel->save();
 
             return response()->json(['message' => 'Return deleted successfully.']);
         });
@@ -352,7 +347,8 @@ class ReelReturnController extends Controller
     {
         // Calculate balance from transaction history
         $totalConsumed = $reel->issues()->sum('net_consumed_weight');
-        $calculatedBalance = $reel->original_weight - $totalConsumed;
+        $totalReturnedToSupplier = $reel->returns()->where('returned_to', 'supplier')->sum('remaining_weight');
+        $calculatedBalance = max($reel->original_weight - $totalConsumed - $totalReturnedToSupplier, 0);
         
         // Allow small floating-point differences (0.01 kg tolerance)
         $difference = abs($calculatedBalance - $reel->balance_weight);

@@ -61,6 +61,7 @@ export default {
       permissions: {},
       menus: [
         { key: 'dashboard', name: 'Dashboard', hasAmounts: true },
+        { key: 'management_dashboard', name: 'Management Dashboard', hasAmounts: true },
         { key: 'supplier', name: 'Supplier Management', hasAmounts: false },
         { key: 'reel_receipt', name: 'Paper Reel Receipt', hasAmounts: true },
         { key: 'reel_issue', name: 'Reel Issue and Return', hasAmounts: true },

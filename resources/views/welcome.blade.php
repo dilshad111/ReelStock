@@ -730,7 +730,7 @@
 
                 <!-- Main Content Area -->
                 <main class="main-content">
-                <dashboard-component v-if="currentView === 'dashboard'" :user="user" :can-view-dashboard="canView('dashboard')" :can-see-amounts="canSeeAmounts('dashboard')"></dashboard-component>
+                <dashboard-component v-if="currentView === 'dashboard'" :user="user" :can-view-dashboard="canView('dashboard')" :can-see-amounts="canSeeAmounts('dashboard')" :can-view-management="canView('management-dashboard')"></dashboard-component>
                 <supplier-component v-else-if="currentView === 'suppliers'" :user="user"></supplier-component>
                 <paper-quality-component v-else-if="currentView === 'qualities'" :user="user"></paper-quality-component>
                 <reel-receipt-component v-else-if="currentView === 'receipts'" :user="user"></reel-receipt-component>

@@ -52,7 +52,8 @@ class Reel extends Model implements Auditable
     {
         // 1. Recalculate Balance
         $totalConsumed = (float) $this->issues()->sum('net_consumed_weight');
-        $this->balance_weight = max($this->original_weight - $totalConsumed, 0);
+        $totalReturnedToSupplier = (float) $this->returns()->where('returned_to', 'supplier')->sum('remaining_weight');
+        $this->balance_weight = max($this->original_weight - $totalConsumed - $totalReturnedToSupplier, 0);
 
         // 2. Update Status
         $supplierReturn = $this->returns()

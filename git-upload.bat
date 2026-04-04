@@ -8,7 +8,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "Reel Number Issue resolved multi user reel receipt & Customer, Carton Sketch Form Removed"
+git commit -m "Management Dashboard Tab Added"
 
 echo.
 echo Pushing to origin main...

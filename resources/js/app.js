@@ -16,6 +16,7 @@ const PERMISSION_KEY_MAP = {
     'monthly-closing': 'monthly_closing',
     'reel-stock-count': 'reel_stock',
     'usage-intelligence': 'monthly_consumption',
+    'management-dashboard': 'management_dashboard',
     reports: null,
     users: null,
     'user-rights': null,
@@ -34,7 +35,8 @@ const PERMISSION_KEYS = [
     'monthly_consumption',
     'reel_stock',
     'reel_receipt_report',
-    'monthly_closing'
+    'monthly_closing',
+    'management_dashboard'
 ];
 
 const VIEW_ORDER = [
