@@ -22,6 +22,12 @@ use App\Http\Controllers\ReelUsageReportController;
 use App\Http\Controllers\OldReelsReportController;
 use App\Http\Controllers\StockAlertController;
 use App\Http\Controllers\ReconciliationController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\TransporterController;
+use App\Http\Controllers\VehicleController;
+use App\Http\Controllers\CartageRateController;
+use App\Http\Controllers\CartageBillController;
+use App\Http\Controllers\CartageReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -113,4 +119,26 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('reconciliation/history', [ReconciliationController::class, 'getReconciliationHistory']);
     Route::get('reconciliation/discrepancies', [ReconciliationController::class, 'getDiscrepancies']);
     Route::post('reconciliation/reel/{id}', [ReconciliationController::class, 'reconcileSpecificReel']);
+
+    // Transport Module
+    Route::apiResource('customers', CustomerController::class);
+    Route::post('customers/{customerId}/addresses', [CustomerController::class, 'storeAddress']);
+    Route::put('customers/addresses/{addressId}', [CustomerController::class, 'updateAddress']);
+    Route::delete('customers/addresses/{addressId}', [CustomerController::class, 'destroyAddress']);
+
+    Route::apiResource('transporters', TransporterController::class);
+    Route::apiResource('vehicles', VehicleController::class);
+
+    Route::get('cartage-rates', [CartageRateController::class, 'index']);
+    Route::post('cartage-rates', [CartageRateController::class, 'store']);
+    Route::get('cartage-rates/fetch', [CartageRateController::class, 'getRate']);
+    Route::delete('cartage-rates/{id}', [CartageRateController::class, 'destroy']);
+
+    Route::get('reports/cartage', [CartageReportController::class, 'index']);
+    Route::get('reports/cartage/filters', [CartageReportController::class, 'getFilters']);
+
+    Route::get('cartage-bills/pending-count', [CartageBillController::class, 'getPendingCount']);
+    Route::get('cartage-bills/next-id', [CartageBillController::class, 'getNextId']);
+    Route::post('cartage-bills/{id}/approve', [CartageBillController::class, 'approve']);
+    Route::apiResource('cartage-bills', CartageBillController::class);
 });

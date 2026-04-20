@@ -213,6 +213,43 @@
             --border-color: #ffcc02;
         }
 
+        /* Global Print Fixes */
+        @media print {
+            aside, 
+            header, 
+            footer,
+            .sidebar-fixed, 
+            .top-navbar-fixed, 
+            .footer-sidebar, 
+            .no-print, 
+            .el-button,
+            .notification-bell-btn,
+            .menu-toggle-btn,
+            .theme-selector,
+            .scroll-to-top,
+            .el-dropdown,
+            .el-menu,
+            button {
+                display: none !important;
+                visibility: hidden !important;
+            }
+            .main-container, .main-content, .app-container {
+                margin: 0 !important;
+                padding: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                display: block !important;
+            }
+            body {
+                background: #fff !important;
+                color: #000 !important;
+            }
+            @page {
+                size: A4 portrait;
+                margin: 10mm;
+            }
+        }
+
         /* Red Theme */
         [data-theme="red"] {
             --primary-color: #dc3545;
@@ -324,16 +361,23 @@
             width: 64px;
         }
 
-        .main-content {
+        .main-container {
             flex-grow: 1;
             margin-left: 260px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .main-content {
+            flex: 1 0 auto;
             padding: 24px;
             padding-top: 80px;
-            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             overflow-x: hidden;
         }
 
-        .sidebar-el.is-collapsed + .main-container .main-content {
+        .sidebar-el.is-collapsed + .main-container {
             margin-left: 64px;
         }
 
@@ -391,6 +435,7 @@
         .icon-cartons { color: #ff6b6b !important; }
         .icon-users { color: #20c997 !important; }
         .icon-setup { color: #868e96 !important; }
+        .icon-transport { color: #fcc419 !important; }
 
         .navbar-brand-el {
             font-size: 1.1rem;
@@ -594,6 +639,26 @@
         .animate__infinite {
             animation-iteration-count: infinite;
         }
+
+        /* Footer Styles */
+        .footer-sidebar {
+            background: #000000 !important;
+            color: #ffffff !important;
+            padding: 12px 0;
+            font-family: 'Outfit', sans-serif !important;
+            letter-spacing: 0.8px;
+            border-top: 2px solid #1a1a1a;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .footer-sidebar p {
+            color: #ffffff !important;
+            font-weight: 400 !important;
+            font-size: 0.85rem;
+            margin: 0;
+            opacity: 0.9;
+        }
     </style>
     @vite(['resources/js/app.js'])
 </head>
@@ -659,6 +724,20 @@
                         <el-menu-item index="old-reels" v-if="!permissionsLoaded || canView('old-reels')">Old Reels Report</el-menu-item>
                     </el-sub-menu>
 
+                    <el-sub-menu index="transport" v-if="!permissionsLoaded || canView('customers') || canView('transporters') || canView('vehicles') || canView('cartage-rates') || canView('cartage')">
+                        <template #title>
+                            <i class="bi bi-truck-flatbed me-2 icon-transport"></i>
+                            <span>Transport</span>
+                        </template>
+                        <el-menu-item index="customers" v-if="!permissionsLoaded || canView('customers')">Customers</el-menu-item>
+                        <el-menu-item index="transporters" v-if="!permissionsLoaded || canView('transporters')">Transporters</el-menu-item>
+                        <el-menu-item index="vehicles" v-if="!permissionsLoaded || canView('vehicles')">Vehicles</el-menu-item>
+                        <el-menu-item index="cartage-rates" v-if="!permissionsLoaded || canView('cartage-rates')">Cartage Rates</el-menu-item>
+                        <el-menu-item index="cartage" v-if="!permissionsLoaded || canView('cartage')">Cartage Billing</el-menu-item>
+                        <el-menu-item index="cartage-list" v-if="!permissionsLoaded || canView('cartage')">Cartage Bill List</el-menu-item>
+                        <el-menu-item index="cartage-report" v-if="!permissionsLoaded || canView('cartage')">Cartage Report</el-menu-item>
+                    </el-sub-menu>
+
                     <el-sub-menu index="users" v-if="user.role.name === 'Admin' || user.email === 'superadmin@qc.com'">
                         <template #title>
                             <i class="bi bi-people me-2 icon-users"></i>
@@ -721,6 +800,12 @@
                                 <i class="bi" :class="triggeredCount > 0 ? 'bi-bell-fill text-danger animate__animated animate__swing animate__infinite' : 'bi-bell'"></i>
                             </el-button>
                         </el-badge>
+
+                        <el-badge :value="pendingCartageCount" class="item" :hidden="pendingCartageCount === 0" type="warning">
+                            <el-button circle @click="setView('cartage-list')" class="notification-bell-btn">
+                                <i class="bi" :class="pendingCartageCount > 0 ? 'bi-shield-check text-warning animate__animated animate__pulse animate__infinite' : 'bi-shield-check'"></i>
+                            </el-button>
+                        </el-badge>
                         <el-button circle @click="setView('reconciliation')" title="Stock Reconciliation">
                             <i class="bi bi-arrow-repeat"></i>
                         </el-button>
@@ -751,6 +836,13 @@
                 <profile-component v-else-if="currentView === 'profile'" :user="user"></profile-component>
                 <stock-alert-component v-else-if="currentView === 'stock-alerts'" :user="user" @update-triggered-count="triggeredCount = $event"></stock-alert-component>
                 <reconciliation-component v-else-if="currentView === 'reconciliation'" :user="user"></reconciliation-component>
+                <customer-component v-else-if="currentView === 'customers'" :user="user"></customer-component>
+                <transporter-component v-else-if="currentView === 'transporters'" :user="user"></transporter-component>
+                <vehicle-component v-else-if="currentView === 'vehicles'" :user="user"></vehicle-component>
+                <cartage-rate-component v-else-if="currentView === 'cartage-rates'" :user="user"></cartage-rate-component>
+                <cartage-billing-component v-else-if="currentView === 'cartage'" :user="user" @update-pending-count="fetchPendingCartageCount"></cartage-billing-component>
+                <cartage-billing-component v-else-if="currentView === 'cartage-list'" :user="user" :initial-history="true" @update-pending-count="fetchPendingCartageCount"></cartage-billing-component>
+                <cartage-report-component v-else-if="currentView === 'cartage-report'" :user="user"></cartage-report-component>
                 <best-ui-showcase-component v-else-if="currentView === 'best-ui'"></best-ui-showcase-component>
                 <!-- Add other components here -->
                 <div v-else>
@@ -760,8 +852,11 @@
                 </div>
                 </main>
 
-                <footer class="footer-sidebar text-center py-3 mt-auto">
-                    <p class="mb-0 small text-muted">Developed by DILSHAD KB &copy; 2026 SACHAAN TECHSOL. | Contact: 0300-2566358</p>
+                <footer class="footer-sidebar">
+                    <div class="d-flex justify-content-between px-4">
+                        <span>Software Developed by SACHAAN TECHSOL &copy; 2026</span>
+                        <span>Contact / WhatsApp: 03002566358</span>
+                    </div>
                 </footer>
             </div>
         </div>

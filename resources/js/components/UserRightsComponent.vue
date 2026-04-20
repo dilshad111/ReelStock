@@ -54,23 +54,33 @@ import axios from 'axios';
 
 export default {
   data() {
+    const menus = [
+      { key: 'dashboard', name: 'Dashboard', hasAmounts: true },
+      { key: 'management_dashboard', name: 'Management Dashboard', hasAmounts: true },
+      { key: 'supplier', name: 'Supplier Management', hasAmounts: false },
+      { key: 'reel_receipt', name: 'Paper Reel Receipt', hasAmounts: true },
+      { key: 'reel_issue', name: 'Reel Issue and Return', hasAmounts: true },
+      { key: 'monthly_consumption', name: 'Monthly Consumption Report', hasAmounts: true },
+      { key: 'reel_stock', name: 'Reel Stock Report', hasAmounts: true },
+      { key: 'reel_receipt_report', name: 'Reel Received Report', hasAmounts: true },
+      { key: 'monthly_closing', name: 'Monthly Closing Stock', hasAmounts: true },
+      { key: 'customer', name: 'Customer Management', hasAmounts: false },
+      { key: 'transporter', name: 'Transporter Management', hasAmounts: false },
+      { key: 'vehicle', name: 'Vehicle Management', hasAmounts: false },
+      { key: 'cartage_rate', name: 'Cartage Rate Setup', hasAmounts: true },
+      { key: 'cartage_billing', name: 'Cartage Billing', hasAmounts: true },
+      { key: 'approve_cartage', name: 'Cartage Bill Approval', hasAmounts: true }
+    ];
+    const permissions = {};
+    menus.forEach(m => {
+      permissions[m.key] = { can_view: false, can_edit: false, can_see_amounts: false };
+    });
     return {
       users: [],
       selectedUserId: '',
       selectedUser: null,
-      permissions: {},
-      menus: [
-        { key: 'dashboard', name: 'Dashboard', hasAmounts: true },
-        { key: 'management_dashboard', name: 'Management Dashboard', hasAmounts: true },
-        { key: 'supplier', name: 'Supplier Management', hasAmounts: false },
-        { key: 'reel_receipt', name: 'Paper Reel Receipt', hasAmounts: true },
-        { key: 'reel_issue', name: 'Reel Issue and Return', hasAmounts: true },
-        { key: 'monthly_consumption', name: 'Monthly Consumption Report', hasAmounts: true },
-        { key: 'reel_stock', name: 'Reel Stock Report', hasAmounts: true },
-        { key: 'reel_receipt_report', name: 'Reel Received Report', hasAmounts: true },
-        { key: 'monthly_closing', name: 'Monthly Closing Stock', hasAmounts: true },
-        { key: 'cartons', name: 'Cartons', hasAmounts: false }
-      ]
+      permissions,
+      menus
     };
   },
   mounted() {

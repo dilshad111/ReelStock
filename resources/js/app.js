@@ -24,7 +24,14 @@ const PERMISSION_KEY_MAP = {
     'old-reels': 'reel_stock',
     'best-ui': null,
     'stock-alerts': 'reel_stock',
-    'reconciliation': 'reel_stock'
+    'reconciliation': 'reel_stock',
+    'customers': 'customer',
+    'transporters': 'transporter',
+    'vehicles': 'vehicle',
+    'cartage-rates': 'cartage_rate',
+    'cartage': 'cartage_billing',
+    'cartage-list': 'cartage_billing',
+    'cartage-report': 'cartage_billing'
 };
 
 const PERMISSION_KEYS = [
@@ -36,7 +43,13 @@ const PERMISSION_KEYS = [
     'reel_stock',
     'reel_receipt_report',
     'monthly_closing',
-    'management_dashboard'
+    'management_dashboard',
+    'customer',
+    'transporter',
+    'vehicle',
+    'cartage_rate',
+    'cartage_billing',
+    'approve_cartage'
 ];
 
 const VIEW_ORDER = [
@@ -60,6 +73,13 @@ const VIEW_ORDER = [
     'old-reels',
     'stock-alerts',
     'reconciliation',
+    'customers',
+    'transporters',
+    'vehicles',
+    'cartage-rates',
+    'cartage',
+    'cartage-list',
+    'cartage-report',
     'profile'
 ];
 
@@ -80,11 +100,18 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     users: 'users',
     'user-rights': 'user-rights',
     'audit-log': 'audit-log',
+    'cartage-report': 'cartage-report',
     'best-ui': 'best-ui',
     setup: 'setup',
     'old-reels': 'old-reels',
     'stock-alerts': 'stock-alerts',
     'reconciliation': 'reconciliation',
+    'customers': 'customers',
+    'transporters': 'transporters',
+    'vehicles': 'vehicles',
+    'cartage-rates': 'cartage-rates',
+    'cartage': 'cartage',
+    'cartage-list': 'cartage-list',
     profile: 'profile'
 });
 
@@ -200,7 +227,8 @@ const app = createApp({
             idleTimeout: 3600000, // 1 hour in milliseconds
             isSidebarCollapsed: false,
             currentTime: new Date().toLocaleString(),
-            triggeredCount: 0
+            triggeredCount: 0,
+            pendingCartageCount: 0
         };
 
     },
@@ -232,11 +260,15 @@ const app = createApp({
 
         if (this.user) {
             this.fetchTriggeredCount();
+            this.fetchPendingCartageCount();
         }
 
         // Periodic check for stock alerts (every 2 minutes)
         setInterval(() => {
-            if (this.user) this.fetchTriggeredCount();
+            if (this.user) {
+                this.fetchTriggeredCount();
+                this.fetchPendingCartageCount();
+            }
         }, 120000);
 
         // Live time updater
@@ -316,6 +348,7 @@ const app = createApp({
         fetchPermissions() {
             if (!this.user || this.user.role?.name === 'Admin' || this.user.email === 'superadmin@qc.com') {
                 this.permissions = createFullPermissions();
+                this.user.permissions = this.permissions;
                 this.permissionsLoaded = true;
                 if (!this.applyInitialRouteView({ replace: true })) {
                     this.setView(this.getFirstPermittedView(), { replace: true });
@@ -333,6 +366,7 @@ const app = createApp({
                         };
                     }
                 });
+                this.user.permissions = this.permissions;
                 this.permissionsLoaded = true;
                 if (!this.applyInitialRouteView({ replace: true })) {
                     this.setView(this.getFirstPermittedView(), { replace: true });
@@ -442,6 +476,14 @@ const app = createApp({
             }).catch(error => {
                 console.error('Error fetching triggered alerts:', error);
             });
+        },
+        fetchPendingCartageCount() {
+            if (!this.user) return;
+            axios.get('/api/cartage-bills/pending-count').then(response => {
+                this.pendingCartageCount = response.data.count;
+            }).catch(error => {
+                console.error('Error fetching pending cartage count:', error);
+            });
         }
     }
 
@@ -474,6 +516,12 @@ import UsageIntelligenceReportComponent from './components/UsageIntelligenceRepo
 import OldReelsReportComponent from './components/OldReelsReportComponent.vue';
 import StockAlertComponent from './components/StockAlertComponent.vue';
 import ReconciliationComponent from './components/ReconciliationComponent.vue';
+import CustomerComponent from './components/CustomerComponent.vue';
+import TransporterComponent from './components/TransporterComponent.vue';
+import VehicleComponent from './components/VehicleComponent.vue';
+import CartageRateComponent from './components/CartageRateComponent.vue';
+import CartageBillingComponent from './components/CartageBillingComponent.vue';
+import CartageReportComponent from './components/CartageReportComponent.vue';
 
 app.component('supplier-component', SupplierComponent);
 app.component('paper-quality-component', PaperQualityComponent);
@@ -500,6 +548,12 @@ app.component('profile-component', ProfileComponent);
 app.component('old-reels-report-component', OldReelsReportComponent);
 app.component('stock-alert-component', StockAlertComponent);
 app.component('reconciliation-component', ReconciliationComponent);
+app.component('customer-component', CustomerComponent);
+app.component('transporter-component', TransporterComponent);
+app.component('vehicle-component', VehicleComponent);
+app.component('cartage-rate-component', CartageRateComponent);
+app.component('cartage-billing-component', CartageBillingComponent);
+app.component('cartage-report-component', CartageReportComponent);
 
 /**
  * The following block of code may be used to automatically register your
