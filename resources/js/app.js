@@ -6,8 +6,8 @@ axios.defaults.baseURL = 'http://192.168.10.47:8000';
 const PERMISSION_KEY_MAP = {
     dashboard: 'dashboard',
     suppliers: 'supplier',
-    qualities: null,
     receipts: 'reel_receipt',
+    qualities: 'reel_stock',
     issues: 'reel_issue',
     'return-supplier': 'reel_issue',
     'monthly-consumption': 'monthly_consumption',
@@ -31,7 +31,12 @@ const PERMISSION_KEY_MAP = {
     'cartage-rates': 'cartage_rate',
     'cartage': 'cartage_billing',
     'cartage-list': 'cartage_billing',
-    'cartage-report': 'cartage_billing'
+    'cartage-report': 'cartage_billing',
+    'setup': 'setup',
+    'users': 'users',
+    'user-rights': 'users',
+    'audit-log': 'audit_log',
+    'transport-dashboard': 'transport_dashboard'
 };
 
 const PERMISSION_KEYS = [
@@ -49,11 +54,17 @@ const PERMISSION_KEYS = [
     'vehicle',
     'cartage_rate',
     'cartage_billing',
-    'approve_cartage'
+    'approve_cartage',
+    'setup',
+    'users',
+    'audit_log',
+    'transport_dashboard'
 ];
 
 const VIEW_ORDER = [
     'dashboard',
+    'transport-dashboard',
+    'management-dashboard',
     'suppliers',
     'qualities',
     'receipts',
@@ -85,6 +96,8 @@ const VIEW_ORDER = [
 
 const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     dashboard: 'dashboard',
+    'transport-dashboard': 'transport-dashboard',
+    'management-dashboard': 'management-dashboard',
     suppliers: 'suppliers',
     qualities: 'qualities',
     receipts: 'receipts',
@@ -523,9 +536,12 @@ import CartageRateComponent from './components/CartageRateComponent.vue';
 import CartageBillingComponent from './components/CartageBillingComponent.vue';
 import CartageReportComponent from './components/CartageReportComponent.vue';
 
+import TransportDashboardComponent from './components/TransportDashboardComponent.vue';
+
 app.component('supplier-component', SupplierComponent);
 app.component('paper-quality-component', PaperQualityComponent);
 app.component('dashboard-component', DashboardComponent);
+app.component('transport-dashboard-component', TransportDashboardComponent);
 app.component('reel-receipt-component', ReelReceiptComponent);
 app.component('reel-issue-component', ReelIssueComponent);
 app.component('reel-return-supplier-component', ReelReturnSupplierComponent);

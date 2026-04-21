@@ -126,7 +126,24 @@
 
             <!-- History View -->
             <div v-else>
-                <el-table :data="history" style="width: 100%" v-loading="loading" class="entry-table">
+                <div class="filters-bar mb-3 p-3 bg-light rounded border d-flex justify-content-between align-items-center">
+                    <div class="d-flex gap-2 flex-grow-1">
+                        <el-input v-model="historyFilters.bill_id" placeholder="Filter by Bill #" clearable style="width: 150px">
+                            <template #prefix><i class="bi bi-search"></i></template>
+                        </el-input>
+                        <el-input v-model="historyFilters.transporter" placeholder="Transporter Name..." clearable style="width: 220px" />
+                        <el-input v-model="historyFilters.bill_to" placeholder="Bill To Entity..." clearable style="width: 220px" />
+                    </div>
+                    <div class="d-flex gap-2">
+                        <el-button type="success" @click="exportHistoryExcel" plain title="Export to Excel">
+                            <i class="bi bi-file-earmark-excel"></i>
+                        </el-button>
+                        <el-button type="info" @click="printHistory" plain title="Print List">
+                            <i class="bi bi-printer"></i>
+                        </el-button>
+                    </div>
+                </div>
+                <el-table :data="filteredHistory" style="width: 100%" v-loading="loading" class="entry-table">
                     <el-table-column prop="id" label="Bill #" width="120" sortable>
                         <template #default="scope">
                             <span class="fw-bold text-primary">{{ formatBillId(scope.row.id) }}</span>
@@ -210,15 +227,28 @@
                 </thead>
                 <tbody>
                     <tr v-for="(entry, index) in currentBill.entries" :key="entry.id" :class="{'sub-row-print': entry.parent_entry_id}">
-                        <td align="center">{{ index + 1 }}</td>
-                        <td>{{ formatDate(entry.entry_date) }}</td>
+                        <td align="center" :style="entry.parent_entry_id ? 'border-top: none;' : ''">{{ index + 1 }}</td>
+                        <td :style="entry.parent_entry_id && isSameAsParent(entry, 'entry_date') ? 'border-top: none; color: transparent;' : ''">
+                            {{ formatDate(entry.entry_date) }}
+                        </td>
                         <td>
                             <div class="fw-bold">{{ entry.customer?.name }}</div>
-                            <div class="small opacity-75">{{ entry.shipping_address?.address_name }}</div>
+                            <div class="small opacity-75">
+                                {{ entry.shipping_address?.address_name }}
+                                <span v-if="entry.is_return" class="ms-2 px-1 fw-bold" style="background: #000; color: #fff; border-radius: 2px;">
+                                    ({{ entry.remarks || 'Return Cartage' }})
+                                </span>
+                            </div>
                         </td>
-                        <td>{{ entry.vehicle_number }}</td>
-                        <td>{{ entry.dc_number }}</td>
-                        <td>{{ entry.slip_no }}</td>
+                        <td :style="entry.parent_entry_id && isSameAsParent(entry, 'vehicle_number') ? 'border-top: none; color: transparent;' : ''">
+                            {{ entry.vehicle_number }}
+                        </td>
+                        <td :style="entry.parent_entry_id && isSameAsParent(entry, 'dc_number') ? 'border-top: none; color: transparent;' : ''">
+                            {{ entry.dc_number }}
+                        </td>
+                        <td :style="entry.parent_entry_id && isSameAsParent(entry, 'slip_no') ? 'border-top: none; color: transparent;' : ''">
+                            {{ entry.slip_no }}
+                        </td>
                         <td class="text-end fw-bold">{{ entry.amount.toLocaleString() }}</td>
                     </tr>
                 </tbody>
@@ -333,6 +363,7 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue';
 import axios from 'axios';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import * as XLSX from 'xlsx';
 
 const props = defineProps({
     user: Object,
@@ -370,6 +401,22 @@ const approvalForm = reactive({
     tax_type: 'WHT on Services',
     tax_percentage: 3
 });
+
+const historyFilters = reactive({
+    bill_id: '',
+    transporter: '',
+    bill_to: ''
+});
+
+const filteredHistory = computed(() => {
+    return history.value.filter(bill => {
+        const idMatch = !historyFilters.bill_id || formatBillId(bill.id).toLowerCase().includes(historyFilters.bill_id.toLowerCase());
+        const transporterMatch = !historyFilters.transporter || bill.transporter?.name.toLowerCase().includes(historyFilters.transporter.toLowerCase());
+        const billToMatch = !historyFilters.bill_to || bill.bill_to.toLowerCase().includes(historyFilters.bill_to.toLowerCase());
+        return idMatch && transporterMatch && billToMatch;
+    });
+});
+
 let rowCounter = 0;
 
 const emit = defineEmits(['update-pending-count']);
@@ -424,6 +471,29 @@ const mainRules = {
 const grandTotal = computed(() => {
     return mainForm.value.entries.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
 });
+
+watch(() => mainForm.value.entries, (newEntries) => {
+    newEntries.forEach(row => {
+        if (!row.is_sub_row) {
+            const children = newEntries.filter(r => r.parent_temp_id === row.temp_id);
+            children.forEach(child => {
+                if (child.entry_date !== row.entry_date) child.entry_date = row.entry_date;
+                if (child.vehicle_id !== row.vehicle_id) child.vehicle_id = row.vehicle_id;
+                if (child.vehicle_number !== row.vehicle_number) child.vehicle_number = row.vehicle_number;
+                if (child.vehicle_type !== row.vehicle_type) child.vehicle_type = row.vehicle_type;
+                if (child.dc_number !== row.dc_number) child.dc_number = row.dc_number;
+                if (child.slip_no !== row.slip_no) child.slip_no = row.slip_no;
+                
+                if (child.is_return) {
+                    const expectedAmount = (Number(row.amount) || 0) * 0.5;
+                    if (child.amount !== expectedAmount) {
+                        child.amount = expectedAmount;
+                    }
+                }
+            });
+        }
+    });
+}, { deep: true });
 
 const filteredVehicles = computed(() => {
     if (!mainForm.value.transporter_id) return [];
@@ -487,7 +557,8 @@ const handleReturnChange = (row, index) => {
             vehicle_number: row.vehicle_number,
             vehicle_type: row.vehicle_type,
             dc_number: row.dc_number,
-            amount: row.amount * 0.5,
+            slip_no: row.slip_no,
+            amount: (Number(row.amount) || 0) * 0.5,
             is_return: true,
             is_second_location: false,
             remarks: 'Cartage for Return',
@@ -596,9 +667,13 @@ const saveAndPrint = async () => {
             return;
         }
 
-        const invalid = mainForm.value.entries.some(e => !e.customer_id || !e.shipping_address_id || !e.vehicle_id);
+        const invalid = mainForm.value.entries.some(e => {
+            // Second location doesn't need customer/address, others do
+            const needsCustomer = !e.is_second_location;
+            return (needsCustomer && (!e.customer_id || !e.shipping_address_id)) || !e.vehicle_id;
+        });
         if (invalid) {
-            ElMessage.warning('Please complete all row fields.');
+            ElMessage.warning('Please complete all row fields (Customer, Address, and Vehicle).');
             return;
         }
 
@@ -653,10 +728,14 @@ const editBill = (bill) => {
     editId.value = bill.id;
     viewHistory.value = false;
     
-    const entriesWithTemp = bill.entries.map(e => ({
-        ...e,
-        temp_id: 'row_' + Date.now() + '_' + (rowCounter++)
-    }));
+    const entriesWithTemp = bill.entries.map(e => {
+        const vehicle = vehicles.value.find(v => v.vehicle_number === e.vehicle_number);
+        return {
+            ...e,
+            temp_id: 'row_' + Date.now() + '_' + (rowCounter++),
+            vehicle_id: vehicle ? vehicle.id : null
+        };
+    });
 
     entriesWithTemp.forEach(e => {
         if (e.parent_entry_id) {
@@ -763,6 +842,27 @@ const formatDate = (dateString) => {
     return `${d}/${m}/${y}`;
 };
 
+const isSameAsParent = (entry, field) => {
+    if (!entry.parent_entry_id && !entry.parent_temp_id) return false;
+    
+    const entries = currentBill.value ? currentBill.value.entries : mainForm.value.entries;
+    let parent;
+    
+    if (entry.parent_entry_id) {
+        parent = entries.find(p => p.id === entry.parent_entry_id);
+    } else if (entry.parent_temp_id) {
+        parent = entries.find(p => p.temp_id === entry.parent_temp_id);
+    }
+    
+    if (!parent) return false;
+    
+    if (field === 'entry_date') {
+        return formatDate(parent.entry_date) === formatDate(entry.entry_date);
+    }
+    
+    return parent[field] === entry[field];
+};
+
 const amountToWords = (num) => {
     if (num === 0) return "Zero";
     
@@ -786,6 +886,28 @@ const tableRowClassName = ({ row }) => {
         return 'sub-row';
     }
     return '';
+};
+
+const exportHistoryExcel = () => {
+    const data = filteredHistory.value.map(bill => ({
+        'Bill #': formatBillId(bill.id),
+        Date: formatDate(bill.bill_date),
+        Transporter: bill.transporter?.name,
+        'Bill To': bill.bill_to,
+        Status: bill.status,
+        Amount: bill.total_amount
+    }));
+    
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Bill_History");
+    XLSX.writeFile(workbook, "Cartage_Bill_History.xlsx");
+    ElMessage.success('History exported to Excel');
+};
+
+const printHistory = () => {
+    // Basic print of the list
+    window.print();
 };
 </script>
 

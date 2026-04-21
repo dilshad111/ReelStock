@@ -91,6 +91,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Dashboard
     Route::get('dashboard', [DashboardController::class, 'index']);
     Route::get('management-dashboard', [DashboardController::class, 'managementIndex']);
+    Route::get('transport-dashboard', [DashboardController::class, 'transportIndex']);
 
     // User Permissions
     Route::get('user-permissions/{userId}', [UserPermissionController::class, 'getPermissions']);

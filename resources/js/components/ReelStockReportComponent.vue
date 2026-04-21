@@ -105,9 +105,8 @@
       <tbody>
         <tr v-for="item in report" :key="item.reel_no">
           <td class="text-center">
-            <a href="#" @click.prevent="showHistory(item.reel_no)" class="d-block text-decoration-none">
-              <div>{{ getReelPrefix(item.reel_no) }}</div>
-              <div>{{ getReelSerial(item.reel_no) }}</div>
+            <a href="#" @click.prevent="showHistory(item.reel_no)" class="reel-link">
+              {{ item.reel_no }}
             </a>
           </td>
           <td class="supplier-cell">{{ item.supplier }}</td>
@@ -805,28 +804,78 @@ export default {
   padding: 6px 12px;
   cursor: pointer;
   border-bottom: 1px solid #f1f1f1;
+  color: #1e293b;
 }
 
 .dropdown-item-custom:hover {
   background-color: #f8f9fa;
-  color: #0d6efd;
+  color: #6366f1;
 }
 
 .dropdown-item-custom:last-child {
   border-bottom: none;
 }
 
-.table.table-striped.align-middle td,
+.container {
+  color: #1e293b;
+  max-width: 100% !important;
+  padding: 0 25px;
+}
+
+h2 {
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: -0.5px;
+}
+
+.table.table-striped.align-middle td {
+  padding: 3px 8px;
+  color: #1e293b;
+  font-weight: 500;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13.5px;
+}
+
 .table.table-striped.align-middle th {
-  padding: 4px 6px;
+  padding: 8px 8px;
+  background-color: #f8fafc;
+  color: #475569;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.reel-link {
+  text-decoration: none;
+  font-weight: 700;
+  color: #6366f1;
+  display: block;
+}
+
+.reel-link:hover {
+  text-decoration: underline;
 }
 
 .table-sticky-header thead th {
   position: sticky;
   top: 0;
   z-index: 2;
-  background-color: #f8f9fa;
+  background-color: #f8fafc;
   text-align: center;
   vertical-align: middle;
+}
+
+.table-info.fw-bold td {
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+  border-top: 2px solid #cbd5e1 !important;
+  padding: 8px !important;
+}
+
+.status-cell {
+  font-weight: 700 !important;
+  font-size: 12px !important;
 }
 </style>

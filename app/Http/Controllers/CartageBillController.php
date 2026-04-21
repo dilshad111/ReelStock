@@ -24,6 +24,7 @@ class CartageBillController extends Controller
             'entries.*.entry_date' => 'required|date',
             'entries.*.customer_id' => 'required|exists:customers,id',
             'entries.*.shipping_address_id' => 'required|exists:shipping_addresses,id',
+            'entries.*.vehicle_id' => 'required|exists:vehicles,id',
             'entries.*.vehicle_number' => 'required|string',
             'entries.*.dc_number' => 'nullable|string',
             'entries.*.slip_no' => 'nullable|string',
@@ -43,7 +44,8 @@ class CartageBillController extends Controller
                 'total_amount' => $totalAmount,
             ]);
 
-            $entryMap = []; // To store created entries and map them by index
+            $createdEntriesTotal = 0;
+            $entryMap = [];
 
             foreach ($request->entries as $index => $entryData) {
                 $parentIndex = $entryData['parent_index'] ?? null;
@@ -53,12 +55,15 @@ class CartageBillController extends Controller
                     $parentEntryId = $entryMap[$parentIndex]->id;
                 }
 
-                $data = collect($entryData)->except(['parent_index'])->toArray();
+                $data = collect($entryData)->except(['parent_index', 'temp_id', 'is_return_checkbox', 'is_second_location_checkbox', 'is_sub_row', 'parent_temp_id'])->toArray();
                 $data['parent_entry_id'] = $parentEntryId;
 
                 $entry = $bill->entries()->create($data);
+                $createdEntriesTotal += $entry->amount;
                 $entryMap[$index] = $entry;
             }
+
+            $bill->update(['total_amount' => $createdEntriesTotal]);
 
             return response()->json($bill->load(['transporter', 'entries.customer', 'entries.shippingAddress']), 201);
         });
@@ -76,8 +81,10 @@ class CartageBillController extends Controller
             'entries.*.entry_date' => 'required|date',
             'entries.*.customer_id' => 'required|exists:customers,id',
             'entries.*.shipping_address_id' => 'required|exists:shipping_addresses,id',
+            'entries.*.vehicle_id' => 'required|exists:vehicles,id',
             'entries.*.vehicle_number' => 'required|string',
             'entries.*.dc_number' => 'nullable|string',
+            'entries.*.slip_no' => 'nullable|string',
             'entries.*.amount' => 'required|numeric',
             'entries.*.is_return' => 'boolean',
             'entries.*.is_second_location' => 'boolean',
@@ -94,9 +101,9 @@ class CartageBillController extends Controller
                 'total_amount' => $totalAmount,
             ]);
 
-            // Delete old entries and re-create (simplest way for nested structures in this context)
             $bill->entries()->delete();
 
+            $createdEntriesTotal = 0;
             $entryMap = [];
 
             foreach ($request->entries as $index => $entryData) {
@@ -107,12 +114,15 @@ class CartageBillController extends Controller
                     $parentEntryId = $entryMap[$parentIndex]->id;
                 }
 
-                $data = collect($entryData)->except(['parent_index', 'id'])->toArray();
+                $data = collect($entryData)->except(['parent_index', 'id', 'temp_id', 'is_return_checkbox', 'is_second_location_checkbox', 'is_sub_row', 'parent_temp_id'])->toArray();
                 $data['parent_entry_id'] = $parentEntryId;
 
                 $entry = $bill->entries()->create($data);
+                $createdEntriesTotal += $entry->amount;
                 $entryMap[$index] = $entry;
             }
+
+            $bill->update(['total_amount' => $createdEntriesTotal]);
 
             return response()->json($bill->load(['transporter', 'entries.customer', 'entries.shippingAddress']));
         });

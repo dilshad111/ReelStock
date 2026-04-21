@@ -23,14 +23,14 @@
         </div>
 
         <div v-else-if="dashboard">
-          <div class="row mb-4 g-3">
+          <div class="row mb-4 g-3 mt-1">
             <div class="col-md-3" v-for="(kpi, key) in operationalKpis" :key="key">
               <div :class="['card action-widget border-start border-4 shadow-sm h-100', kpi.borderColor]">
                 <div class="card-body">
                   <div class="d-flex justify-content-between">
                     <div>
                       <h6 :class="[kpi.textColor, 'fw-bold mb-1']">{{ kpi.label }}</h6>
-                      <h3 class="mb-0">{{ kpi.value }}</h3>
+                      <h3 class="mb-0 fw-bold text-slate-800">{{ kpi.value }}</h3>
                     </div>
                     <div :class="['widget-icon', kpi.bgSoft]"><i :class="['bi', kpi.icon, kpi.textColor]"></i></div>
                   </div>
@@ -40,21 +40,23 @@
             </div>
           </div>
 
-          <div class="section-container mb-5">
-            <h4 class="section-title"><i class="bi bi-geo-alt"></i> Stock by Location</h4>
-            <div class="row g-4">
+          <div class="section-container mb-4">
+            <h6 class="section-title text-muted text-uppercase tracking-wider small fw-bold mb-3"><i class="bi bi-geo-alt"></i> Stock by Location</h6>
+            <div class="row g-3">
               <div class="col-md-6" v-for="(loc, name) in dashboard.location_breakdown" :key="name">
-                <div class="card location-card border-0 shadow-sm bg-white overflow-hidden">
+                <div class="card location-card border-0 shadow-sm bg-white overflow-hidden h-100">
                     <div class="card-body p-0">
-                        <div class="d-flex">
-                            <div :class="[name === 'godown' ? 'bg-primary' : 'bg-indigo', 'text-white d-flex align-items-center justify-content-center px-4']" style="width: 80px;">
-                                <i :class="['bi', name === 'godown' ? 'bi-building' : 'bi-tools', 'fs-2']"></i>
+                        <div class="d-flex h-100">
+                            <div :class="[name === 'godown' ? 'bg-primary' : 'bg-indigo', 'text-white d-flex align-items-center justify-content-center']" style="width: 70px; min-height: 80px;">
+                                <i :class="['bi', name === 'godown' ? 'bi-building' : 'bi-tools', 'fs-3']"></i>
                             </div>
-                            <div class="p-3 flex-grow-1">
-                                <h5 class="fw-bold mb-1 text-uppercase">{{ name }}</h5>
-                                <div class="d-flex justify-content-between align-items-end">
-                                    <div><h3 class="mb-0">{{ loc.count }} <small class="fs-6 text-muted">Reels</small></h3></div>
-                                    <div class="text-end"><h3 :class="['mb-0', name === 'godown' ? 'text-primary' : 'text-indigo']">{{ formatNumber(loc.weight) }} <small class="fs-6 text-muted">kg</small></h3></div>
+                            <div class="p-3 flex-grow-1 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="fw-bold mb-0 text-uppercase text-slate-800">{{ name }}</h5>
+                                    <p class="mb-0 text-muted fs-5 fw-bold">{{ loc.count }} <small class="fs-6 fw-normal text-muted">Reels</small></p>
+                                </div>
+                                <div class="text-end">
+                                    <h3 :class="['mb-0 fw-bold', name === 'godown' ? 'text-primary' : 'text-indigo']">{{ formatNumber(loc.weight) }} <small class="fs-6 fw-normal text-muted">kg</small></h3>
                                 </div>
                             </div>
                         </div>
@@ -65,21 +67,76 @@
           </div>
 
           <div class="row g-4 mb-5">
+            <div class="col-md-7">
+              <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent border-0 pt-3 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0 text-slate-700"><i class="bi bi-water"></i> Inventory Flow Trend (Inward vs Outward)</h6>
+                    <el-tag size="small" type="primary" effect="plain">Last {{ timeRange }} Days</el-tag>
+                </div>
+                <div class="card-body pt-0">
+                  <canvas id="inventoryFlowChart" height="220"></canvas>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-5">
+              <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent border-0 pt-3"><h6 class="fw-bold mb-0 text-slate-700"><i class="bi bi-rulers"></i> Consumption by Reel Size (Volume)</h6></div>
+                <div class="card-body pt-0">
+                  <canvas id="usageBySizeChart" height="220"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-4 mb-5">
             <div class="col-md-8">
               <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-transparent border-0 pt-3"><h6 class="fw-bold mb-0">Current Stock by Quality (kg)</h6></div>
-                <div class="card-body pt-0"><canvas id="stockByQualityChart" height="300"></canvas></div>
+                <div class="card-header bg-transparent border-0 pt-3 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0 text-slate-700"><i class="bi bi-bar-chart"></i> Current Stock by Quality (Volume & Count)</h6>
+                    <el-tag size="small" type="info" effect="plain">Weight vs Units</el-tag>
+                </div>
+                <div class="card-body pt-0"><canvas id="stockByQualityChart" height="280"></canvas></div>
               </div>
             </div>
             <div class="col-md-4">
               <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-transparent border-0 pt-3"><h6 class="fw-bold mb-0">Stock Distribution</h6></div>
+                <div class="card-header bg-transparent border-0 pt-3"><h6 class="fw-bold mb-0 text-slate-700">Stock Mix Profile</h6></div>
                 <div class="card-body pt-0 d-flex flex-column align-items-center justify-content-center">
-                  <canvas id="stockStatusPieChart" height="200"></canvas>
+                  <canvas id="stockStatusPieChart" height="220"></canvas>
                   <div class="mt-3 text-center">
-                    <h2 class="mb-0 text-primary">{{ formatNumber(dashboard.stock_overview.total_weight) }}</h2>
-                    <span class="text-muted">Total Available kg</span>
+                    <h2 class="mb-0 text-primary fw-bold">{{ formatNumber(dashboard.stock_overview.total_weight) }}</h2>
+                    <span class="text-muted small text-uppercase tracking-wider">Total kg Available</span>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-4 mb-5">
+            <div class="col-md-5">
+              <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent border-0 pt-3"><h6 class="fw-bold mb-0 text-slate-700"><i class="bi bi-award"></i> Top 10 Heaviest Reels in Stock</h6></div>
+                <div class="card-body pt-0">
+                  <canvas id="topReelsChart" height="300"></canvas>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-7">
+              <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent border-0 pt-3 d-flex justify-content-between">
+                  <h6 class="fw-bold mb-0 text-danger"><i class="bi bi-arrow-return-left"></i> Supplier Returns & Rejections</h6>
+                  <span class="badge bg-danger-soft text-danger">Last {{ timeRange }} Days</span>
+                </div>
+                <div class="card-body pt-0">
+                    <div class="row align-items-center">
+                        <div class="col-md-8 border-end">
+                            <canvas id="returnsTrendChart" height="220"></canvas>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <p class="small text-muted mb-2 text-uppercase fw-bold">Reason Breakdown</p>
+                            <canvas id="returnReasonsChart" height="150"></canvas>
+                        </div>
+                    </div>
                 </div>
               </div>
             </div>
@@ -151,25 +208,47 @@
             </div>
           </div>
 
-          <!-- 12 MONTHS HISTORY BAR GRAPHS -->
+          <!-- 12 MONTHS HISTORY BAR GRAPHS (Dual Axis: Amount & Weight) -->
           <div class="row g-4 mb-5">
             <div class="col-md-6">
-              <div class="card shadow-sm border-0">
-                <div class="card-header bg-transparent border-0 pt-3">
-                  <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-bar-chart-fill"></i> Monthly Consumption Value (Last 12 Months)</h6>
+              <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent border-0 pt-3 d-flex justify-content-between align-items-center">
+                  <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-cart-check-fill me-1"></i> Monthly Purchase Analysis (Last 12 Months)</h6>
+                  <el-tag size="small" type="success" effect="plain">Volume vs Value</el-tag>
                 </div>
                 <div class="card-body pt-0">
-                  <canvas id="mgmtConsumption12Chart" height="220"></canvas>
+                  <canvas id="mgmtReceived12Chart" height="240"></canvas>
                 </div>
               </div>
             </div>
             <div class="col-md-6">
-              <div class="card shadow-sm border-0">
-                <div class="card-header bg-transparent border-0 pt-3">
-                  <h6 class="fw-bold mb-0 text-success"><i class="bi bi-bar-chart-fill"></i> Monthly Material Receipt Value (Last 12 Months)</h6>
+              <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent border-0 pt-3 d-flex justify-content-between align-items-center">
+                  <h6 class="fw-bold mb-0 text-indigo"><i class="bi bi-box-arrow-up me-1"></i> Monthly Consumption Analysis (Last 12 Months)</h6>
+                  <el-tag size="small" type="primary" effect="plain">Volume vs Value</el-tag>
                 </div>
                 <div class="card-body pt-0">
-                  <canvas id="mgmtReceived12Chart" height="220"></canvas>
+                  <canvas id="mgmtConsumption12Chart" height="240"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TOP INWARD ANALYSIS (By Quality & Supplier) -->
+          <div class="row g-4 mb-5">
+            <div class="col-md-4">
+              <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent border-0 pt-3"><h6 class="fw-bold mb-0 text-slate-700">Inward by Quality (Monthly)</h6></div>
+                <div class="card-body d-flex align-items-center justify-content-center">
+                  <canvas id="mgmtInwardByQualityChart" height="280"></canvas>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-8">
+              <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent border-0 pt-3"><h6 class="fw-bold mb-0 text-slate-700">Inward by Supplier (Monthly Volume)</h6></div>
+                <div class="card-body">
+                  <canvas id="mgmtInwardBySupplierChart" height="280"></canvas>
                 </div>
               </div>
             </div>
@@ -246,10 +325,10 @@
 import axios from 'axios';
 
 export default {
-  props: ['user', 'canViewManagement'],
+  props: ['user', 'canViewManagement', 'initialTab'],
   data() {
     return {
-      activeTab: 'operational',
+      activeTab: this.initialTab || 'operational',
       dashboard: null,
       managementData: null,
       timeRange: 30,
@@ -297,62 +376,181 @@ export default {
     renderOperationalCharts() {
       this.destroyCharts();
       const d = this.dashboard; if (!d) return;
+
+      // 1. Stock by Quality
       this.charts.stockByQuality = new Chart(document.getElementById('stockByQualityChart'), {
         type: 'bar',
         data: {
           labels: d.stock_overview.by_quality.map(i => i.name),
-          datasets: [{ label: 'Reels', data: d.stock_overview.by_quality.map(i => i.count), backgroundColor: 'rgba(99, 102, 241, 0.5)', yAxisID: 'yCount' }, 
-                     { label: 'Weight (kg)', data: d.stock_overview.by_quality.map(i => i.weight), backgroundColor: 'rgba(16, 185, 129, 0.5)', yAxisID: 'yWeight' }]
+          datasets: [
+              { label: 'Weight (kg)', data: d.stock_overview.by_quality.map(i => i.weight), backgroundColor: 'rgba(99, 102, 241, 0.7)', borderRadius: 4, yAxisID: 'yWeight' },
+              { label: 'Reel Count', data: d.stock_overview.by_quality.map(i => i.count), type: 'line', borderColor: '#f59e0b', backgroundColor: '#f59e0b', tension: 0.3, pointRadius: 3, yAxisID: 'yCount' }
+          ]
         },
-        options: { scales: { yWeight: { position: 'right' }, yCount: { position: 'left' } } }
+        options: { 
+            responsive: true,
+            scales: { 
+                yWeight: { position: 'left', title: { display: true, text: 'Weight (kg)' }, grid: { display: false } }, 
+                yCount: { position: 'right', title: { display: true, text: 'Unit Count' } } 
+            } 
+        }
       });
+
+      // 2. Stock Mix (Full vs Partial)
       this.charts.stockStatusPie = new Chart(document.getElementById('stockStatusPieChart'), {
         type: 'doughnut',
-        data: { labels: d.stock_overview.status_distribution.map(i => i.label), datasets: [{ data: d.stock_overview.status_distribution.map(i => i.value), backgroundColor: ['#6366f1', '#f59e0b'] }] },
-        options: { cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+        data: { labels: d.stock_overview.status_distribution.map(i => i.label), datasets: [{ data: d.stock_overview.status_distribution.map(i => i.value), backgroundColor: ['#6366f1', '#f59e0b'], borderWidth: 0 }] },
+        options: { cutout: '75%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true } } } }
+      });
+
+      // 3. Top Reels by Weight
+      this.charts.topReels = new Chart(document.getElementById('topReelsChart'), {
+          type: 'bar',
+          data: {
+              labels: d.partial_reel_tracking.top_remaining.map(i => i.reel_no),
+              datasets: [{ label: 'Remaining Weight (kg)', data: d.partial_reel_tracking.top_remaining.map(i => i.weight), backgroundColor: 'rgba(16, 185, 129, 0.7)', borderRadius: 4 }]
+          },
+          options: { indexAxis: 'y', plugins: { legend: { display: false } } }
+      });
+
+      // 4. Returns Trend
+      this.charts.returnsTrend = new Chart(document.getElementById('returnsTrendChart'), {
+          type: 'line',
+          data: {
+              labels: Object.keys(d.supplier_return_tracking.over_time),
+              datasets: [{ label: 'Reels Rejected', data: Object.values(d.supplier_return_tracking.over_time), borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', fill: true, tension: 0.4, pointRadius: 4 }]
+          },
+          options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { grid: { display: false } } } }
+      });
+
+      // 5. Return Reasons
+      this.charts.returnReasons = new Chart(document.getElementById('returnReasonsChart'), {
+          type: 'pie',
+          data: {
+              labels: Object.keys(d.supplier_return_tracking.reasons),
+              datasets: [{ data: Object.values(d.supplier_return_tracking.reasons), backgroundColor: ['#ef4444', '#f59e0b', '#6366f1', '#10b981'] }]
+          },
+          options: { plugins: { legend: { display: false } } }
+      });
+
+      // 6. Inventory Flow Trend
+      this.charts.inventoryFlow = new Chart(document.getElementById('inventoryFlowChart'), {
+          type: 'line',
+          data: {
+              labels: Object.keys(d.receiving_analysis.over_time),
+              datasets: [
+                  { label: 'Incoming (kg)', data: Object.values(d.receiving_analysis.over_time), borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.05)', fill: true, tension: 0.3 },
+                  { label: 'Usage (kg)', data: Object.values(d.consumption_analysis.over_time), borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.05)', fill: true, tension: 0.3 }
+              ]
+          },
+          options: { interaction: { intersect: false, mode: 'index' }, scales: { x: { grid: { display: false } } } }
+      });
+
+      // 7. Usage by Size
+      this.charts.usageBySize = new Chart(document.getElementById('usageBySizeChart'), {
+          type: 'bar',
+          data: {
+              labels: Object.keys(d.consumption_analysis.by_size),
+              datasets: [{ label: 'Weight (kg)', data: Object.values(d.consumption_analysis.by_size), backgroundColor: '#8b5cf6', borderRadius: 4 }]
+          },
+          options: { plugins: { legend: { display: false } } }
       });
     },
     renderManagementCharts() {
       this.destroyCharts();
       const m = this.managementData; if (!m) return;
 
-      // New 12 Months Consumption Bar
-      this.charts.mgmtCons12 = new Chart(document.getElementById('mgmtConsumption12Chart'), {
-        type: 'bar',
-        data: {
-          labels: m.consumption.monthly_12.map(i => i.month),
-          datasets: [{ label: 'Consumption Amount (₨)', data: m.consumption.monthly_12.map(i => i.amount), backgroundColor: '#6366f1', borderRadius: 5 }]
-        }
-      });
+      const monthlyLabels = m.consumption.monthly_12.map(i => i.month);
 
-      // New 12 Months Received Bar
+      // 1. Monthly Purchase Analysis (Dual Axis)
       this.charts.mgmtRec12 = new Chart(document.getElementById('mgmtReceived12Chart'), {
         type: 'bar',
         data: {
           labels: m.receiving.monthly_12.map(i => i.month),
-          datasets: [{ label: 'Receipt Amount (₨)', data: m.receiving.monthly_12.map(i => i.amount), backgroundColor: '#10b981', borderRadius: 5 }]
+          datasets: [
+            { label: 'Amount (₨)', data: m.receiving.monthly_12.map(i => i.amount), backgroundColor: 'rgba(16, 185, 129, 0.7)', borderRadius: 4, yAxisID: 'yAmount' },
+            { label: 'Weight (kg)', data: m.receiving.monthly_12.map(i => i.weight), type: 'line', borderColor: '#3b82f6', backgroundColor: '#3b82f6', tension: 0.4, yAxisID: 'yWeight', pointRadius: 3 }
+          ]
+        },
+        options: { 
+            responsive: true,
+            scales: { 
+                yAmount: { position: 'left', title: { display: true, text: 'Value (₨)' }, grid: { display: false } }, 
+                yWeight: { position: 'right', title: { display: true, text: 'Volume (kg)' } } 
+            } 
         }
       });
 
+      // 2. Monthly Consumption Analysis (Dual Axis)
+      this.charts.mgmtCons12 = new Chart(document.getElementById('mgmtConsumption12Chart'), {
+        type: 'bar',
+        data: {
+          labels: m.consumption.monthly_12.map(i => i.month),
+          datasets: [
+            { label: 'Amount (₨)', data: m.consumption.monthly_12.map(i => i.amount), backgroundColor: 'rgba(99, 102, 241, 0.7)', borderRadius: 4, yAxisID: 'yAmount' },
+            { label: 'Weight (kg)', data: m.consumption.monthly_12.map(i => i.weight), type: 'line', borderColor: '#ef4444', backgroundColor: '#ef4444', tension: 0.4, yAxisID: 'yWeight', pointRadius: 3 }
+          ]
+        },
+        options: { 
+            responsive: true,
+            scales: { 
+                yAmount: { position: 'left', title: { display: true, text: 'Value (₨)' }, grid: { display: false } }, 
+                yWeight: { position: 'right', title: { display: true, text: 'Volume (kg)' } } 
+            } 
+        }
+      });
+
+      // 3. Inward by Quality (Doughnut)
+      this.charts.mgmtInwardQuality = new Chart(document.getElementById('mgmtInwardByQualityChart'), {
+        type: 'doughnut',
+        data: {
+          labels: m.receiving.by_quality.map(i => i.name),
+          datasets: [{
+            data: m.receiving.by_quality.map(i => i.weight),
+            backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899'],
+            hoverOffset: 10
+          }]
+        },
+        options: { cutout: '65%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } } }
+      });
+
+      // 4. Inward by Supplier (Horizontal Bar)
+      this.charts.mgmtInwardSupplier = new Chart(document.getElementById('mgmtInwardBySupplierChart'), {
+        type: 'bar',
+        data: {
+          labels: m.receiving.by_supplier.map(i => i.name),
+          datasets: [{ label: 'Weight (kg)', data: m.receiving.by_supplier.map(i => i.weight), backgroundColor: 'rgba(245, 158, 11, 0.7)', borderRadius: 5 }]
+        },
+        options: { indexAxis: 'y', plugins: { legend: { display: false } } }
+      });
+
+      // 5. Investment by Quality (Stock Value)
       this.charts.mgmtQuality = new Chart(document.getElementById('mgmtAmountByQualityChart'), {
         type: 'bar',
-        data: { labels: m.stock.by_quality.map(i => i.name), datasets: [{ label: 'Value (₨)', data: m.stock.by_quality.map(i => i.amount), backgroundColor: 'rgba(99, 102, 241, 0.7)' }] },
-        options: { indexAxis: 'y' }
+        data: { labels: m.stock.by_quality.map(i => i.name), datasets: [{ label: 'Value (₨)', data: m.stock.by_quality.map(i => i.amount), backgroundColor: 'rgba(99, 102, 241, 0.7)', borderRadius: 4 }] },
+        options: { indexAxis: 'y', plugins: { legend: { display: false } } }
       });
 
+      // 6. Portfolio by Supplier (Stock Value)
       this.charts.mgmtSupplier = new Chart(document.getElementById('mgmtAmountBySupplierChart'), {
         type: 'bar',
-        data: { labels: m.stock.by_supplier.map(i => i.name), datasets: [{ label: 'Value (₨)', data: m.stock.by_supplier.map(i => i.amount), backgroundColor: 'rgba(16, 185, 129, 0.7)' }] }
+        data: { labels: m.stock.by_supplier.map(i => i.name), datasets: [{ label: 'Value (₨)', data: m.stock.by_supplier.map(i => i.amount), backgroundColor: 'rgba(16, 185, 129, 0.7)', borderRadius: 4 }] },
+        options: { plugins: { legend: { display: false } } }
       });
 
+      // 7. Trend Chart
       this.charts.mgmtTrend = new Chart(document.getElementById('mgmtConsumptionTrendChart'), {
         type: 'line',
         data: {
           labels: m.consumption.over_time.map(i => i.date),
           datasets: [
-            { label: 'Outward (₨)', data: m.consumption.over_time.map(i => i.amount), borderColor: '#6366f1', fill: false, tension: 0.3 },
-            { label: 'Inward (₨)', data: m.receiving.over_time.map(i => i.amount), borderColor: '#10b981', fill: false, tension: 0.3 }
+            { label: 'Consumption (₨)', data: m.consumption.over_time.map(i => i.amount), borderColor: '#6366f1', fill: true, backgroundColor: 'rgba(99, 102, 241, 0.05)', tension: 0.3, pointRadius: 0 },
+            { label: 'Purchase (₨)', data: m.receiving.over_time.map(i => i.amount), borderColor: '#10b981', fill: true, backgroundColor: 'rgba(16, 185, 129, 0.05)', tension: 0.3, pointRadius: 0 }
           ]
+        },
+        options: { 
+            interaction: { intersect: false, mode: 'index' },
+            scales: { x: { grid: { display: false } } }
         }
       });
     },
@@ -375,7 +573,11 @@ export default {
 .bg-success-soft { background-color: #dcfce7; }
 .bg-info-soft { background-color: #e0f2fe; }
 .bg-warning-soft { background-color: #fef3c7; }
+.bg-danger-soft { background-color: #fee2e2; }
 .bg-indigo { background-color: #6366f1; }
+.text-indigo { color: #6366f1; }
+.text-slate-800 { color: #1e293b; }
+.text-slate-700 { color: #334155; }
 .bg-gradient-premium { background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%); }
 .custom-dashboard-tabs :deep(.el-tabs__item) { font-weight: 600; font-size: 1rem; height: 50px; }
 .custom-dashboard-tabs :deep(.el-tabs__active-bar) { background-color: #6366f1; height: 3px; }

@@ -9,27 +9,33 @@
                     <p class="text-muted small mb-0 mt-1">Track and monitor all user activities across the platform.</p>
                 </div>
                 
-                <div class="d-flex gap-3 align-items-center bg-light rounded-pill px-3 py-2 border">
-                    <div class="d-flex align-items-center border-end pe-3">
-                        <i class="bi bi-funnel text-muted me-2"></i>
-                        <select v-model="filters.event" class="form-select form-select-sm border-0 bg-transparent shadow-none" style="min-width: 120px;" @change="debouncedFetch">
-                            <option value="">All Actions</option>
-                            <option value="created">Created</option>
-                            <option value="updated">Modified</option>
-                            <option value="deleted">Deleted</option>
-                        </select>
+                <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 me-3">
+                        <el-button type="success" size="small" @click="exportToExcel" plain><i class="bi bi-file-earmark-excel me-1"></i> Excel</el-button>
+                        <el-button type="info" size="small" @click="printLogs" plain><i class="bi bi-printer me-1"></i> Print</el-button>
                     </div>
-                    <div class="d-flex align-items-center border-end pe-3">
-                        <i class="bi bi-box text-muted me-2"></i>
-                        <input v-model="filters.auditable_type" type="text" class="form-control form-control-sm border-0 bg-transparent shadow-none" placeholder="Module (e.g. Reel)" style="min-width: 140px;" @input="debouncedFetch">
+                    <div class="d-flex gap-3 align-items-center bg-light rounded-pill px-3 py-2 border">
+                        <div class="d-flex align-items-center border-end pe-3">
+                            <i class="bi bi-funnel text-muted me-2"></i>
+                            <select v-model="filters.event" class="form-select form-select-sm border-0 bg-transparent shadow-none" style="min-width: 120px;" @change="debouncedFetch">
+                                <option value="">All Actions</option>
+                                <option value="created">Created</option>
+                                <option value="updated">Modified</option>
+                                <option value="deleted">Deleted</option>
+                            </select>
+                        </div>
+                        <div class="d-flex align-items-center border-end pe-3">
+                            <i class="bi bi-box text-muted me-2"></i>
+                            <input v-model="filters.auditable_type" type="text" class="form-control form-control-sm border-0 bg-transparent shadow-none" placeholder="Module (e.g. Reel)" style="min-width: 140px;" @input="debouncedFetch">
+                        </div>
+                        <div class="d-flex align-items-center pe-3">
+                            <i class="bi bi-search text-muted me-2"></i>
+                            <input v-model="filters.user_search" type="text" class="form-control form-control-sm border-0 bg-transparent shadow-none" placeholder="Search User..." style="min-width: 140px;" @input="debouncedFetch">
+                        </div>
+                        <button class="btn btn-primary btn-sm rounded-circle shadow-sm" style="width: 32px; height: 32px; padding: 0;" @click="fetchAudits" title="Refresh">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
                     </div>
-                    <div class="d-flex align-items-center pe-3">
-                        <i class="bi bi-search text-muted me-2"></i>
-                        <input v-model="filters.user_search" type="text" class="form-control form-control-sm border-0 bg-transparent shadow-none" placeholder="Search User..." style="min-width: 140px;" @input="debouncedFetch">
-                    </div>
-                    <button class="btn btn-primary btn-sm rounded-circle shadow-sm" style="width: 32px; height: 32px; padding: 0;" @click="fetchAudits" title="Refresh">
-                        <i class="bi bi-arrow-clockwise"></i>
-                    </button>
                 </div>
             </div>
 
@@ -268,6 +274,7 @@
 
 <script>
 import axios from 'axios';
+import * as XLSX from 'xlsx';
 
 export default {
     name: 'AuditLogComponent',
@@ -444,6 +451,24 @@ export default {
             if (typeof val === 'boolean') return val ? 'TRUE' : 'FALSE';
             if (typeof val === 'object') return JSON.stringify(val);
             return val;
+        },
+        exportToExcel() {
+            const data = this.audits.map(audit => ({
+                'Date & Time': this.formatDate(audit.created_at) + ' ' + this.formatTime(audit.created_at),
+                User: audit.user ? audit.user.name : 'System',
+                Event: audit.event,
+                Module: this.formatModelName(audit.auditable_type),
+                Target: audit.reel_no || audit.auditable_id,
+                'IP Address': audit.ip_address
+            }));
+            
+            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "AuditLogs");
+            XLSX.writeFile(workbook, "Audit_Logs.xlsx");
+        },
+        printLogs() {
+            window.print();
         }
     }
 };

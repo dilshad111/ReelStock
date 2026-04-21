@@ -688,67 +688,72 @@
                     :collapse="isSidebarCollapsed"
                     :collapse-transition="false"
                 >
-                    <el-menu-item index="dashboard" v-if="!permissionsLoaded || canView('dashboard')">
-                        <i class="bi bi-speedometer2 me-2 icon-dashboard"></i> 
-                        <span>Dashboard</span>
-                    </el-menu-item>
+                    <el-sub-menu index="dashboards" v-if="canView('dashboard') || canView('management-dashboard') || canView('transport-dashboard')">
+                        <template #title>
+                            <i class="bi bi-speedometer2 me-2 icon-dashboard"></i> 
+                            <span>Dashboards</span>
+                        </template>
+                        <el-menu-item index="dashboard" v-if="canView('dashboard')">Operational Dashboard</el-menu-item>
+                        <el-menu-item index="management-dashboard" v-if="canView('management-dashboard')">Management Dashboard</el-menu-item>
+                        <el-menu-item index="transport-dashboard" v-if="canView('transport-dashboard')">Transport Dashboard</el-menu-item>
+                    </el-sub-menu>
                     
-                    <el-menu-item index="suppliers" v-if="!permissionsLoaded || canView('suppliers')">
+                    <el-menu-item index="suppliers" v-if="canView('suppliers')">
                         <i class="bi bi-truck me-2 icon-suppliers"></i>
                         <span>Suppliers</span>
                     </el-menu-item>
 
-                    <el-sub-menu index="paper">
+                    <el-sub-menu index="paper" v-if="canView('qualities') || canView('receipts') || canView('issues') || canView('return-supplier') || canView('stock-alerts')">
                         <template #title>
                             <i class="bi bi-file-earmark-text me-2 icon-paper"></i>
                             <span>Paper</span>
                         </template>
-                        <el-menu-item index="qualities">Paper Qualities</el-menu-item>
-                        <el-menu-item index="receipts" v-if="!permissionsLoaded || canView('receipts')">Receipts</el-menu-item>
-                        <el-menu-item index="issues" v-if="!permissionsLoaded || canView('issues')">Reel Issue</el-menu-item>
-                        <el-menu-item index="return-supplier" v-if="!permissionsLoaded || canView('return-supplier')">Return to Supp.</el-menu-item>
-                        <el-menu-item index="stock-alerts" v-if="!permissionsLoaded || canView('stock-alerts')">Stock Alerts</el-menu-item>
+                        <el-menu-item index="qualities" v-if="canView('qualities')">Paper Qualities</el-menu-item>
+                        <el-menu-item index="receipts" v-if="canView('receipts')">Receipts</el-menu-item>
+                        <el-menu-item index="issues" v-if="canView('issues')">Reel Issue</el-menu-item>
+                        <el-menu-item index="return-supplier" v-if="canView('return-supplier')">Return to Supp.</el-menu-item>
+                        <el-menu-item index="stock-alerts" v-if="canView('stock-alerts')">Stock Alerts</el-menu-item>
                     </el-sub-menu>
 
-                    <el-sub-menu index="reports">
+                    <el-sub-menu index="reports" v-if="canView('monthly-consumption') || canView('reel-stock') || canView('reel-receipt') || canView('monthly-closing') || canView('reel-stock-count') || canView('usage-intelligence') || canView('old-reels')">
                         <template #title>
                             <i class="bi bi-graph-up me-2 icon-reports"></i>
                             <span>Reports</span>
                         </template>
-                        <el-menu-item index="monthly-consumption" v-if="!permissionsLoaded || canView('monthly-consumption')">Monthly Cons.</el-menu-item>
-                        <el-menu-item index="reel-stock" v-if="!permissionsLoaded || canView('reel-stock')">Reel Stock</el-menu-item>
-                        <el-menu-item index="reel-receipt" v-if="!permissionsLoaded || canView('reel-receipt')">Reel Received</el-menu-item>
-                        <el-menu-item index="monthly-closing" v-if="!permissionsLoaded || canView('monthly-closing')">Monthly Closing</el-menu-item>
-                        <el-menu-item index="reel-stock-count" v-if="!permissionsLoaded || canView('reel-stock-count')">Stock Count</el-menu-item>
-                        <el-menu-item index="usage-intelligence" v-if="!permissionsLoaded || canView('usage-intelligence')">Usage Intel.</el-menu-item>
-                        <el-menu-item index="old-reels" v-if="!permissionsLoaded || canView('old-reels')">Old Reels Report</el-menu-item>
+                        <el-menu-item index="monthly-consumption" v-if="canView('monthly-consumption')">Monthly Cons.</el-menu-item>
+                        <el-menu-item index="reel-stock" v-if="canView('reel-stock')">Reel Stock</el-menu-item>
+                        <el-menu-item index="reel-receipt" v-if="canView('reel-receipt')">Reel Received</el-menu-item>
+                        <el-menu-item index="monthly-closing" v-if="canView('monthly-closing')">Monthly Closing</el-menu-item>
+                        <el-menu-item index="reel-stock-count" v-if="canView('reel-stock-count')">Stock Count</el-menu-item>
+                        <el-menu-item index="usage-intelligence" v-if="canView('usage-intelligence')">Usage Intel.</el-menu-item>
+                        <el-menu-item index="old-reels" v-if="canView('old-reels')">Old Reels Report</el-menu-item>
                     </el-sub-menu>
 
-                    <el-sub-menu index="transport" v-if="!permissionsLoaded || canView('customers') || canView('transporters') || canView('vehicles') || canView('cartage-rates') || canView('cartage')">
+                    <el-sub-menu index="transport" v-if="canView('customers') || canView('transporters') || canView('vehicles') || canView('cartage-rates') || canView('cartage')">
                         <template #title>
                             <i class="bi bi-truck-flatbed me-2 icon-transport"></i>
                             <span>Transport</span>
                         </template>
-                        <el-menu-item index="customers" v-if="!permissionsLoaded || canView('customers')">Customers</el-menu-item>
-                        <el-menu-item index="transporters" v-if="!permissionsLoaded || canView('transporters')">Transporters</el-menu-item>
-                        <el-menu-item index="vehicles" v-if="!permissionsLoaded || canView('vehicles')">Vehicles</el-menu-item>
-                        <el-menu-item index="cartage-rates" v-if="!permissionsLoaded || canView('cartage-rates')">Cartage Rates</el-menu-item>
-                        <el-menu-item index="cartage" v-if="!permissionsLoaded || canView('cartage')">Cartage Billing</el-menu-item>
-                        <el-menu-item index="cartage-list" v-if="!permissionsLoaded || canView('cartage')">Cartage Bill List</el-menu-item>
-                        <el-menu-item index="cartage-report" v-if="!permissionsLoaded || canView('cartage')">Cartage Report</el-menu-item>
+                        <el-menu-item index="customers" v-if="canView('customers')">Customers</el-menu-item>
+                        <el-menu-item index="transporters" v-if="canView('transporters')">Transporters</el-menu-item>
+                        <el-menu-item index="vehicles" v-if="canView('vehicles')">Vehicles</el-menu-item>
+                        <el-menu-item index="cartage-rates" v-if="canView('cartage-rates')">Cartage Rates</el-menu-item>
+                        <el-menu-item index="cartage" v-if="canView('cartage')">Cartage Billing</el-menu-item>
+                        <el-menu-item index="cartage-list" v-if="canView('cartage')">Cartage Bill List</el-menu-item>
+                        <el-menu-item index="cartage-report" v-if="canView('cartage')">Cartage Report</el-menu-item>
                     </el-sub-menu>
 
-                    <el-sub-menu index="users" v-if="user.role.name === 'Admin' || user.email === 'superadmin@qc.com'">
+                    <el-sub-menu index="users" v-if="canView('users') || canView('audit-log')">
                         <template #title>
                             <i class="bi bi-people me-2 icon-users"></i>
                             <span>Users</span>
                         </template>
-                        <el-menu-item index="users">Manage Users</el-menu-item>
-                        <el-menu-item index="user-rights">User Rights</el-menu-item>
-                        <el-menu-item index="audit-log">Audit Logs</el-menu-item>
+                        <el-menu-item index="users" v-if="canView('users')">Manage Users</el-menu-item>
+                        <el-menu-item index="user-rights" v-if="canView('user-rights')">User Rights</el-menu-item>
+                        <el-menu-item index="audit-log" v-if="canView('audit-log')">Audit Logs</el-menu-item>
                     </el-sub-menu>
 
-                    <el-menu-item index="setup" v-if="user.role.name === 'Admin' || user.email === 'superadmin@qc.com'">
+                    <el-menu-item index="setup" v-if="canView('setup')">
                         <i class="bi bi-gear me-2 icon-setup"></i>
                         <span>Setup</span>
                     </el-menu-item>
@@ -815,7 +820,9 @@
 
                 <!-- Main Content Area -->
                 <main class="main-content">
-                <dashboard-component v-if="currentView === 'dashboard'" :user="user" :can-view-dashboard="canView('dashboard')" :can-see-amounts="canSeeAmounts('dashboard')" :can-view-management="canView('management-dashboard')"></dashboard-component>
+                <dashboard-component v-if="currentView === 'dashboard'" :user="user" initial-tab="operational" :can-view-dashboard="canView('dashboard')" :can-see-amounts="canSeeAmounts('dashboard')" :can-view-management="canView('management-dashboard')"></dashboard-component>
+                <dashboard-component v-else-if="currentView === 'management-dashboard'" :user="user" initial-tab="management" :can-view-dashboard="canView('dashboard')" :can-see-amounts="true" :can-view-management="true"></dashboard-component>
+                <transport-dashboard-component v-else-if="currentView === 'transport-dashboard'" :user="user"></transport-dashboard-component>
                 <supplier-component v-else-if="currentView === 'suppliers'" :user="user"></supplier-component>
                 <paper-quality-component v-else-if="currentView === 'qualities'" :user="user"></paper-quality-component>
                 <reel-receipt-component v-else-if="currentView === 'receipts'" :user="user"></reel-receipt-component>

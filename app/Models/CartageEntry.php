@@ -15,6 +15,7 @@ class CartageEntry extends Model
         'entry_date',
         'customer_id',
         'shipping_address_id',
+        'vehicle_id',
         'vehicle_number',
         'dc_number',
         'slip_no',
@@ -37,6 +38,11 @@ class CartageEntry extends Model
     public function shippingAddress()
     {
         return $this->belongsTo(ShippingAddress::class);
+    }
+
+    public function vehicle()
+    {
+        return $this->belongsTo(Vehicle::class);
     }
 
     public function parentEntry()

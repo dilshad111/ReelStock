@@ -9,11 +9,13 @@ class UserPermission extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'menu', 'can_view', 'can_edit', 'can_see_amounts'];
+    protected $fillable = ['user_id', 'menu', 'can_view', 'can_add', 'can_edit', 'can_delete', 'can_see_amounts'];
 
     protected $casts = [
         'can_view' => 'boolean',
+        'can_add' => 'boolean',
         'can_edit' => 'boolean',
+        'can_delete' => 'boolean',
         'can_see_amounts' => 'boolean',
     ];
 

@@ -8,22 +8,27 @@
                         <p class="text-muted mb-0 small">Analyze transport history and costs with multi-dimensional filters</p>
                     </div>
                     <div class="d-flex gap-2">
+                    <div class="d-flex gap-2">
                         <el-button type="success" @click="exportToExcel" :disabled="!reportData.length">
                             <i class="bi bi-file-earmark-excel me-2"></i> Export Excel
+                        </el-button>
+                        <el-button type="danger" @click="exportToPDF" :disabled="!reportData.length">
+                            <i class="bi bi-file-earmark-pdf me-2"></i> PDF
                         </el-button>
                         <el-button type="primary" @click="printReport" :disabled="!reportData.length">
                             <i class="bi bi-printer me-2"></i> Print Report
                         </el-button>
+                    </div>
                     </div>
                 </div>
             </template>
 
             <!-- Filters Section -->
             <div class="filter-section p-4 bg-light rounded border mb-4">
-                <el-form :inline="true" :model="filters" class="demo-form-inline">
+                <el-form label-position="top" :model="filters">
                     <div class="row w-100 g-3">
                         <div class="col-md-2">
-                            <el-form-item label="From Date" class="w-100 mb-0">
+                            <el-form-item label="From Date" class="w-100">
                                 <el-date-picker
                                     v-model="filters.start_date"
                                     type="date"
@@ -35,7 +40,7 @@
                             </el-form-item>
                         </div>
                         <div class="col-md-2">
-                            <el-form-item label="To Date" class="w-100 mb-0">
+                            <el-form-item label="To Date" class="w-100">
                                 <el-date-picker
                                     v-model="filters.end_date"
                                     type="date"
@@ -47,27 +52,27 @@
                             </el-form-item>
                         </div>
                         <div class="col-md-2">
-                            <el-form-item label="Customer" class="w-100 mb-0">
+                            <el-form-item label="Customer" class="w-100">
                                 <el-select v-model="filters.customer_id" placeholder="All Customers" clearable filterable class="w-100">
                                     <el-option v-for="c in filterOptions.customers" :key="c.id" :label="c.name" :value="c.id" />
                                 </el-select>
                             </el-form-item>
                         </div>
                         <div class="col-md-2">
-                            <el-form-item label="Transporter" class="w-100 mb-0">
+                            <el-form-item label="Transporter" class="w-100">
                                 <el-select v-model="filters.transporter_id" placeholder="All Transporters" clearable filterable class="w-100">
                                     <el-option v-for="t in filterOptions.transporters" :key="t.id" :label="t.name" :value="t.id" />
                                 </el-select>
                             </el-form-item>
                         </div>
                         <div class="col-md-2">
-                            <el-form-item label="Vehicle" class="w-100 mb-0">
+                            <el-form-item label="Vehicle" class="w-100">
                                 <el-select v-model="filters.vehicle_number" placeholder="All Vehicles" clearable filterable class="w-100">
                                     <el-option v-for="v in filterOptions.vehicles" :key="v.id" :label="v.vehicle_number" :value="v.vehicle_number" />
                                 </el-select>
                             </el-form-item>
                         </div>
-                        <div class="col-md-2 d-flex align-items-end">
+                        <div class="col-md-2 d-flex align-items-end" style="padding-bottom: 18px;">
                             <el-button type="primary" @click="fetchReport" :loading="loading" class="w-100 shadow-sm">
                                 <i class="bi bi-search me-2"></i> Generate
                             </el-button>
@@ -158,6 +163,7 @@
 import { ref, reactive, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { ElMessage } from 'element-plus';
+import * as XLSX from 'xlsx';
 
 const loading = ref(false);
 const printing = ref(false);
@@ -232,7 +238,7 @@ const getSummaries = (param) => {
     const sums = [];
     columns.forEach((column, index) => {
         if (index === 0) {
-            sums[index] = 'TOTAL';
+            sums[index] = `TOTAL (${data.length} Trips)`;
             return;
         }
         if (column.property === 'amount') {
@@ -259,8 +265,26 @@ const printReport = () => {
 };
 
 const exportToExcel = () => {
-    // Basic Excel export logic would go here
-    ElMessage.success('Export logic initiated...');
+    const data = reportData.value.map(row => ({
+        Date: formatDate(row.entry_date),
+        'Bill #': formatBillId(row.bill?.id),
+        Customer: row.customer?.name,
+        Destination: row.shipping_address?.address_name,
+        Transporter: row.bill?.transporter?.name,
+        'Vehicle #': row.vehicle_number,
+        'DC #': row.dc_number,
+        'Amount (Rs.)': row.amount
+    }));
+    
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Cartage_Report");
+    XLSX.writeFile(workbook, `Cartage_Report_${filters.start_date}_to_${filters.end_date}.xlsx`);
+    ElMessage.success('Report exported to Excel');
+};
+
+const exportToPDF = () => {
+    printReport();
 };
 
 onMounted(() => {
@@ -299,6 +323,31 @@ onMounted(() => {
 }
 .modern-table :deep(td) {
     padding: 12px 0;
+}
+
+/* Summary Row Styling */
+.modern-table :deep(.el-table__footer-wrapper tbody td) {
+    background-color: #f8fafc !important; /* Professional Light Background */
+    border-top: 2px solid #e2e8f0;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.modern-table :deep(.el-table__footer-wrapper .cell) {
+    color: #1e293b !important; /* Dark Slate for standard cells */
+    font-weight: 800 !important;
+    font-size: 15px !important;
+    text-transform: uppercase;
+    white-space: nowrap !important; /* Ensure single row */
+}
+
+.modern-table :deep(.el-table__footer-wrapper tr td:last-child .cell) {
+    color: #000000 !important; /* BOLD BLACK as requested */
+    font-size: 18px !important;
+}
+
+.modern-table :deep(.el-table__footer-wrapper tr td:first-child .cell) {
+    color: #475569 !important; /* Medium slate for label */
+    letter-spacing: 0.5px;
 }
 
 /* Date Picker adjustments for right-side icon */

@@ -26,7 +26,9 @@ class UserPermissionController extends Controller
                 'user_id' => $userId,
                 'menu' => $perm['menu'],
                 'can_view' => $perm['can_view'],
+                'can_add' => $perm['can_add'] ?? false,
                 'can_edit' => $perm['can_edit'],
+                'can_delete' => $perm['can_delete'] ?? false,
                 'can_see_amounts' => $perm['can_see_amounts']
             ]);
         }

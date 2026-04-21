@@ -160,6 +160,7 @@ class DashboardController extends Controller
 
         // 5. SUPPLIER RETURN / REJECTION TRACKING
         $supplierReturns = \App\Models\ReelReturn::with(['reel.supplier', 'returnToSupplier'])
+            ->where('returned_to', 'supplier')
             ->where('return_date', '>=', $startDate)
             ->get();
 
@@ -464,25 +465,59 @@ class DashboardController extends Controller
             ];
         });
 
-        // 12 Months Received Bar Data
+        // 12 Months Received Bar Data (Amount & Weight)
         $received12MonthsData = ReelReceipt::with(['reel'])
             ->where('receiving_date', '>=', $startOf12Months)
             ->get()
             ->map(function ($receipt) {
                 return [
                     'month' => date('Y-m', strtotime($receipt->receiving_date)),
+                    'weight' => $receipt->reel->original_weight,
                     'amount' => $receipt->reel->original_weight * ($receipt->rate_per_kg ?? 0)
                 ];
             })->groupBy('month')->map(function ($group) {
-                return $group->sum('amount');
+                return [
+                    'amount' => $group->sum('amount'),
+                    'weight' => $group->sum('weight')
+                ];
             });
 
         $monthlyReceived12 = [];
         for ($i = 0; $i < 12; $i++) {
             $m = now()->subMonths(11 - $i)->format('Y-m');
+            $data = $received12MonthsData->get($m, ['amount' => 0, 'weight' => 0]);
             $monthlyReceived12[] = [
                 'month' => $m,
-                'amount' => $received12MonthsData->get($m, 0)
+                'amount' => $data['amount'],
+                'weight' => $data['weight']
+            ];
+        }
+
+        // 12 Months Consumption Bar Data (Amount & Weight)
+        $consumption12MonthsData = ReelIssue::with(['reel.receipts'])
+            ->where('issue_date', '>=', $startOf12Months)
+            ->get()
+            ->map(function ($issue) {
+                return [
+                    'month' => date('Y-m', strtotime($issue->issue_date)),
+                    'weight' => $issue->quantity_issued,
+                    'amount' => $issue->quantity_issued * ($issue->reel->receipts->first()->rate_per_kg ?? 0)
+                ];
+            })->groupBy('month')->map(function ($group) {
+                return [
+                    'amount' => $group->sum('amount'),
+                    'weight' => $group->sum('weight')
+                ];
+            });
+
+        $monthlyConsumption12 = [];
+        for ($i = 0; $i < 12; $i++) {
+            $m = now()->subMonths(11 - $i)->format('Y-m');
+            $data = $consumption12MonthsData->get($m, ['amount' => 0, 'weight' => 0]);
+            $monthlyConsumption12[] = [
+                'month' => $m,
+                'amount' => $data['amount'],
+                'weight' => $data['weight']
             ];
         }
 
@@ -497,6 +532,32 @@ class DashboardController extends Controller
                 'weight' => $group->sum('weight')
             ];
         })->values()->sortBy('date')->values();
+
+        // Receiving by Supplier (Amount & Weight)
+        $receivingBySupplier = $receivedWithAmounts->groupBy('supplier_name')->map(function ($group) {
+            return [
+                'name' => $group->first()['supplier_name'],
+                'amount' => $group->sum('amount'),
+                'weight' => $group->sum('weight')
+            ];
+        })->values()->sortByDesc('amount')->values();
+
+        // Receiving by Quality (Amount & Weight)
+        $receivingByQuality = $receivedData->map(function ($receipt) {
+            $weight = $receipt->reel->original_weight;
+            $rate = $receipt->rate_per_kg ?? 0;
+            return [
+                'name' => $receipt->reel->paperQuality->quality ?? 'Unknown',
+                'weight' => $weight,
+                'amount' => $weight * $rate
+            ];
+        })->groupBy('name')->map(function ($group) {
+            return [
+                'name' => $group->first()['name'],
+                'amount' => $group->sum('amount'),
+                'weight' => $group->sum('weight')
+            ];
+        })->values()->sortByDesc('amount')->values();
 
         // 4. KPIS
         $kpis = [
@@ -520,9 +581,90 @@ class DashboardController extends Controller
             ],
             'receiving' => [
                 'over_time' => $receivingOverTime,
+                'by_supplier' => $receivingBySupplier,
+                'by_quality' => $receivingByQuality,
                 'monthly_12' => $monthlyReceived12,
             ],
             'last_updated' => now()->toISOString(),
+        ]);
+    }
+
+    public function transportIndex(Request $request)
+    {
+        $timeRange = $request->get('range', 30);
+        $startDate = now()->subDays($timeRange)->startOfDay();
+
+        // 1. BILLS SUMMARY
+        $bills = \App\Models\CartageBill::with('transporter')
+            ->where('bill_date', '>=', $startDate)
+            ->get();
+
+        $totalBillsCount = $bills->count();
+        $totalBillAmount = $bills->sum('total_amount');
+        
+        $pendingBills = \App\Models\CartageBill::where('status', 'pending')->count();
+        $approvedBills = \App\Models\CartageBill::where('status', 'approved')->count();
+
+        // 2. TRENDS
+        $billsOverTime = $bills->groupBy(function($b) {
+            return date('Y-m-d', strtotime($b->bill_date));
+        })->map(function($group) {
+            return [
+                'count' => $group->count(),
+                'amount' => $group->sum('total_amount')
+            ];
+        });
+
+        // 3. TRANSPORTER PERFORMANCE
+        $transporterPerformance = $bills->groupBy(function($b) {
+            return $b->transporter->name ?? 'Unknown';
+        })->map(function($group, $name) {
+            return [
+                'name' => $name,
+                'amount' => $group->sum('total_amount'),
+                'bills' => $group->count()
+            ];
+        })->values()->sortByDesc('amount')->values();
+
+        // 4. TOP SHIPPING ADDRESSES
+        $entries = \App\Models\CartageEntry::with(['shippingAddress', 'customer'])
+            ->whereHas('cartageBill', function($q) use ($startDate) {
+                $q->where('bill_date', '>=', $startDate);
+            })->get();
+
+        $addressDistribution = $entries->groupBy(function($e) {
+            return $e->shippingAddress->address_name ?? 'Unknown';
+        })->map(function($group, $name) {
+            return [
+                'name' => $name,
+                'amount' => $group->sum('amount'),
+                'count' => $group->count()
+            ];
+        })->values()->sortByDesc('amount')->take(10)->values();
+
+        // 5. VEHICLE UTILIZATION
+        $vehicleUsage = $entries->groupBy('vehicle_number')->map(function($group) {
+            return [
+                'number' => $group->first()->vehicle_number,
+                'count' => $group->count(),
+                'amount' => $group->sum('amount')
+            ];
+        })->values()->sortByDesc('count')->take(10)->values();
+
+        return response()->json([
+            'kpis' => [
+                'total_bills' => $totalBillsCount,
+                'total_amount' => round($totalBillAmount, 2),
+                'pending_bills' => $pendingBills,
+                'approved_bills' => $approvedBills,
+            ],
+            'trends' => [
+                'over_time' => $billsOverTime
+            ],
+            'transporters' => $transporterPerformance,
+            'destinations' => $addressDistribution,
+            'vehicles' => $vehicleUsage,
+            'last_updated' => now()->toISOString()
         ]);
     }
 }

@@ -7,14 +7,59 @@
                         <span class="fs-4 fw-800 text-slate-800"><i class="bi bi-tag-fill me-2 text-primary"></i>Rate Configuration</span>
                         <p class="text-muted mb-0 small">Setup standard cartage rates for customers and vehicles</p>
                     </div>
-                    <el-button type="primary" size="large" @click="openDialog()" class="add-btn shadow-sm">
-                        <i class="bi bi-gear-fill me-2"></i> Configure Rate
-                    </el-button>
+                    <div class="d-flex gap-2">
+                        <el-button type="info" @click="printRates" plain>
+                            <i class="bi bi-printer me-1"></i> Print
+                        </el-button>
+                        <el-button type="success" @click="exportToExcel" plain>
+                            <i class="bi bi-file-earmark-excel me-1"></i> Excel
+                        </el-button>
+                        <el-button type="danger" @click="exportToPDF" plain>
+                            <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+                        </el-button>
+                        <el-button type="primary" @click="openDialog()" class="add-btn shadow-sm ms-2">
+                            <i class="bi bi-gear-fill me-2"></i> Configure Rate
+                        </el-button>
+                    </div>
                 </div>
             </template>
 
+            <!-- Filters Bar -->
+            <div class="filters-bar mb-4 p-3 bg-light rounded border border-light-subtle">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <el-input 
+                            v-model="searchFilters.customer" 
+                            placeholder="Filter by Customer..." 
+                            clearable
+                        >
+                            <template #prefix><i class="bi bi-search"></i></template>
+                        </el-input>
+                    </div>
+                    <div class="col-md-4">
+                        <el-input 
+                            v-model="searchFilters.destination" 
+                            placeholder="Filter by Destination..." 
+                            clearable
+                        >
+                            <template #prefix><i class="bi bi-geo-alt"></i></template>
+                        </el-input>
+                    </div>
+                    <div class="col-md-4">
+                        <el-select v-model="searchFilters.vehicle_type" placeholder="Vehicle Type" clearable class="w-100">
+                            <template #prefix><i class="bi bi-truck"></i></template>
+                            <el-option label="Suzuki" value="Suzuki" />
+                            <el-option label="Shehzore" value="Shehzore" />
+                            <el-option label="Mazda" value="Mazda" />
+                            <el-option label="1x17 Container" value="1x17 Container" />
+                            <el-option label="1x20 Container" value="1x20 Container" />
+                        </el-select>
+                    </div>
+                </div>
+            </div>
+
             <el-table 
-                :data="rates" 
+                :data="filteredRates" 
                 style="width: 100%" 
                 v-loading="loading"
                 class="modern-table"
@@ -88,13 +133,40 @@
             </template>
         </el-dialog>
     </div>
+
+    <!-- Print Only Area -->
+    <div id="print-area" class="d-none print-only">
+        <div class="print-header text-center mb-4">
+            <h2 class="fw-bold">Cartage Rate Configuration</h2>
+            <p class="text-muted small">Generated on {{ new Date().toLocaleString() }}</p>
+        </div>
+        <table class="table table-bordered print-table">
+            <thead>
+                <tr>
+                    <th>Customer</th>
+                    <th>Shipping Destination</th>
+                    <th>Transport Mode</th>
+                    <th class="text-end">Standard Rate (Rs.)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="rate in filteredRates" :key="rate.id">
+                    <td>{{ rate.shipping_address?.customer?.name }}</td>
+                    <td>{{ rate.shipping_address?.address_name }}</td>
+                    <td>{{ rate.vehicle_type }}</td>
+                    <td class="text-end">{{ rate.rate.toLocaleString() }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, reactive } from 'vue';
 import axios from 'axios';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Delete } from '@element-plus/icons-vue';
+import * as XLSX from 'xlsx';
 
 const rates = ref([]);
 const customers = ref([]);
@@ -108,6 +180,21 @@ const form = ref({
     shipping_address_id: null,
     vehicle_type: '',
     rate: 0
+});
+
+const searchFilters = reactive({
+    customer: '',
+    destination: '',
+    vehicle_type: ''
+});
+
+const filteredRates = computed(() => {
+    return rates.value.filter(rate => {
+        const customerMatch = !searchFilters.customer || rate.shipping_address?.customer?.name.toLowerCase().includes(searchFilters.customer.toLowerCase());
+        const destinationMatch = !searchFilters.destination || rate.shipping_address?.address_name.toLowerCase().includes(searchFilters.destination.toLowerCase());
+        const vehicleMatch = !searchFilters.vehicle_type || rate.vehicle_type === searchFilters.vehicle_type;
+        return customerMatch && destinationMatch && vehicleMatch;
+    });
 });
 
 const rules = {
@@ -183,6 +270,31 @@ const deleteRate = async (rate) => {
     } catch (e) {}
 };
 
+const printRates = () => {
+    window.print();
+};
+
+const exportToExcel = () => {
+    const data = filteredRates.value.map(r => ({
+        Customer: r.shipping_address?.customer?.name,
+        Destination: r.shipping_address?.address_name,
+        Vehicle: r.vehicle_type,
+        Rate: r.rate
+    }));
+    
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Rates");
+    XLSX.writeFile(workbook, "Cartage_Rates.xlsx");
+    ElMessage.success('Excel file exported');
+};
+
+const exportToPDF = () => {
+    // For now, use print to PDF. In a real app we might call a backend PDF route
+    // but browser print handles it beautifully if styled correctly.
+    window.print();
+};
+
 onMounted(() => {
     fetchRates();
     fetchCustomers();
@@ -233,5 +345,33 @@ onMounted(() => {
     font-weight: 700;
     color: #475569;
     padding-bottom: 8px !important;
+}
+
+.filters-bar {
+    border-radius: 12px;
+}
+
+.print-only {
+    display: none;
+}
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #print-area, #print-area * {
+        visibility: visible;
+    }
+    #print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        display: block !important;
+    }
+    .cartage-rate-setup {
+        padding: 0;
+        background: none;
+    }
 }
 </style>
