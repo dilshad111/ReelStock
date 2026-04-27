@@ -36,7 +36,12 @@ const PERMISSION_KEY_MAP = {
     'users': 'users',
     'user-rights': 'users',
     'audit-log': 'audit_log',
-    'transport-dashboard': 'transport_dashboard'
+    'transport-dashboard': 'transport_dashboard',
+    'fg-products': 'fg_products',
+    'fg-receipts': 'fg_receipts',
+    'fg-dispatches': 'fg_dispatches',
+    'fg-reports': 'fg_reports',
+    'fg-dashboard': 'fg_dashboard'
 };
 
 const PERMISSION_KEYS = [
@@ -58,7 +63,12 @@ const PERMISSION_KEYS = [
     'setup',
     'users',
     'audit_log',
-    'transport_dashboard'
+    'transport_dashboard',
+    'fg_products',
+    'fg_receipts',
+    'fg_dispatches',
+    'fg_reports',
+    'fg_dashboard'
 ];
 
 const VIEW_ORDER = [
@@ -91,6 +101,11 @@ const VIEW_ORDER = [
     'cartage',
     'cartage-list',
     'cartage-report',
+    'fg-dashboard',
+    'fg-products',
+    'fg-receipts',
+    'fg-dispatches',
+    'fg-reports',
     'profile'
 ];
 
@@ -125,6 +140,11 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     'cartage-rates': 'cartage-rates',
     'cartage': 'cartage',
     'cartage-list': 'cartage-list',
+    'fg-dashboard': 'fg-dashboard',
+    'fg-products': 'fg-products',
+    'fg-receipts': 'fg-receipts',
+    'fg-dispatches': 'fg-dispatches',
+    'fg-reports': 'fg-reports',
     profile: 'profile'
 });
 
@@ -538,6 +558,12 @@ import CartageReportComponent from './components/CartageReportComponent.vue';
 
 import TransportDashboardComponent from './components/TransportDashboardComponent.vue';
 
+import ProductComponent from './components/ProductComponent.vue';
+import FGReceiptComponent from './components/FGReceiptComponent.vue';
+import FGDispatchComponent from './components/FGDispatchComponent.vue';
+import FGReportComponent from './components/FGReportComponent.vue';
+import FGDashboardComponent from './components/FGDashboardComponent.vue';
+
 app.component('supplier-component', SupplierComponent);
 app.component('paper-quality-component', PaperQualityComponent);
 app.component('dashboard-component', DashboardComponent);
@@ -570,6 +596,11 @@ app.component('vehicle-component', VehicleComponent);
 app.component('cartage-rate-component', CartageRateComponent);
 app.component('cartage-billing-component', CartageBillingComponent);
 app.component('cartage-report-component', CartageReportComponent);
+app.component('product-component', ProductComponent);
+app.component('fg-receipt-component', FGReceiptComponent);
+app.component('fg-dispatch-component', FGDispatchComponent);
+app.component('fg-report-component', FGReportComponent);
+app.component('fg-dashboard-component', FGDashboardComponent);
 
 /**
  * The following block of code may be used to automatically register your

@@ -743,6 +743,18 @@
                         <el-menu-item index="cartage-report" v-if="canView('cartage')">Cartage Report</el-menu-item>
                     </el-sub-menu>
 
+                    <el-sub-menu index="finished-goods" v-if="canView('fg-dashboard') || canView('fg-products') || canView('fg-receipts') || canView('fg-dispatches') || canView('fg-reports')">
+                        <template #title>
+                            <i class="bi bi-box-seam-fill me-2" style="color: #a78bfa !important;"></i>
+                            <span>Finished Goods</span>
+                        </template>
+                        <el-menu-item index="fg-dashboard" v-if="canView('fg-dashboard')">FG Dashboard</el-menu-item>
+                        <el-menu-item index="fg-products" v-if="canView('fg-products')">Products</el-menu-item>
+                        <el-menu-item index="fg-receipts" v-if="canView('fg-receipts')">Production Entry</el-menu-item>
+                        <el-menu-item index="fg-dispatches" v-if="canView('fg-dispatches')">Dispatch Entry</el-menu-item>
+                        <el-menu-item index="fg-reports" v-if="canView('fg-reports')">FG Reports</el-menu-item>
+                    </el-sub-menu>
+
                     <el-sub-menu index="users" v-if="canView('users') || canView('audit-log')">
                         <template #title>
                             <i class="bi bi-people me-2 icon-users"></i>
@@ -850,6 +862,11 @@
                 <cartage-billing-component v-else-if="currentView === 'cartage'" :user="user" @update-pending-count="fetchPendingCartageCount"></cartage-billing-component>
                 <cartage-billing-component v-else-if="currentView === 'cartage-list'" :user="user" :initial-history="true" @update-pending-count="fetchPendingCartageCount"></cartage-billing-component>
                 <cartage-report-component v-else-if="currentView === 'cartage-report'" :user="user"></cartage-report-component>
+                <fg-dashboard-component v-else-if="currentView === 'fg-dashboard'" :user="user"></fg-dashboard-component>
+                <product-component v-else-if="currentView === 'fg-products'" :user="user"></product-component>
+                <fg-receipt-component v-else-if="currentView === 'fg-receipts'" :user="user"></fg-receipt-component>
+                <fg-dispatch-component v-else-if="currentView === 'fg-dispatches'" :user="user"></fg-dispatch-component>
+                <fg-report-component v-else-if="currentView === 'fg-reports'" :user="user"></fg-report-component>
                 <best-ui-showcase-component v-else-if="currentView === 'best-ui'"></best-ui-showcase-component>
                 <!-- Add other components here -->
                 <div v-else>

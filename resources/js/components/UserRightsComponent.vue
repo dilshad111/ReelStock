@@ -170,6 +170,16 @@ export default {
           { key: 'users', name: 'User Management', hasAmounts: false },
           { key: 'audit_log', name: 'Audit Logs', hasAmounts: false },
         ]
+      },
+      {
+        category: 'Finished Goods Inventory',
+        items: [
+          { key: 'fg_dashboard', name: 'FG Dashboard', hasAmounts: false },
+          { key: 'fg_products', name: 'Product Master', hasAmounts: false },
+          { key: 'fg_receipts', name: 'Production Entry', hasAmounts: false },
+          { key: 'fg_dispatches', name: 'Dispatch Entry', hasAmounts: false },
+          { key: 'fg_reports', name: 'FG Reports', hasAmounts: false },
+        ]
       }
     ];
 

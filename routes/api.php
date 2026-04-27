@@ -28,6 +28,10 @@ use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\CartageRateController;
 use App\Http\Controllers\CartageBillController;
 use App\Http\Controllers\CartageReportController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\FGReceiptController;
+use App\Http\Controllers\FGDispatchController;
+use App\Http\Controllers\FGReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -142,4 +146,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('cartage-bills/next-id', [CartageBillController::class, 'getNextId']);
     Route::post('cartage-bills/{id}/approve', [CartageBillController::class, 'approve']);
     Route::apiResource('cartage-bills', CartageBillController::class);
+
+    // Finished Goods Inventory Module
+    Route::apiResource('products', ProductController::class);
+    Route::get('products/by-customer/{customerId}', [ProductController::class, 'byCustomer']);
+
+    Route::apiResource('fg-receipts', FGReceiptController::class);
+    Route::apiResource('fg-dispatches', FGDispatchController::class);
+    Route::get('fg-dispatches/available-stock/{productId}', [FGDispatchController::class, 'getAvailableStock']);
+    Route::get('fg-dispatches/job-details/{jobNumber}', [FGDispatchController::class, 'getJobDetails']);
+
+    Route::get('fg-reports/stock', [FGReportController::class, 'stockReport']);
+    Route::get('fg-reports/job', [FGReportController::class, 'jobReport']);
+    Route::get('fg-reports/job-detail', [FGReportController::class, 'jobDetail']);
+    Route::get('fg-reports/audit', [FGReportController::class, 'auditReport']);
+    Route::get('fg-reports/filters', [FGReportController::class, 'getFilters']);
+    Route::get('fg-dashboard', [FGReportController::class, 'dashboard']);
 });
