@@ -51,7 +51,7 @@ class ProductController extends Controller
             'item_code' => 'required|string|max:100',
             'item_name' => 'required|string|max:255',
             'rate' => 'nullable|numeric|min:0',
-            'opening_balance' => 'nullable|numeric|min:0',
+            'opening_balance' => 'nullable|integer|min:0',
         ]);
 
 
@@ -62,7 +62,7 @@ class ProductController extends Controller
                 'item_code' => $request->item_code,
                 'item_name' => $request->item_name,
                 'rate' => $request->rate,
-                'opening_balance' => $request->opening_balance ?? 0,
+                'opening_balance' => (int) ($request->opening_balance ?? 0),
             ]);
 
             // Record opening balance in ledger if > 0
@@ -102,13 +102,61 @@ class ProductController extends Controller
             'item_code' => 'required|string|max:100',
             'item_name' => 'required|string|max:255',
             'rate' => 'nullable|numeric|min:0',
+            'opening_balance' => 'nullable|integer|min:0',
         ]);
 
+        return DB::transaction(function () use ($request, $product) {
+            $oldOpening = (float) $product->opening_balance;
+            $newOpening = (int) ($request->opening_balance ?? 0);
 
+            $product->update([
+                'customer_id' => $request->customer_id,
+                'item_code' => $request->item_code,
+                'item_name' => $request->item_name,
+                'rate' => $request->rate,
+                'opening_balance' => $newOpening,
+            ]);
 
-        $product->update($request->only(['customer_id', 'item_code', 'item_name', 'rate']));
+            if ($oldOpening != $newOpening) {
+                $diff = $newOpening - $oldOpening;
 
-        return response()->json($product->load('customer'));
+                // Find opening ledger entry
+                $openingLedger = FGStockLedger::where('product_id', $product->id)
+                    ->where('transaction_type', 'opening')
+                    ->first();
+
+                if ($openingLedger) {
+                    $openingLedger->update([
+                        'quantity_in' => $newOpening,
+                        'balance_after' => $newOpening,
+                    ]);
+                } else if ($newOpening > 0) {
+                    // Create if it didn't exist
+                    FGStockLedger::create([
+                        'transaction_type' => 'opening',
+                        'reference_id' => $product->id,
+                        'product_id' => $product->id,
+                        'customer_id' => $product->customer_id,
+                        'job_number' => null,
+                        'quantity_in' => $newOpening,
+                        'quantity_out' => 0,
+                        'balance_after' => $newOpening,
+                        'transaction_date' => $product->created_at ? $product->created_at->toDateString() : now()->toDateString(),
+                    ]);
+                    // If it was created from 0, the diff for subsequent entries is just newOpening
+                    $diff = $newOpening;
+                }
+
+                // Update all subsequent ledger entries for this product
+                if ($diff != 0) {
+                    FGStockLedger::where('product_id', $product->id)
+                        ->where('transaction_type', '!=', 'opening')
+                        ->increment('balance_after', $diff);
+                }
+            }
+
+            return response()->json($product->load('customer'));
+        });
     }
 
     public function destroy($id)

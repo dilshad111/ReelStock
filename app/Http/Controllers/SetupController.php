@@ -16,7 +16,14 @@ class SetupController extends Controller
 {
     public function getSettings()
     {
-        $settings = Setting::all()->pluck('value', 'key');
+        $settings = Setting::all()->pluck('value', 'key')->toArray();
+        
+        $sequence = \App\Models\ReelSequence::first();
+        if ($sequence) {
+            $settings['reel_no_prefix'] = $sequence->prefix;
+            $settings['reel_next_number'] = (string) $sequence->next_number;
+        }
+
         return response()->json($settings);
     }
 
@@ -47,6 +54,14 @@ class SetupController extends Controller
                         }
                     });
             }
+
+            // Sync with ReelSequence table
+            \App\Models\ReelSequence::query()->update(['prefix' => $newPrefix]);
+        }
+
+        if ($request->key === 'reel_next_number') {
+            $newNext = (int) $request->value;
+            \App\Models\ReelSequence::query()->update(['next_number' => $newNext]);
         }
 
         return response()->json(['message' => 'Setting updated successfully']);

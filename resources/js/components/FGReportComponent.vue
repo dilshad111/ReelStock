@@ -28,16 +28,20 @@
               <option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option>
             </select>
           </div>
+          <div class="col-md-2">
+            <label class="small text-muted">Item / Code</label>
+            <input v-model="stockFilters.item_search" @input="debouncedStockFetch" type="text" class="form-control form-control-sm" placeholder="Search...">
+          </div>
           <div class="col-md-2"><label class="small text-muted">From</label><input v-model="stockFilters.date_from" type="date" class="form-control form-control-sm" @change="fetchStockReport"></div>
           <div class="col-md-2"><label class="small text-muted">To</label><input v-model="stockFilters.date_to" type="date" class="form-control form-control-sm" @change="fetchStockReport"></div>
-          <div class="col-md-2"><button @click="stockFilters = { customer_id: '', date_from: '', date_to: '' }; fetchStockReport()" class="btn btn-sm btn-outline-secondary w-100">Clear</button></div>
+          <div class="col-md-1"><button @click="stockFilters = { customer_id: '', date_from: '', date_to: '', item_search: '' }; fetchStockReport()" class="btn btn-sm btn-outline-secondary w-100">Clear</button></div>
         </div>
 
         <div v-for="group in stockData" :key="group.customer" class="card mb-3 shadow-sm">
           <div class="card-header bg-light fw-bold"><i class="bi bi-person-circle me-2"></i>{{ group.customer }}</div>
           <div class="card-body p-0">
             <table class="table table-sm table-striped mb-0 small">
-              <thead><tr><th>Item Code</th><th>Item Name</th><th class="text-end">Opening</th><th class="text-end">Produced</th><th class="text-end">Dispatched</th><th class="text-end fw-bold">Balance</th></tr></thead>
+              <thead><tr><th class="text-center">Item Code</th><th class="text-center" style="width: 35%;">Item Name</th><th class="text-center">Opening</th><th class="text-center">Produced</th><th class="text-center">Dispatched</th><th class="text-center fw-bold">Balance</th><th v-if="isAdmin" class="text-center">Amount</th></tr></thead>
               <tbody>
                 <tr v-for="p in group.products" :key="p.product_id">
                   <td class="fw-bold">{{ p.item_code }}</td><td>{{ p.item_name }}</td>
@@ -45,12 +49,14 @@
                   <td class="text-end text-success">{{ fmt(p.total_produced) }}</td>
                   <td class="text-end text-danger">{{ fmt(p.total_dispatched) }}</td>
                   <td class="text-end fw-bold" :class="p.current_balance > 0 ? 'text-primary' : 'text-danger'">{{ fmt(p.current_balance) }}</td>
+                  <td v-if="isAdmin" class="text-end fw-bold text-dark">{{ fmt(p.amount) }}</td>
                 </tr>
                 <tr class="table-secondary fw-bold">
                   <td colspan="3">Total</td>
                   <td class="text-end text-success">{{ fmt(group.total_produced) }}</td>
                   <td class="text-end text-danger">{{ fmt(group.total_dispatched) }}</td>
                   <td class="text-end text-primary">{{ fmt(group.total_balance) }}</td>
+                  <td v-if="isAdmin" class="text-end text-success">{{ fmt(group.total_amount) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -92,11 +98,12 @@
         <div class="row mb-3 g-2 align-items-end">
           <div class="col-md-2"><label class="small text-muted">Customer</label>
             <select v-model="auditFilters.customer_id" @change="fetchAuditReport" class="form-control form-control-sm"><option value="">All</option><option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option></select></div>
+          <div class="col-md-2"><label class="small text-muted">Item / Code</label><input v-model="auditFilters.item_search" @input="debouncedAuditFetch" type="text" class="form-control form-control-sm" placeholder="Search..."></div>
           <div class="col-md-2"><label class="small text-muted">Type</label>
             <select v-model="auditFilters.transaction_type" @change="fetchAuditReport" class="form-control form-control-sm"><option value="">All</option><option value="opening">Opening</option><option value="receipt">Receipt</option><option value="dispatch">Dispatch</option><option value="adjustment">Adjustment</option></select></div>
           <div class="col-md-2"><label class="small text-muted">From</label><input v-model="auditFilters.date_from" type="date" class="form-control form-control-sm" @change="fetchAuditReport"></div>
           <div class="col-md-2"><label class="small text-muted">To</label><input v-model="auditFilters.date_to" type="date" class="form-control form-control-sm" @change="fetchAuditReport"></div>
-          <div class="col-md-2"><button @click="auditFilters = { customer_id: '', transaction_type: '', date_from: '', date_to: '' }; fetchAuditReport()" class="btn btn-sm btn-outline-secondary w-100">Clear</button></div>
+          <div class="col-md-1"><button @click="auditFilters = { customer_id: '', transaction_type: '', date_from: '', date_to: '', item_search: '' }; fetchAuditReport()" class="btn btn-sm btn-outline-secondary w-100">Clear</button></div>
         </div>
 
         <table class="table table-striped table-sm text-nowrap small table-sticky-header">
@@ -132,10 +139,14 @@
         </div>
         <h6 class="mt-3 mb-2 fw-bold">Production Entries</h6>
         <table class="table table-sm table-bordered small">
-          <thead><tr><th>Date</th><th class="text-end">Qty Produced</th><th class="text-end">Wastage</th><th>Remarks</th></tr></thead>
+          <thead><tr><th>Date</th><th class="text-end">Qty Produced</th><th class="text-end">Price</th><th class="text-end">Wastage</th><th>Remarks</th></tr></thead>
           <tbody>
             <tr v-for="r in jobDetail.receipts" :key="r.id">
-              <td>{{ formatDate(r.date) }}</td><td class="text-end text-success fw-bold">{{ fmt(r.quantity_produced) }}</td><td class="text-end">{{ fmt(r.wastage) }}</td><td>{{ r.remarks || '-' }}</td>
+              <td>{{ formatDate(r.date) }}</td>
+              <td class="text-end text-success fw-bold">{{ fmt(r.quantity_produced) }}</td>
+              <td class="text-end fw-bold text-dark">{{ fmt(r.carton_price) }}</td>
+              <td class="text-end">{{ fmt(r.wastage) }}</td>
+              <td>{{ r.remarks || '-' }}</td>
             </tr>
           </tbody>
         </table>
@@ -169,11 +180,13 @@ export default {
     return {
       activeTab: 'stock',
       customers: [], products: [],
-      stockData: [], stockFilters: { customer_id: '', date_from: '', date_to: '' },
+      stockData: [], stockFilters: { customer_id: '', date_from: '', date_to: '', item_search: '' },
       jobData: [], jobFilters: { customer_id: '', job_number: '', date_from: '', date_to: '' },
-      auditData: [], auditFilters: { customer_id: '', transaction_type: '', date_from: '', date_to: '' },
+      auditData: [], auditFilters: { customer_id: '', transaction_type: '', date_from: '', date_to: '', item_search: '' },
       showJobModal: false, jobDetail: null,
       searchTimeout: null,
+      stockSearchTimeout: null,
+      auditSearchTimeout: null,
       companyName: 'QUALITY CARTONS (PVT.) LTD.',
       companyAddress: 'Plot# 46, Sector 24, Korangi Industrial Area Karachi',
       companyLogo: window.location.origin + '/images/quality-cartons-logo.svg'
@@ -210,7 +223,14 @@ export default {
       if (filters.job_number) {
         parts.push(`Job: <strong>${filters.job_number}</strong>`);
       }
+      if (filters.item_search) {
+        parts.push(`Item Search: <strong>${filters.item_search}</strong>`);
+      }
       return parts.length > 0 ? parts.join(' &nbsp;|&nbsp; ') : 'All Data';
+    },
+    isAdmin() {
+      // Logic for admin: check role_id or specific permission
+      return this.user && (this.user.role_id === 1 || (this.user.role && this.user.role.name.toLowerCase() === 'admin'));
     }
   },
   mounted() {
@@ -250,6 +270,8 @@ export default {
       axios.get('/api/fg-reports/job', { params }).then(r => { this.jobData = r.data.data || r.data; });
     },
     debouncedJobFetch() { clearTimeout(this.searchTimeout); this.searchTimeout = setTimeout(() => this.fetchJobReport(), 400); },
+    debouncedStockFetch() { clearTimeout(this.stockSearchTimeout); this.stockSearchTimeout = setTimeout(() => this.fetchStockReport(), 400); },
+    debouncedAuditFetch() { clearTimeout(this.auditSearchTimeout); this.auditSearchTimeout = setTimeout(() => this.fetchAuditReport(), 400); },
     showJobDetail(job) {
       axios.get('/api/fg-reports/job-detail', { params: { job_number: job.job_number, product_id: job.product_id } })
         .then(r => { this.jobDetail = r.data; this.showJobModal = true; });
@@ -282,7 +304,7 @@ export default {
           <head>
             <title>${this.printTitle} - Quality Cartons</title>
             <style>
-              @page { size: A4 landscape; margin: 3mm 5mm 3mm 5mm; @bottom-center { content: "Page " counter(page) " of " counter(pages); font-size: 10px; color: #000; } }
+              @page { size: A4 portrait; margin: 3mm 5mm 3mm 5mm; @bottom-center { content: "Page " counter(page) " of " counter(pages); font-size: 10px; color: #000; } }
               body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #000; }
               .header { margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; display: flex; align-items: center; justify-content: space-between; color: #000; }
               .logo-section { flex-shrink: 0; }
@@ -327,16 +349,17 @@ export default {
         this.stockData.forEach(group => {
           html += `<div class="customer-heading"><strong>Customer:</strong> ${group.customer}</div>`;
           html += `<table>
-            <thead><tr><th>Item Code</th><th>Item Name</th><th class="text-end">Opening</th><th class="text-end">Produced</th><th class="text-end">Dispatched</th><th class="text-end">Balance</th></tr></thead>
+            <thead><tr><th class="text-center">Item Code</th><th class="text-center" style="width: 35%;">Item Name</th><th class="text-center">Opening</th><th class="text-center">Produced</th><th class="text-center">Dispatched</th><th class="text-center">Balance</th>${this.isAdmin ? '<th class="text-center">Amount</th>' : ''}</tr></thead>
             <tbody>`;
           group.products.forEach(p => {
             html += `<tr>
               <td class="fw-bold">${p.item_code}</td><td>${p.item_name}</td>
               <td class="text-end">${this.fmt(p.opening_balance)}</td><td class="text-end">${this.fmt(p.total_produced)}</td>
               <td class="text-end">${this.fmt(p.total_dispatched)}</td><td class="text-end fw-bold">${this.fmt(p.current_balance)}</td>
+              ${this.isAdmin ? `<td class="text-end fw-bold">${this.fmt(p.amount)}</td>` : ''}
             </tr>`;
           });
-          html += `<tr class="total-row"><td colspan="3" class="fw-bold">Total</td><td class="text-end fw-bold">${this.fmt(group.total_produced)}</td><td class="text-end fw-bold">${this.fmt(group.total_dispatched)}</td><td class="text-end fw-bold">${this.fmt(group.total_balance)}</td></tr>
+          html += `<tr class="total-row"><td colspan="3" class="fw-bold">Total</td><td class="text-end fw-bold">${this.fmt(group.total_produced)}</td><td class="text-end fw-bold">${this.fmt(group.total_dispatched)}</td><td class="text-end fw-bold">${this.fmt(group.total_balance)}</td>${this.isAdmin ? `<td class="text-end fw-bold">${this.fmt(group.total_amount)}</td>` : ''}</tr>
             </tbody></table>`;
         });
       } else if (this.activeTab === 'job') {
@@ -389,7 +412,8 @@ export default {
               'Opening Balance': Number(p.opening_balance),
               'Total Produced': Number(p.total_produced),
               'Total Dispatched': Number(p.total_dispatched),
-              'Current Balance': Number(p.current_balance)
+              'Current Balance': Number(p.current_balance),
+              ...(this.isAdmin ? { 'Amount': Number(p.amount) } : {})
             });
           });
         });

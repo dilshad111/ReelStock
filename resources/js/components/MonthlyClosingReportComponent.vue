@@ -44,7 +44,8 @@
                   <tr>
                     <th class="align-middle text-start">Paper Quality</th>
                     <th v-for="size in reelSizes" :key="size" class="text-center">{{ size }}</th>
-                    <th class="text-center">Total</th>
+                    <th class="text-center">Total Weight</th>
+                    <th v-if="canSeeAmounts('monthly-closing')" class="text-center">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -54,14 +55,16 @@
                       {{ row[size] > 0 ? formatNumber(row[size]) : '-' }}
                     </td>
                     <td class="text-end fw-bold bg-light">{{ formatNumber(row.total) }}</td>
+                    <td v-if="canSeeAmounts('monthly-closing')" class="text-end fw-bold">{{ formatNumber(row.amount) }}</td>
                   </tr>
                   <!-- Totals row -->
-                  <tr class="table-info fw-bold">
-                    <td class="fw-bold" style="white-space: nowrap;">TOTAL</td>
-                    <td v-for="size in reelSizes" :key="size" class="text-end bg-light">
+                  <tr class="fw-bold" style="background-color: #000 !important; color: #fff !important;">
+                    <td class="fw-bold" style="white-space: nowrap; color: #fff !important;">GRAND TOTAL</td>
+                    <td v-for="size in reelSizes" :key="size" class="text-end" style="color: #fff !important; background-color: #333 !important;">
                       {{ formatNumber(pivotData[pivotData.length - 1][size]) }}
                     </td>
-                    <td class="text-end fw-bold bg-primary text-white">{{ formatNumber(pivotData[pivotData.length - 1].total) }}</td>
+                    <td class="text-end fw-bold" style="background-color: #000 !important; color: #fff !important;">{{ formatNumber(pivotData[pivotData.length - 1].total) }}</td>
+                    <td v-if="canSeeAmounts('monthly-closing')" class="text-end fw-900" style="background-color: #000 !important; color: #fff !important;">{{ formatNumber(pivotData[pivotData.length - 1].amount) }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -305,6 +308,14 @@ export default {
       );
       return sizesWithData;
     },
+    canSeeAmounts(menu) {
+      if (!this.user || !this.user.permissions) return false;
+      const isAdmin = this.user.is_admin || this.user.role?.name === 'Admin' || this.user.email === 'superadmin@qc.com';
+      if (isAdmin) return true;
+      // Permissions are stored as an object { menu_key: { ... } }
+      const perm = this.user.permissions[menu];
+      return perm ? !!perm.can_see_amounts : false;
+    },
     generateHTMLContent(activeSizes = null) {
       if (!this.pivotData.length) {
         return '<p class="text-muted">No stock data available for this date</p>';
@@ -323,7 +334,8 @@ export default {
             <thead>
               <tr style="background-color: #f8f9fa;">
                 <th style="padding: 8px; min-width: 300px;">Paper Quality</th>
-                <th style="padding: 8px; min-width: 80px;">Total</th>
+                <th style="padding: 8px; min-width: 80px;">Total Weight</th>
+                ${this.canSeeAmounts('monthly-closing') ? '<th style="padding: 8px; min-width: 100px;">Amount</th>' : ''}
               </tr>
             </thead>
             <tbody>
@@ -331,11 +343,13 @@ export default {
                 <tr>
                   <td style="padding: 6px; font-weight: bold;">${row.quality}</td>
                   <td style="text-align: right; padding: 6px; font-weight: bold; background-color: #f8f9fa;">${this.formatNumber(Number(row.total) || 0)}</td>
+                  ${this.canSeeAmounts('monthly-closing') ? `<td style="text-align: right; padding: 6px; font-weight: bold;">${this.formatNumber(Number(row.amount) || 0)}</td>` : ''}
                 </tr>
               `).join('')}
               <tr style="background-color: #e3f2fd; font-weight: bold;">
                 <td style="padding: 6px; font-weight: bold;">TOTAL</td>
                 <td style="text-align: right; padding: 6px; font-weight: bold; background-color: #007bff; color: white;">${this.formatNumber(Number(totalsRow.total) || 0)}</td>
+                ${this.canSeeAmounts('monthly-closing') ? `<td style="text-align: right; padding: 6px; font-weight: 900; background-color: #000; color: #fff;">${this.formatNumber(Number(totalsRow.amount) || 0)}</td>` : ''}
               </tr>
             </tbody>
           </table>
@@ -348,7 +362,8 @@ export default {
             <tr style="background-color: #f8f9fa;">
               <th rowspan="2" style="padding: 2px;">Paper Quality</th>
               <th colspan="${sizes.length}" style="text-align: center; padding: 2px;">Reel Sizes</th>
-              <th rowspan="2" style="padding: 2px;">Total</th>
+              <th rowspan="2" style="padding: 2px;">Total Weight</th>
+              ${this.canSeeAmounts('monthly-closing') ? '<th rowspan="2" style="padding: 2px;">Amount</th>' : ''}
             </tr>
             <tr style="background-color: #f8f9fa;">
               ${sizes.map(size => `<th style="text-align: center; padding: 2px; min-width: 25px;">${size}</th>`).join('')}
@@ -363,23 +378,26 @@ export default {
                   return `<td style=\"text-align: right; padding: 2px;\">${value > 0 ? this.formatNumber(value) : '-'}</td>`;
                 }).join('')}
                 <td style="text-align: right; padding: 2px; font-weight: bold; background-color: #f8f9fa;">${this.formatNumber(Number(row.total) || 0)}</td>
+                ${this.canSeeAmounts('monthly-closing') ? `<td style="text-align: right; padding: 2px; font-weight: bold;">${this.formatNumber(Number(row.amount) || 0)}</td>` : ''}
               </tr>
             `).join('')}
-            <tr style="background-color: #e3f2fd; font-weight: bold;">
-              <td style="padding: 2px; font-weight: bold; white-space: nowrap;">TOTAL</td>
+            <tr style="background-color: #000; color: #fff; font-weight: bold;">
+              <td style="padding: 2px; font-weight: bold; white-space: nowrap; color: #fff;">GRAND TOTAL</td>
               ${sizes.map(size => {
                 const value = Number(totalsRow[size]) || 0;
-                return `<td style=\"text-align: right; padding: 2px; background-color: #f8f9fa;\">${this.formatNumber(value)}</td>`;
+                return `<td style=\"text-align: right; padding: 2px; color: #fff; background-color: #333;\">${this.formatNumber(value)}</td>`;
               }).join('')}
-              <td style="text-align: right; padding: 2px; font-weight: bold; background-color: #007bff; color: white;">${this.formatNumber(Number(totalsRow.total) || 0)}</td>
+              <td style="text-align: right; padding: 2px; font-weight: bold; background-color: #000; color: #fff;">${this.formatNumber(Number(totalsRow.total) || 0)}</td>
+              ${this.canSeeAmounts('monthly-closing') ? `<td style="text-align: right; padding: 2px; font-weight: 900; background-color: #000; color: #fff;">${this.formatNumber(Number(totalsRow.amount) || 0)}</td>` : ''}
             </tr>
           </tbody>
         </table>
       `;
     },
     formatDate(dateString) {
+      if (!dateString) return '-';
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      return date.toLocaleDateString('en-GB');
     },
     formatDateDMY(dateString) {
       const date = new Date(dateString);
@@ -430,5 +448,9 @@ export default {
   line-height: 0.5;
   font-size: 12px;
   white-space: nowrap;
+}
+
+.fw-900 {
+  font-weight: 900 !important;
 }
 </style>

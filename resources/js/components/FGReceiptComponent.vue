@@ -24,7 +24,7 @@
               </div>
               <div class="mb-3">
                 <label>Product <span class="text-danger">*</span></label>
-                <select v-model="form.product_id" class="form-control" required>
+                <select v-model="form.product_id" @change="onProductChange" class="form-control" required>
                   <option value="">Select Product</option>
                   <option v-for="p in filteredProducts" :key="p.id" :value="p.id">{{ p.item_code }} - {{ p.item_name }}</option>
                 </select>
@@ -46,12 +46,16 @@
             </div>
             <div class="col-md-4">
               <div class="mb-3">
+                <label>Carton Price</label>
+                <input v-model="form.carton_price" type="number" step="0.01" class="form-control">
+              </div>
+              <div class="mb-3">
                 <label>Wastage</label>
                 <input v-model="form.wastage" type="number" step="0.01" class="form-control">
               </div>
               <div class="mb-3">
                 <label>Remarks</label>
-                <textarea v-model="form.remarks" class="form-control" rows="3"></textarea>
+                <textarea v-model="form.remarks" class="form-control" rows="2"></textarea>
               </div>
             </div>
           </div>
@@ -99,6 +103,7 @@
           <th>Job #</th>
           <th>Prod. Date</th>
           <th class="text-end">Qty Produced</th>
+          <th class="text-end">Price</th>
           <th class="text-end">Wastage</th>
           <th>Actions</th>
         </tr>
@@ -112,13 +117,14 @@
           <td class="fw-bold text-primary">{{ r.job_number }}</td>
           <td>{{ formatDate(r.production_date) }}</td>
           <td class="text-end fw-bold text-success">{{ formatNumber(r.quantity_produced) }}</td>
+          <td class="text-end fw-bold text-dark">{{ formatNumber(r.carton_price) }}</td>
           <td class="text-end">{{ formatNumber(r.wastage) }}</td>
           <td>
             <button @click="editReceipt(r)" class="btn btn-sm btn-warning me-1">Edit</button>
             <button @click="deleteReceipt(r)" class="btn btn-sm btn-danger">Delete</button>
           </td>
         </tr>
-        <tr v-if="receipts.length === 0"><td colspan="9" class="text-center text-muted py-4">No receipts found.</td></tr>
+        <tr v-if="receipts.length === 0"><td colspan="10" class="text-center text-muted py-4">No receipts found.</td></tr>
       </tbody>
     </table>
 
@@ -141,7 +147,7 @@ export default {
     return {
       receipts: [], customers: [], allProducts: [], filteredProducts: [],
       showForm: false, editing: false,
-      form: { id: null, date: today, customer_id: '', product_id: '', job_number: '', production_date: today, quantity_produced: '', wastage: 0, remarks: '' },
+      form: { id: null, date: today, customer_id: '', product_id: '', job_number: '', production_date: today, quantity_produced: '', carton_price: '', wastage: 0, remarks: '' },
       filters: { customer_id: '', job_number: '', date_from: '', date_to: '' },
       searchTimeout: null,
       pagination: { current_page: 1, last_page: 1, per_page: 50, total: 0 }
@@ -162,6 +168,16 @@ export default {
         axios.get(`/api/products/by-customer/${this.form.customer_id}`).then(r => { this.filteredProducts = r.data; });
       } else { this.filteredProducts = []; }
     },
+    onProductChange() {
+      if (this.form.product_id) {
+        const product = this.filteredProducts.find(p => p.id === this.form.product_id);
+        if (product) {
+          this.form.carton_price = product.rate;
+        }
+      } else {
+        this.form.carton_price = '';
+      }
+    },
     fetchReceipts(page = 1) {
       const params = { page, ...this.filters };
       Object.keys(params).forEach(k => { if (!params[k]) delete params[k]; });
@@ -173,7 +189,7 @@ export default {
     debouncedFetch() { clearTimeout(this.searchTimeout); this.searchTimeout = setTimeout(() => this.fetchReceipts(), 400); },
     goToPage(p) { if (p >= 1 && p <= this.pagination.last_page) this.fetchReceipts(p); },
     clearFilters() { this.filters = { customer_id: '', job_number: '', date_from: '', date_to: '' }; this.fetchReceipts(); },
-    resetForm() { const t = new Date().toISOString().substr(0, 10); this.form = { id: null, date: t, customer_id: '', product_id: '', job_number: '', production_date: t, quantity_produced: '', wastage: 0, remarks: '' }; this.filteredProducts = []; },
+    resetForm() { const t = new Date().toISOString().substr(0, 10); this.form = { id: null, date: t, customer_id: '', product_id: '', job_number: '', production_date: t, quantity_produced: '', carton_price: '', wastage: 0, remarks: '' }; this.filteredProducts = []; },
     saveReceipt() {
       if (!this.form.customer_id || !this.form.product_id || !this.form.job_number || !this.form.quantity_produced) { this.$message.error('Fill required fields.'); return; }
       const action = this.editing ? axios.put(`/api/fg-receipts/${this.form.id}`, this.form) : axios.post('/api/fg-receipts', this.form);
@@ -181,7 +197,7 @@ export default {
         .catch(err => { this.$message.error(err.response?.data?.error || 'Failed.'); });
     },
     editReceipt(r) {
-      this.form = { id: r.id, date: r.date?.split('T')[0], customer_id: r.customer_id, product_id: r.product_id, job_number: r.job_number, production_date: r.production_date?.split('T')[0], quantity_produced: r.quantity_produced, wastage: r.wastage, remarks: r.remarks };
+      this.form = { id: r.id, date: r.date?.split('T')[0], customer_id: r.customer_id, product_id: r.product_id, job_number: r.job_number, production_date: r.production_date?.split('T')[0], quantity_produced: r.quantity_produced, carton_price: r.carton_price, wastage: r.wastage, remarks: r.remarks };
       this.onCustomerChange();
       this.editing = true; this.showForm = true;
     },

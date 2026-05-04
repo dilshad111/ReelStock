@@ -998,9 +998,7 @@ export default {
         : axios.post('/api/reel-receipts', payload);
 
       request.then(() => {
-        if (!this.editing) {
-          this.advanceReelNumber(1);
-        }
+        this.fetchReelSettings();
         this.fetchReceipts();
         this.cancel();
       }).catch(error => {
@@ -1018,9 +1016,7 @@ export default {
     saveBulkReceipt() {
       const reelCount = Array.isArray(this.bulkData.reels) ? this.bulkData.reels.length : 0;
       axios.post('/api/reel-receipts/bulk', this.bulkData).then(() => {
-        if (reelCount > 0) {
-          this.advanceReelNumber(reelCount);
-        }
+        this.fetchReelSettings();
         this.fetchReceipts();
         this.cancel();
         alert('Bulk receipt saved successfully!');
@@ -1118,18 +1114,7 @@ export default {
       const nextNum = (Number(this.pendingNextNumber ?? this.reelNextNumber) || 1) + index;
       return prefix + nextNum.toString().padStart(padding, '0');
     },
-    advanceReelNumber(count = 1) {
-      const increment = Number.isFinite(count) && count > 0 ? Math.floor(count) : 1;
-      const current = Number(this.pendingNextNumber ?? this.reelNextNumber) || 1;
-      const newNext = current + increment;
-      this.pendingNextNumber = newNext;
-      this.reelNextNumber = newNext;
-      const value = newNext.toString();
-      axios.post('/api/setup/settings', { key: 'reel_next_number', value })
-        .catch(error => {
-          console.error('Failed to persist next reel number:', error);
-        });
-    },
+
     showHistory(reelNo) {
       axios.get(`/api/reports/reel-stock/${reelNo}/history`).then(response => {
         // HMR Trigger Comment

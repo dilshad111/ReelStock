@@ -156,6 +156,11 @@
                     </el-table-column>
                     <el-table-column prop="transporter.name" label="Transporter" min-width="150" />
                     <el-table-column prop="bill_to" label="Bill To" min-width="150" />
+                    <el-table-column prop="total_amount" label="Bill Amount" width="130" align="right">
+                        <template #default="scope">
+                            <span class="fw-bold">Rs. {{ scope.row.total_amount.toLocaleString() }}</span>
+                        </template>
+                    </el-table-column>
                     <el-table-column prop="status" label="Status" width="120" align="center">
                         <template #default="scope">
                             <el-tag :type="scope.row.status === 'Approved' ? 'success' : 'warning'" effect="dark" round size="small">
@@ -649,7 +654,7 @@ const fetchRateForRow = async (row) => {
                 }
             });
             if (res.data && res.data.rate) {
-                row.amount = res.data.rate;
+                row.amount = Number(res.data.rate);
                 ElMessage.success(`Pre-saved rate loaded for ${row.vehicle_type}`);
             }
         } catch (e) {}

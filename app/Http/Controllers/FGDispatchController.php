@@ -222,4 +222,32 @@ class FGDispatchController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
+    public function getProductDetails($productId)
+    {
+        try {
+            $product = \App\Models\Product::with('customer')->findOrFail($productId);
+            $lastLedger = \App\Models\FGStockLedger::where('product_id', $productId)->latest('id')->first();
+            $balance = $lastLedger ? (float)$lastLedger->balance_after : 0;
+
+            // Get dispatch history for this product
+            $dispatches = \App\Models\FGDispatch::with(['creator'])
+                ->where('product_id', $productId)
+                ->orderBy('date', 'desc')
+                ->limit(10)
+                ->get();
+
+            return response()->json([
+                'job_number' => 'MANUAL/OPENING',
+                'customer' => $product->customer,
+                'product' => $product,
+                'total_produced' => $balance + $dispatches->sum('quantity_dispatched'),
+                'total_dispatched' => $dispatches->sum('quantity_dispatched'),
+                'balance' => $balance,
+                'history' => $dispatches
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
 }

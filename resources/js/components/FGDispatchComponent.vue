@@ -28,6 +28,9 @@
                         <i class="bi bi-search" v-if="!loadingJob"></i>
                         <span v-else class="spinner-border spinner-border-sm" style="width: 12px; height: 12px;"></span>
                       </button>
+                      <button v-if="form.job_number" class="btn btn-sm btn-outline-danger px-2" type="button" @click="clearJobData">
+                        <i class="bi bi-x-circle"></i>
+                      </button>
                     </div>
                   </div>
 
@@ -46,16 +49,18 @@
                 <div class="col-md-6">
                   <div class="mb-3">
                     <label class="form-label fw-bold text-muted x-small uppercase mb-1">Customer</label>
-                    <div class="form-control form-control-sm bg-light border-0 text-truncate fw-bold" :title="jobInfo.customer?.name">
-                      {{ jobInfo.customer ? jobInfo.customer.name : '---' }}
-                    </div>
+                    <select v-model="form.customer_id" @change="onCustomerChange" class="form-select form-select-sm">
+                      <option value="">Select Customer</option>
+                      <option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option>
+                    </select>
                   </div>
 
                   <div class="mb-3">
                     <label class="form-label fw-bold text-muted x-small uppercase mb-1">Product Name</label>
-                    <div class="form-control form-control-sm bg-light border-0 text-dark small text-nowrap overflow-hidden" style="text-overflow: ellipsis;" :title="jobInfo.product?.item_name">
-                      <span class="fw-bold">{{ jobInfo.product?.item_code }}</span> - {{ jobInfo.product?.item_name || '---' }}
-                    </div>
+                    <select v-model="form.product_id" @change="fetchProductData" class="form-select form-select-sm" :disabled="!form.customer_id">
+                      <option value="">Select Product</option>
+                      <option v-for="p in customerProducts" :key="p.id" :value="p.id">{{ p.item_code }} - {{ p.item_name }}</option>
+                    </select>
                   </div>
 
                   <div class="mb-3">
@@ -262,7 +267,9 @@ export default {
     return {
       dispatches: [], 
       customers: [], 
+      customerProducts: [],
       loadingJob: false,
+      manualMode: false,
       showForm: false, 
       editing: false,
       jobInfo: { job_number: '', customer: null, product: null, balance: null, total_produced: 0, total_dispatched: 0, history: [] },
@@ -285,18 +292,60 @@ export default {
     fetchJobData() {
       if (!this.form.job_number) return;
       this.loadingJob = true;
+      this.manualMode = false;
       axios.get(`/api/fg-dispatches/job-details/${this.form.job_number}`)
         .then(r => {
           this.jobInfo = r.data;
           this.form.customer_id = r.data.customer.id;
+          this.fetchProductsByCustomer(); // Load products for the customer
           this.form.product_id = r.data.product.id;
+          this.manualMode = false;
           this.$message.success('Job details fetched.');
         })
         .catch(err => {
           this.jobInfo = { job_number: '', customer: null, product: null, balance: null, history: [] };
-          this.$message.error(err.response?.data?.error || 'Job not found.');
+          this.manualMode = true;
+          this.$message.warning('Job not found. You can now select customer/product manually.');
         })
         .finally(() => { this.loadingJob = false; });
+    },
+
+    clearJobData() {
+        this.form.job_number = '';
+        this.jobInfo = { job_number: '', customer: null, product: null, balance: null, history: [] };
+        this.manualMode = true;
+    },
+
+    onCustomerChange() {
+        this.clearJobData(); // If user manually changes customer, clear any job data
+        this.fetchProductsByCustomer();
+    },
+
+    fetchProductsByCustomer() {
+      if (!this.form.customer_id) {
+          this.customerProducts = [];
+          return;
+      }
+      axios.get(`/api/products/by-customer/${this.form.customer_id}`).then(r => {
+        this.customerProducts = r.data;
+      });
+    },
+
+    fetchProductData() {
+        if (!this.form.product_id) return;
+        if (this.form.job_number && this.form.job_number !== 'MANUAL/OPENING') return;
+
+        this.loadingJob = true;
+        axios.get(`/api/fg-dispatches/product-details/${this.form.product_id}`)
+            .then(r => {
+                this.jobInfo = r.data;
+                this.form.job_number = 'MANUAL/OPENING';
+                this.$message.success('Stock details fetched.');
+            })
+            .catch(err => {
+                this.$message.error('Failed to fetch product details.');
+            })
+            .finally(() => { this.loadingJob = false; });
     },
 
     fetchDispatches(page = 1) {
@@ -313,7 +362,9 @@ export default {
     
     resetForm() { 
       this.form = { id: null, date: new Date().toISOString().substr(0, 10), customer_id: '', product_id: '', job_number: '', dc_number: '', quantity_dispatched: '', remarks: '' }; 
-      this.jobInfo = { job_number: '', customer: null, product: null, balance: null, history: [] };
+      this.jobInfo = { job_number: '', customer: null, product: null, balance: null, total_produced: 0, total_dispatched: 0, history: [] };
+      this.manualMode = true;
+      this.customerProducts = [];
     },
 
     saveDispatch() {

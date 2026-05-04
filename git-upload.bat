@@ -8,7 +8,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "Carton Inventory Updated"
+git commit -m "Transporter updated"
 
 echo.
 echo Pushing to origin main...

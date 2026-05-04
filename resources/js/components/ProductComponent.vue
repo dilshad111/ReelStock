@@ -35,9 +35,9 @@
                 <label>Rate</label>
                 <input v-model="form.rate" type="number" step="0.01" class="form-control" placeholder="0.00">
               </div>
-              <div class="mb-3" v-if="!editing">
+              <div class="mb-3">
                 <label>Opening Balance</label>
-                <input v-model="form.opening_balance" type="number" step="0.01" class="form-control" placeholder="0">
+                <input v-model="form.opening_balance" type="number" class="form-control" placeholder="0">
               </div>
             </div>
           </div>
@@ -189,7 +189,7 @@ export default {
       });
     },
     editProduct(p) {
-      this.form = { id: p.id, customer_id: p.customer_id, item_code: p.item_code, item_name: p.item_name, rate: p.rate || '', opening_balance: p.opening_balance };
+      this.form = { id: p.id, customer_id: p.customer_id, item_code: p.item_code, item_name: p.item_name, rate: p.rate || '', opening_balance: Math.floor(p.opening_balance) };
       this.editing = true;
       this.showForm = true;
     },
@@ -202,7 +202,7 @@ export default {
         this.$message.error(err.response?.data?.error || 'Cannot delete product.');
       });
     },
-    formatNumber(v) { return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 }); }
+    formatNumber(v) { return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 0 }); }
   }
 };
 </script>

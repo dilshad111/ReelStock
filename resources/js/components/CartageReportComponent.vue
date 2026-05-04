@@ -174,9 +174,14 @@ const filterOptions = reactive({
     vehicles: []
 });
 
+const now = new Date();
+const year = now.getFullYear();
+const month = String(now.getMonth() + 1).padStart(2, '0');
+const day = String(now.getDate()).padStart(2, '0');
+
 const filters = reactive({
-    start_date: new Date().toISOString().substr(0, 10),
-    end_date: new Date().toISOString().substr(0, 10),
+    start_date: `${year}-${month}-01`,
+    end_date: `${year}-${month}-${day}`,
     customer_id: null,
     transporter_id: null,
     vehicle_number: null

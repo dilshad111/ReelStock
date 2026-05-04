@@ -33,11 +33,13 @@ class MonthlyClosingReportController extends Controller
                 })
                 ->leftJoin('paper_qualities', 'reels.paper_quality_id', '=', 'paper_qualities.id')
                 ->leftJoin('suppliers', 'reels.supplier_id', '=', 'suppliers.id')
+                ->leftJoin('reel_receipts', 'reels.id', '=', 'reel_receipts.reel_id')
                 ->select(
                     'reels.*',
                     'paper_qualities.quality',
                     'paper_qualities.gsm_range',
-                    'suppliers.name as supplier_name'
+                    'suppliers.name as supplier_name',
+                    'reel_receipts.rate_per_kg'
                 )
                 ->get();
 
@@ -134,6 +136,10 @@ class MonthlyClosingReportController extends Controller
                     // If there's a big gap, it might indicate missing transaction records.
                 }
 
+                // Calculate amount
+                $rate = (float)($reel->rate_per_kg ?? 0);
+                $amount = $closingBalance * $rate;
+
                 // Normalize size key (e.g., 20 -> 20")
                 $normalizedSize = rtrim(rtrim(number_format($sizeValue, 2, '.', ''), '0'), '.');
                 $sizeKey = $normalizedSize . '"';
@@ -143,21 +149,25 @@ class MonthlyClosingReportController extends Controller
                     $qualityKey = ($reel->quality ?? 'Unknown') . ' (' . ($reel->gsm_range ?? 'Unknown') . ')';
 
                     if (!isset($qualitySizeData[$qualityKey])) {
-                        $qualitySizeData[$qualityKey] = [];
+                        $qualitySizeData[$qualityKey] = [
+                            'weights' => [],
+                            'total_amount' => 0
+                        ];
                     }
 
-                    if (!isset($qualitySizeData[$qualityKey][$sizeKey])) {
-                        $qualitySizeData[$qualityKey][$sizeKey] = 0;
+                    if (!isset($qualitySizeData[$qualityKey]['weights'][$sizeKey])) {
+                        $qualitySizeData[$qualityKey]['weights'][$sizeKey] = 0;
                     }
 
-                    $qualitySizeData[$qualityKey][$sizeKey] += $closingBalance;
+                    $qualitySizeData[$qualityKey]['weights'][$sizeKey] += $closingBalance;
+                    $qualitySizeData[$qualityKey]['total_amount'] += $amount;
                 }
             }
 
             // Get all unique sizes that have weights in the qualitySizeData
             $allSizesSet = [];
-            foreach ($qualitySizeData as $quality => $sizes) {
-                foreach ($sizes as $sizeKey => $weight) {
+            foreach ($qualitySizeData as $quality => $data) {
+                foreach ($data['weights'] as $sizeKey => $weight) {
                     $allSizesSet[$sizeKey] = true;
                 }
             }
@@ -174,20 +184,23 @@ class MonthlyClosingReportController extends Controller
             $pivotData = [];
             $totalBySize = array_fill_keys($allSizes, 0);
             $grandTotal = 0;
+            $grandTotalAmount = 0;
 
-            foreach ($qualitySizeData as $quality => $sizes) {
+            foreach ($qualitySizeData as $quality => $data) {
                 $rowData = ['quality' => $quality];
                 $rowTotal = 0;
 
                 foreach ($allSizes as $size) {
-                    $weight = $sizes[$size] ?? 0;
+                    $weight = $data['weights'][$size] ?? 0;
                     $rowData[$size] = $weight;
                     $rowTotal += $weight;
                     $totalBySize[$size] = ($totalBySize[$size] ?? 0) + $weight;
                 }
 
                 $rowData['total'] = $rowTotal;
+                $rowData['amount'] = $data['total_amount'];
                 $grandTotal += $rowTotal;
+                $grandTotalAmount += $data['total_amount'];
                 $pivotData[] = $rowData;
             }
 
@@ -198,6 +211,7 @@ class MonthlyClosingReportController extends Controller
                     $totalsRow[$size] = $totalBySize[$size] ?? 0;
                 }
                 $totalsRow['total'] = $grandTotal;
+                $totalsRow['amount'] = $grandTotalAmount;
                 $pivotData[] = $totalsRow;
             }
 

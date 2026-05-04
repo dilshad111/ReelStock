@@ -47,6 +47,7 @@ class FGReceiptController extends Controller
             'job_number' => 'required|string|max:100',
             'production_date' => 'required|date',
             'quantity_produced' => 'required|numeric|min:0.01',
+            'carton_price' => 'nullable|numeric|min:0',
             'wastage' => 'nullable|numeric|min:0',
             'remarks' => 'nullable|string',
         ]);
@@ -59,6 +60,7 @@ class FGReceiptController extends Controller
                 'job_number' => $request->job_number,
                 'production_date' => $request->production_date,
                 'quantity_produced' => $request->quantity_produced,
+                'carton_price' => $request->carton_price,
                 'wastage' => $request->wastage ?? 0,
                 'remarks' => $request->remarks,
                 'created_by' => $request->user()->id,
@@ -106,6 +108,7 @@ class FGReceiptController extends Controller
             'job_number' => 'required|string|max:100',
             'production_date' => 'required|date',
             'quantity_produced' => 'required|numeric|min:0.01',
+            'carton_price' => 'nullable|numeric|min:0',
             'wastage' => 'nullable|numeric|min:0',
             'remarks' => 'nullable|string',
         ]);
@@ -123,6 +126,7 @@ class FGReceiptController extends Controller
                 'job_number' => $request->job_number,
                 'production_date' => $request->production_date,
                 'quantity_produced' => $newQty,
+                'carton_price' => $request->carton_price,
                 'wastage' => $request->wastage ?? 0,
                 'remarks' => $request->remarks,
             ]);

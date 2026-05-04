@@ -23,6 +23,14 @@ class FGReportController extends Controller
             $query->where('customer_id', $request->customer_id);
         }
 
+        if ($request->filled('item_search')) {
+            $search = $request->item_search;
+            $query->where(function($q) use ($search) {
+                $q->where('item_name', 'like', "%{$search}%")
+                  ->orWhere('item_code', 'like', "%{$search}%");
+            });
+        }
+
         $products = $query->orderBy('customer_id')->orderBy('item_name')->get();
 
         $data = $products->map(function ($product) use ($request) {
@@ -50,8 +58,12 @@ class FGReportController extends Controller
                 'total_produced' => (float)$totalProduced,
                 'total_dispatched' => (float)$totalDispatched,
                 'current_balance' => $currentBalance,
+                'rate' => (float)$product->rate,
+                'amount' => (float)($currentBalance * $product->rate)
             ];
-        });
+        })->filter(function ($item) {
+            return $item['current_balance'] > 0;
+        })->values();
 
         // Group by customer
         $grouped = $data->groupBy('customer_name')->map(function ($items, $customer) {
@@ -61,6 +73,7 @@ class FGReportController extends Controller
                 'total_produced' => $items->sum('total_produced'),
                 'total_dispatched' => $items->sum('total_dispatched'),
                 'total_balance' => $items->sum('current_balance'),
+                'total_amount' => $items->sum('amount'),
             ];
         })->values();
 
@@ -74,7 +87,10 @@ class FGReportController extends Controller
     {
         $query = FGReceipt::with(['customer', 'product'])
             ->select('job_number', 'customer_id', 'product_id',
-                DB::raw('SUM(quantity_produced) as total_produced'))
+                DB::raw('SUM(quantity_produced) as total_produced'),
+                DB::raw('(SELECT SUM(quantity_dispatched) FROM fg_dispatches 
+                         WHERE fg_dispatches.job_number = fg_receipts.job_number 
+                         AND fg_dispatches.product_id = fg_receipts.product_id) as total_dispatched'))
             ->groupBy('job_number', 'customer_id', 'product_id');
 
         if ($request->filled('customer_id')) {
@@ -90,15 +106,15 @@ class FGReportController extends Controller
             $query->whereBetween('date', [$request->date_from, $request->date_to]);
         }
 
+        // Only show jobs with remaining balance > 0
+        $query->havingRaw('total_produced > IFNULL(total_dispatched, 0)');
+
         $jobs = $query->orderBy('job_number', 'desc')->paginate(50);
 
         $jobs->getCollection()->transform(function ($job) {
-            $totalDispatched = FGDispatch::where('job_number', $job->job_number)
-                ->where('product_id', $job->product_id)
-                ->sum('quantity_dispatched');
-
-            $job->total_dispatched = (float)$totalDispatched;
-            $job->remaining_balance = (float)$job->total_produced - (float)$totalDispatched;
+            $job->total_dispatched = (float)($job->total_dispatched ?? 0);
+            $job->total_produced = (float)$job->total_produced;
+            $job->remaining_balance = $job->total_produced - $job->total_dispatched;
             return $job;
         });
 
@@ -174,6 +190,13 @@ class FGReportController extends Controller
         }
         if ($request->filled('transaction_type')) {
             $query->where('transaction_type', $request->transaction_type);
+        }
+        if ($request->filled('item_search')) {
+            $search = $request->item_search;
+            $query->whereHas('product', function($q) use ($search) {
+                $q->where('item_name', 'like', "%{$search}%")
+                  ->orWhere('item_code', 'like', "%{$search}%");
+            });
         }
         if ($request->filled('date_from') && $request->filled('date_to')) {
             $query->whereBetween('transaction_date', [$request->date_from, $request->date_to]);

@@ -199,7 +199,7 @@ export default {
       printWindow.document.write(`
         <html>
           <head>
-            <title>Old Reels Report - ${new Date().toLocaleDateString()}</title>
+            <title>Old Reels Report - ${new Date().toLocaleDateString('en-GB')}</title>
             <style>
               body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #333; }
               .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #007bff; padding-bottom: 20px; }
@@ -226,7 +226,7 @@ export default {
               <div class="company-name">${this.companySettings.name}</div>
               <div class="company-address">${this.companySettings.address}</div>
               <div class="report-title">Old Reels Aging Report</div>
-              <div class="report-info">Printed on: ${new Date().toLocaleString()}</div>
+              <div class="report-info">Printed on: ${new Date().toLocaleString('en-GB')}</div>
             </div>
             ${sectionsHtml}
           </body>

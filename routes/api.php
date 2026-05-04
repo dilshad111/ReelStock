@@ -32,6 +32,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\FGReceiptController;
 use App\Http\Controllers\FGDispatchController;
 use App\Http\Controllers\FGReportController;
+use App\Http\Controllers\VehicleTypeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -133,9 +134,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('transporters', TransporterController::class);
     Route::apiResource('vehicles', VehicleController::class);
+    Route::apiResource('vehicle-types', VehicleTypeController::class);
 
     Route::get('cartage-rates', [CartageRateController::class, 'index']);
     Route::post('cartage-rates', [CartageRateController::class, 'store']);
+    Route::get('cartage-rates/classifications', [CartageRateController::class, 'getClassifications']);
+    Route::post('cartage-rates/bulk-update', [CartageRateController::class, 'bulkUpdate']);
+    Route::get('cartage-rates/increment-history', [CartageRateController::class, 'getIncrementHistory']);
+    Route::delete('cartage-rates/increment-history/{id}', [CartageRateController::class, 'destroyIncrementHistory']);
     Route::get('cartage-rates/fetch', [CartageRateController::class, 'getRate']);
     Route::delete('cartage-rates/{id}', [CartageRateController::class, 'destroy']);
 
@@ -155,6 +161,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('fg-dispatches', FGDispatchController::class);
     Route::get('fg-dispatches/available-stock/{productId}', [FGDispatchController::class, 'getAvailableStock']);
     Route::get('fg-dispatches/job-details/{jobNumber}', [FGDispatchController::class, 'getJobDetails']);
+    Route::get('fg-dispatches/product-details/{productId}', [FGDispatchController::class, 'getProductDetails']);
 
     Route::get('fg-reports/stock', [FGReportController::class, 'stockReport']);
     Route::get('fg-reports/job', [FGReportController::class, 'jobReport']);

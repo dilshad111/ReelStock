@@ -15,12 +15,13 @@ class FGReceipt extends Model implements Auditable
 
     protected $fillable = [
         'date', 'customer_id', 'product_id', 'job_number',
-        'production_date', 'quantity_produced', 'wastage',
+        'production_date', 'quantity_produced', 'carton_price', 'wastage',
         'remarks', 'created_by'
     ];
 
     protected $casts = [
         'quantity_produced' => 'decimal:2',
+        'carton_price' => 'decimal:2',
         'wastage' => 'decimal:2',
         'date' => 'date',
         'production_date' => 'date',

@@ -5,70 +5,84 @@ axios.defaults.baseURL = 'http://192.168.10.47:8000';
 
 const PERMISSION_KEY_MAP = {
     dashboard: 'dashboard',
-    suppliers: 'supplier',
-    receipts: 'reel_receipt',
-    qualities: 'reel_stock',
-    issues: 'reel_issue',
-    'return-supplier': 'reel_issue',
-    'monthly-consumption': 'monthly_consumption',
-    'reel-stock': 'reel_stock',
-    'reel-receipt': 'reel_receipt_report',
-    'monthly-closing': 'monthly_closing',
-    'reel-stock-count': 'reel_stock',
-    'usage-intelligence': 'monthly_consumption',
-    'management-dashboard': 'management_dashboard',
+    suppliers: 'suppliers',
+    receipts: 'receipts',
+    qualities: 'qualities',
+    issues: 'issues',
+    'return-supplier': 'return-supplier',
+    'monthly-consumption': 'monthly-consumption',
+    'reel-stock': 'reel-stock',
+    'reel-receipt': 'reel-receipt',
+    'monthly-closing': 'monthly-closing',
+    'reel-stock-count': 'reel-stock-count',
+    'usage-intelligence': 'usage-intelligence',
+    'management-dashboard': 'management-dashboard',
     reports: null,
-    users: null,
-    'user-rights': null,
-    'audit-log': null,
-    'old-reels': 'reel_stock',
+    users: 'users',
+    'user-rights': 'user-rights',
+    'audit-log': 'audit-log',
+    'old-reels': 'old-reels',
     'best-ui': null,
-    'stock-alerts': 'reel_stock',
-    'reconciliation': 'reel_stock',
-    'customers': 'customer',
-    'transporters': 'transporter',
-    'vehicles': 'vehicle',
-    'cartage-rates': 'cartage_rate',
-    'cartage': 'cartage_billing',
-    'cartage-list': 'cartage_billing',
-    'cartage-report': 'cartage_billing',
+    'stock-alerts': 'stock-alerts',
+    'reconciliation': 'reconciliation',
+    'customers': 'customers',
+    'transporters': 'transporters',
+    'vehicles': 'vehicles',
+    'vehicle-types': 'vehicle-types',
+    'cartage-rates': 'cartage-rates',
+    'cartage': 'cartage',
+    'cartage-list': 'cartage-list',
+    'cartage-increment': 'cartage-increment',
+    'cartage-increment-history': 'cartage-increment-history',
+    'cartage-report': 'cartage-report',
     'setup': 'setup',
-    'users': 'users',
-    'user-rights': 'users',
-    'audit-log': 'audit_log',
-    'transport-dashboard': 'transport_dashboard',
-    'fg-products': 'fg_products',
-    'fg-receipts': 'fg_receipts',
-    'fg-dispatches': 'fg_dispatches',
-    'fg-reports': 'fg_reports',
-    'fg-dashboard': 'fg_dashboard'
+    'transport-dashboard': 'transport-dashboard',
+    'fg-products': 'fg-products',
+    'fg-receipts': 'fg-receipts',
+    'fg-dispatches': 'fg-dispatches',
+    'fg-reports': 'fg-reports',
+    'fg-dashboard': 'fg-dashboard',
+    'approve_cartage': 'approve_cartage'
 };
 
 const PERMISSION_KEYS = [
     'dashboard',
-    'supplier',
-    'reel_receipt',
-    'reel_issue',
-    'monthly_consumption',
-    'reel_stock',
-    'reel_receipt_report',
-    'monthly_closing',
-    'management_dashboard',
-    'customer',
-    'transporter',
-    'vehicle',
-    'cartage_rate',
-    'cartage_billing',
+    'suppliers',
+    'qualities',
+    'receipts',
+    'issues',
+    'return-supplier',
+    'monthly-consumption',
+    'reel-stock',
+    'reel-receipt',
+    'monthly-closing',
+    'reel-stock-count',
+    'usage-intelligence',
+    'management-dashboard',
+    'customers',
+    'transporters',
+    'vehicles',
+    'vehicle-types',
+    'cartage-rates',
+    'cartage',
+    'cartage-list',
+    'cartage-increment',
+    'cartage-increment-history',
+    'cartage-report',
     'approve_cartage',
     'setup',
     'users',
-    'audit_log',
-    'transport_dashboard',
-    'fg_products',
-    'fg_receipts',
-    'fg_dispatches',
-    'fg_reports',
-    'fg_dashboard'
+    'user-rights',
+    'audit-log',
+    'transport-dashboard',
+    'fg-products',
+    'fg-receipts',
+    'fg-dispatches',
+    'fg-reports',
+    'fg-dashboard',
+    'old-reels',
+    'stock-alerts',
+    'reconciliation'
 ];
 
 const VIEW_ORDER = [
@@ -97,7 +111,10 @@ const VIEW_ORDER = [
     'customers',
     'transporters',
     'vehicles',
+    'vehicle-types',
     'cartage-rates',
+    'cartage-increment',
+    'cartage-increment-history',
     'cartage',
     'cartage-list',
     'cartage-report',
@@ -137,7 +154,10 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     'customers': 'customers',
     'transporters': 'transporters',
     'vehicles': 'vehicles',
+    'vehicle-types': 'vehicle-types',
     'cartage-rates': 'cartage-rates',
+    'cartage-increment': 'cartage-increment',
+    'cartage-increment-history': 'cartage-increment-history',
     'cartage': 'cartage',
     'cartage-list': 'cartage-list',
     'fg-dashboard': 'fg-dashboard',
@@ -552,7 +572,10 @@ import ReconciliationComponent from './components/ReconciliationComponent.vue';
 import CustomerComponent from './components/CustomerComponent.vue';
 import TransporterComponent from './components/TransporterComponent.vue';
 import VehicleComponent from './components/VehicleComponent.vue';
+import VehicleTypeComponent from './components/VehicleTypeComponent.vue';
 import CartageRateComponent from './components/CartageRateComponent.vue';
+import CartageRateIncrementComponent from './components/CartageRateIncrementComponent.vue';
+import CartageIncrementHistoryComponent from './components/CartageIncrementHistoryComponent.vue';
 import CartageBillingComponent from './components/CartageBillingComponent.vue';
 import CartageReportComponent from './components/CartageReportComponent.vue';
 
@@ -593,7 +616,10 @@ app.component('reconciliation-component', ReconciliationComponent);
 app.component('customer-component', CustomerComponent);
 app.component('transporter-component', TransporterComponent);
 app.component('vehicle-component', VehicleComponent);
+app.component('vehicle-type-component', VehicleTypeComponent);
 app.component('cartage-rate-component', CartageRateComponent);
+app.component('cartage-rate-increment-component', CartageRateIncrementComponent);
+app.component('cartage-increment-history-component', CartageIncrementHistoryComponent);
 app.component('cartage-billing-component', CartageBillingComponent);
 app.component('cartage-report-component', CartageReportComponent);
 app.component('product-component', ProductComponent);
