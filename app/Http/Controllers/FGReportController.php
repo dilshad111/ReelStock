@@ -219,6 +219,47 @@ class FGReportController extends Controller
     }
 
     /**
+     * E. Inventory Email Report
+     * List of items with balance > 0
+     */
+    public function inventoryEmailReport(Request $request)
+    {
+        $query = Product::with('customer');
+
+        if ($request->filled('customer_id')) {
+            $query->where('customer_id', $request->customer_id);
+        }
+
+        if ($request->filled('item_search')) {
+            $search = $request->item_search;
+            $query->where(function($q) use ($search) {
+                $q->where('item_name', 'like', "%{$search}%")
+                  ->orWhere('item_code', 'like', "%{$search}%");
+            });
+        }
+
+        $products = $query->orderBy('item_name')->get();
+
+        $data = $products->map(function ($product) {
+            $lastLedger = FGStockLedger::where('product_id', $product->id)->latest('id')->first();
+            $currentBalance = $lastLedger ? (float)$lastLedger->balance_after : (float)$product->opening_balance;
+
+            return [
+                'customer_name' => $product->customer->name ?? 'Unknown',
+                'item_code' => $product->item_code,
+                'item_name' => $product->item_name,
+                'quantity' => $currentBalance,
+                'rate' => (float)$product->rate,
+                'amount' => (float)($currentBalance * $product->rate)
+            ];
+        })->filter(function ($item) {
+            return $item['quantity'] > 0;
+        })->values();
+
+        return response()->json($data);
+    }
+
+    /**
      * FG Dashboard data
      */
     public function dashboard(Request $request)
@@ -229,15 +270,21 @@ class FGReportController extends Controller
 
         $startOfMonth = now()->startOfMonth();
 
-        $monthlyProduced = FGReceipt::where('date', '>=', $startOfMonth)->sum('quantity_produced');
-        $monthlyDispatched = FGDispatch::where('date', '>=', $startOfMonth)->sum('quantity_dispatched');
+        $monthlyProducedQuery = FGReceipt::where('date', '>=', $startOfMonth);
+        $monthlyDispatchedQuery = FGDispatch::where('date', '>=', $startOfMonth);
+
+        $monthlyProduced = (float)$monthlyProducedQuery->sum('quantity_produced');
+        $monthlyDispatched = (float)$monthlyDispatchedQuery->sum('quantity_dispatched');
 
         // Total current stock across all products
         $products = Product::all();
         $totalStock = 0;
+        $totalStockAmount = 0;
         foreach ($products as $product) {
             $lastLedger = FGStockLedger::where('product_id', $product->id)->latest('id')->first();
-            $totalStock += $lastLedger ? (float)$lastLedger->balance_after : (float)$product->opening_balance;
+            $balance = $lastLedger ? (float)$lastLedger->balance_after : (float)$product->opening_balance;
+            $totalStock += $balance;
+            $totalStockAmount += ($balance * (float)$product->rate);
         }
 
         // Top 10 products by stock
@@ -249,6 +296,7 @@ class FGReportController extends Controller
                 'item_name' => $p->item_name,
                 'item_code' => $p->item_code,
                 'balance' => $balance,
+                'amount' => $balance * (float)$p->rate,
             ];
         })->sortByDesc('balance')->take(10)->values();
 
@@ -260,10 +308,29 @@ class FGReportController extends Controller
             $start = $month->copy()->startOfMonth();
             $end = $month->copy()->endOfMonth();
 
+            $receipts = FGReceipt::whereBetween('date', [$start, $end])->get();
+            $dispatches = FGDispatch::whereBetween('date', [$start, $end])->get();
+
+            $prodQty = (float)$receipts->sum('quantity_produced');
+            $dispQty = (float)$dispatches->sum('quantity_dispatched');
+
+            // Calculate amounts - need to join with products to get rates
+            $prodAmount = 0;
+            foreach ($receipts as $r) {
+                $prodAmount += ($r->quantity_produced * (float)($r->product->rate ?? 0));
+            }
+
+            $dispAmount = 0;
+            foreach ($dispatches as $d) {
+                $dispAmount += ($d->quantity_dispatched * (float)($d->product->rate ?? 0));
+            }
+
             $monthlyTrend[] = [
                 'month' => $monthLabel,
-                'produced' => (float)FGReceipt::whereBetween('date', [$start, $end])->sum('quantity_produced'),
-                'dispatched' => (float)FGDispatch::whereBetween('date', [$start, $end])->sum('quantity_dispatched'),
+                'produced' => $prodQty,
+                'dispatched' => $dispQty,
+                'produced_amount' => $prodAmount,
+                'dispatched_amount' => $dispAmount,
             ];
         }
 
@@ -271,6 +338,7 @@ class FGReportController extends Controller
             'kpis' => [
                 'total_products' => $totalProducts,
                 'total_stock' => round($totalStock, 2),
+                'total_stock_amount' => round($totalStockAmount, 2),
                 'monthly_produced' => round($monthlyProduced, 2),
                 'monthly_dispatched' => round($monthlyDispatched, 2),
             ],

@@ -23,7 +23,7 @@
                     <label class="form-label fw-bold text-muted x-small uppercase mb-1">Job # (Primary) <span class="text-danger">*</span></label>
                     <div class="input-group">
                       <input v-model="form.job_number" type="text" class="form-control form-control-sm border-primary" 
-                             placeholder="Enter Job #..." @keyup.enter="fetchJobData">
+                             placeholder="Enter Job #..." @keyup.enter="fetchJobData" @input="onJobNumberInput">
                       <button class="btn btn-sm btn-primary px-2" type="button" @click="fetchJobData" :disabled="loadingJob">
                         <i class="bi bi-search" v-if="!loadingJob"></i>
                         <span v-else class="spinner-border spinner-border-sm" style="width: 12px; height: 12px;"></span>
@@ -49,7 +49,7 @@
                 <div class="col-md-6">
                   <div class="mb-3">
                     <label class="form-label fw-bold text-muted x-small uppercase mb-1">Customer</label>
-                    <select v-model="form.customer_id" @change="onCustomerChange" class="form-select form-select-sm">
+                    <select v-model="form.customer_id" @change="onCustomerChange" class="form-select form-select-sm" :disabled="jobInfo.job_number">
                       <option value="">Select Customer</option>
                       <option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option>
                     </select>
@@ -57,7 +57,7 @@
 
                   <div class="mb-3">
                     <label class="form-label fw-bold text-muted x-small uppercase mb-1">Product Name</label>
-                    <select v-model="form.product_id" @change="fetchProductData" class="form-select form-select-sm" :disabled="!form.customer_id">
+                    <select v-model="form.product_id" @change="fetchProductData" class="form-select form-select-sm" :disabled="!form.customer_id || jobInfo.job_number">
                       <option value="">Select Product</option>
                       <option v-for="p in customerProducts" :key="p.id" :value="p.id">{{ p.item_code }} - {{ p.item_name }}</option>
                     </select>
@@ -157,7 +157,7 @@
     <div class="card shadow-sm border-0 mb-4 bg-white">
       <div class="card-body p-3">
         <div class="row g-3 align-items-end">
-          <div class="col-md-3">
+          <div class="col-md-2">
             <label class="small text-muted fw-bold uppercase mb-1 d-block"><i class="bi bi-person"></i> Customer</label>
             <select v-model="filters.customer_id" @change="fetchDispatches" class="form-select border-0 bg-light">
               <option value="">All Customers</option>
@@ -172,7 +172,7 @@
             <label class="small text-muted fw-bold uppercase mb-1 d-block"><i class="bi bi-file-earmark-text"></i> DC #</label>
             <input v-model="filters.dc_number" @input="debouncedFetch" type="text" class="form-control border-0 bg-light" placeholder="Search...">
           </div>
-          <div class="col-md-4">
+          <div class="col-md-3">
             <div class="row g-2">
               <div class="col-6">
                 <label class="small text-muted fw-bold uppercase mb-1 d-block"><i class="bi bi-calendar"></i> From</label>
@@ -183,6 +183,15 @@
                 <input v-model="filters.date_to" type="date" class="form-control border-0 bg-light" @change="fetchDispatches">
               </div>
             </div>
+          </div>
+          <div class="col-md-1">
+            <label class="small text-muted fw-bold uppercase mb-1 d-block"><i class="bi bi-list-ol"></i> Show</label>
+            <select v-model="filters.per_page" @change="fetchDispatches(1)" class="form-control border-0 bg-light">
+              <option value="50">50</option>
+              <option value="100">100</option>
+              <option value="200">200</option>
+              <option value="500">500</option>
+            </select>
           </div>
           <div class="col-md-1">
             <button @click="clearFilters" class="btn btn-outline-danger border-0 w-100" title="Clear Filters"><i class="bi bi-eraser-fill"></i></button>
@@ -222,6 +231,7 @@
               <td class="text-end fw-bold text-danger h5 mb-0">{{ formatNumber(d.quantity_dispatched) }}</td>
               <td class="text-center pe-4">
                 <div class="btn-group shadow-sm rounded">
+                  <button @click="showDetail(d)" class="btn btn-sm btn-white text-info border-end" title="View"><i class="bi bi-eye-fill"></i></button>
                   <button @click="editDispatch(d)" class="btn btn-sm btn-white text-warning border-end" title="Edit"><i class="bi bi-pencil-fill"></i></button>
                   <button @click="deleteDispatch(d)" class="btn btn-sm btn-white text-danger" title="Delete"><i class="bi bi-trash-fill"></i></button>
                 </div>
@@ -236,7 +246,77 @@
               </td>
             </tr>
           </tbody>
+          <tfoot v-if="dispatches.length > 0">
+            <tr class="table-info fw-bold">
+              <td colspan="6" class="text-end ps-4">Page Total:</td>
+              <td class="text-end text-danger h5 mb-0">{{ formatNumber(pageTotal) }}</td>
+              <td></td>
+            </tr>
+            <tr class="table-secondary fw-bold" v-if="grandTotal > 0">
+              <td colspan="6" class="text-end ps-4">Grand Total:</td>
+              <td class="text-end text-danger h5 mb-0">{{ formatNumber(grandTotal) }}</td>
+              <td></td>
+            </tr>
+          </tfoot>
         </table>
+      </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div v-if="selectedEntry" class="modal fade show d-block" style="background: rgba(0,0,0,0.5);">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+          <div class="modal-header bg-dark text-white py-2">
+            <h5 class="modal-title small fw-bold uppercase">Dispatch Details: {{ selectedEntry.dc_number }}</h5>
+            <button type="button" class="btn-close btn-close-white" @click="selectedEntry = null"></button>
+          </div>
+          <div class="modal-body p-4">
+            <div class="row g-4">
+              <div class="col-md-6">
+                <div class="detail-item mb-3">
+                  <label class="x-small text-muted uppercase fw-bold d-block">Dispatch Date</label>
+                  <span class="fw-bold">{{ formatDate(selectedEntry.date) }}</span>
+                </div>
+                <div class="detail-item mb-3">
+                  <label class="x-small text-muted uppercase fw-bold d-block">DC Number</label>
+                  <span class="fw-bold fs-5 text-primary">{{ selectedEntry.dc_number }}</span>
+                </div>
+                <div class="detail-item mb-3">
+                  <label class="x-small text-muted uppercase fw-bold d-block">Customer</label>
+                  <span class="fw-bold">{{ selectedEntry.customer?.name }}</span>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="detail-item mb-3">
+                  <label class="x-small text-muted uppercase fw-bold d-block">Job Number</label>
+                  <span class="badge bg-primary px-3">{{ selectedEntry.job_number || '-' }}</span>
+                </div>
+                <div class="detail-item mb-3">
+                  <label class="x-small text-muted uppercase fw-bold d-block">Product</label>
+                  <span class="fw-bold">{{ selectedEntry.product?.item_code }} - {{ selectedEntry.product?.item_name }}</span>
+                </div>
+                <div class="detail-item mb-3">
+                  <label class="x-small text-muted uppercase fw-bold d-block">Quantity Dispatched</label>
+                  <span class="fw-bold fs-4 text-danger">{{ formatNumber(selectedEntry.quantity_dispatched) }}</span>
+                </div>
+              </div>
+              <div class="col-md-12 border-top pt-3">
+                <div class="detail-item mb-3">
+                  <label class="x-small text-muted uppercase fw-bold d-block">Remarks</label>
+                  <p class="mb-0 text-muted">{{ selectedEntry.remarks || 'No remarks provided.' }}</p>
+                </div>
+                <div class="detail-item">
+                  <label class="x-small text-muted uppercase fw-bold d-block">Created By</label>
+                  <span class="small text-muted">{{ selectedEntry.creator?.name || 'Unknown' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer py-2">
+            <button type="button" class="btn btn-secondary btn-sm" @click="selectedEntry = null">Close</button>
+            <button type="button" class="btn btn-warning btn-sm" @click="editDispatch(selectedEntry); selectedEntry = null">Edit Entry</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -274,13 +354,18 @@ export default {
       editing: false,
       jobInfo: { job_number: '', customer: null, product: null, balance: null, total_produced: 0, total_dispatched: 0, history: [] },
       form: { id: null, date: new Date().toISOString().substr(0, 10), customer_id: '', product_id: '', job_number: '', dc_number: '', quantity_dispatched: '', remarks: '' },
-      filters: { customer_id: '', job_number: '', dc_number: '', date_from: '', date_to: '' },
+      filters: { customer_id: '', job_number: '', dc_number: '', date_from: '', date_to: '', per_page: 50 },
       searchTimeout: null,
-      pagination: { current_page: 1, last_page: 1, per_page: 50, total: 0 }
+      pagination: { current_page: 1, last_page: 1, per_page: 50, total: 0 },
+      grandTotal: 0,
+      selectedEntry: null
     };
   },
   computed: {
-    pages() { const c = this.pagination.current_page, l = this.pagination.last_page; let s = Math.max(1, c - 2), e = Math.min(l, c + 2), p = []; for (let i = s; i <= e; i++) p.push(i); return p; }
+    pages() { const c = this.pagination.current_page, l = this.pagination.last_page; let s = Math.max(1, c - 2), e = Math.min(l, c + 2), p = []; for (let i = s; i <= e; i++) p.push(i); return p; },
+    pageTotal() {
+      return this.dispatches.reduce((acc, d) => acc + Number(d.quantity_dispatched || 0), 0);
+    }
   },
   mounted() {
     if (localStorage.getItem('token')) axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
@@ -312,8 +397,17 @@ export default {
 
     clearJobData() {
         this.form.job_number = '';
-        this.jobInfo = { job_number: '', customer: null, product: null, balance: null, history: [] };
+        this.form.customer_id = '';
+        this.form.product_id = '';
+        this.jobInfo = { job_number: '', customer: null, product: null, balance: null, total_produced: 0, total_dispatched: 0, history: [] };
         this.manualMode = true;
+        this.customerProducts = [];
+    },
+
+    onJobNumberInput() {
+        if (!this.form.job_number) {
+            this.clearJobData();
+        }
     },
 
     onCustomerChange() {
@@ -340,6 +434,7 @@ export default {
             .then(r => {
                 this.jobInfo = r.data;
                 this.form.job_number = 'MANUAL/OPENING';
+                this.manualMode = false;
                 this.$message.success('Stock details fetched.');
             })
             .catch(err => {
@@ -352,13 +447,20 @@ export default {
       const params = { page, ...this.filters };
       Object.keys(params).forEach(k => { if (!params[k]) delete params[k]; });
       axios.get('/api/fg-dispatches', { params }).then(r => {
-        this.dispatches = r.data.data;
-        this.pagination = { current_page: r.data.current_page, last_page: r.data.last_page, per_page: r.data.per_page, total: r.data.total };
+        const data = r.data.pagination || r.data;
+        this.dispatches = data.data;
+        this.pagination = { current_page: data.current_page, last_page: data.last_page, per_page: data.per_page, total: data.total };
+        if (r.data.totals) {
+          this.grandTotal = r.data.totals.total_quantity_dispatched;
+        }
       });
+    },
+    showDetail(d) {
+      this.selectedEntry = d;
     },
     debouncedFetch() { clearTimeout(this.searchTimeout); this.searchTimeout = setTimeout(() => this.fetchDispatches(), 400); },
     goToPage(p) { if (p >= 1 && p <= this.pagination.last_page) this.fetchDispatches(p); },
-    clearFilters() { this.filters = { customer_id: '', job_number: '', dc_number: '', date_from: '', date_to: '' }; this.fetchDispatches(); },
+    clearFilters() { this.filters = { customer_id: '', job_number: '', dc_number: '', date_from: '', date_to: '', per_page: 50 }; this.fetchDispatches(); },
     
     resetForm() { 
       this.form = { id: null, date: new Date().toISOString().substr(0, 10), customer_id: '', product_id: '', job_number: '', dc_number: '', quantity_dispatched: '', remarks: '' }; 
@@ -391,7 +493,11 @@ export default {
         quantity_dispatched: d.quantity_dispatched, 
         remarks: d.remarks 
       };
-      this.fetchJobData();
+      if (this.form.job_number && this.form.job_number !== 'MANUAL/OPENING') {
+        this.fetchJobData();
+      } else if (this.form.product_id) {
+        this.fetchProductData();
+      }
       this.editing = true; 
       this.showForm = true;
     },

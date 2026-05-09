@@ -736,7 +736,7 @@
                         </el-sub-menu>
                     </el-sub-menu>
 
-                    <el-sub-menu index="transport" v-if="canView('customers') || canView('transporters') || canView('vehicles') || canView('cartage-rates') || canView('cartage')">
+                    <el-sub-menu index="transport" v-if="canView('customers') || canView('transporters') || canView('vehicles') || canView('vehicle-types') || canView('cartage-rates') || canView('cartage') || canView('cartage-list') || canView('cartage-report') || canView('cartage-increment') || canView('cartage-increment-history')">
                         <template #title>
                             <i class="bi bi-truck-flatbed me-2 icon-transport"></i>
                             <span>Transport</span>
@@ -744,16 +744,16 @@
                         <el-menu-item index="customers" v-if="canView('customers')">Customers</el-menu-item>
                         <el-menu-item index="transporters" v-if="canView('transporters')">Transporters</el-menu-item>
                         <el-menu-item index="vehicles" v-if="canView('vehicles')">Vehicles</el-menu-item>
-                        <el-menu-item index="vehicle-types" v-if="canView('vehicles')">Vehicle Classifications</el-menu-item>
+                        <el-menu-item index="vehicle-types" v-if="canView('vehicle-types')">Vehicle Classifications</el-menu-item>
                         <el-menu-item index="cartage-rates" v-if="canView('cartage-rates')">Cartage Rates</el-menu-item>
                         <el-menu-item index="cartage" v-if="canView('cartage')">Cartage Billing</el-menu-item>
-                        <el-menu-item index="cartage-list" v-if="canView('cartage')">Cartage Bill List</el-menu-item>
-                        <el-menu-item index="cartage-report" v-if="canView('cartage')">Cartage Report</el-menu-item>
-                        <el-menu-item index="cartage-increment" v-if="canView('cartage-rates')">Cartage Rate Increment</el-menu-item>
-                        <el-menu-item index="cartage-increment-history" v-if="canView('cartage-rates')">Increment History</el-menu-item>
+                        <el-menu-item index="cartage-list" v-if="canView('cartage-list')">Cartage Bill List</el-menu-item>
+                        <el-menu-item index="cartage-report" v-if="canView('cartage-report')">Cartage Report</el-menu-item>
+                        <el-menu-item index="cartage-increment" v-if="canView('cartage-increment')">Cartage Rate Increment</el-menu-item>
+                        <el-menu-item index="cartage-increment-history" v-if="canView('cartage-increment-history')">Increment History</el-menu-item>
                     </el-sub-menu>
 
-                    <el-sub-menu index="finished-goods" v-if="canView('fg-dashboard') || canView('fg-products') || canView('fg-receipts') || canView('fg-dispatches') || canView('fg-reports')">
+                    <el-sub-menu index="finished-goods" v-if="canView('fg-dashboard') || canView('fg-products') || canView('fg-receipts') || canView('fg-dispatches') || canView('fg-reports') || canView('fg-inventory-email')">
                         <template #title>
                             <i class="bi bi-box-seam-fill me-2" style="color: #a78bfa !important;"></i>
                             <span>Finished Goods</span>
@@ -763,6 +763,7 @@
                         <el-menu-item index="fg-receipts" v-if="canView('fg-receipts')">Production Entry</el-menu-item>
                         <el-menu-item index="fg-dispatches" v-if="canView('fg-dispatches')">Dispatch Entry</el-menu-item>
                         <el-menu-item index="fg-reports" v-if="canView('fg-reports')">FG Reports</el-menu-item>
+                        <el-menu-item index="fg-inventory-email" v-if="canView('fg-inventory-email')">Inventory Email</el-menu-item>
                     </el-sub-menu>
 
                     <el-sub-menu index="users" v-if="canView('users') || canView('audit-log')">
@@ -879,7 +880,8 @@
                 <product-component v-else-if="currentView === 'fg-products'" :user="user"></product-component>
                 <fg-receipt-component v-else-if="currentView === 'fg-receipts'" :user="user"></fg-receipt-component>
                 <fg-dispatch-component v-else-if="currentView === 'fg-dispatches'" :user="user"></fg-dispatch-component>
-                <fg-report-component v-else-if="currentView === 'fg-reports'" :user="user"></fg-report-component>
+                <fg-report-component v-else-if="currentView === 'fg-reports'" :user="user" :can-see-amounts="canSeeAmounts('fg-reports')"></fg-report-component>
+                <fg-inventory-email-component v-else-if="currentView === 'fg-inventory-email'" :user="user"></fg-inventory-email-component>
                 <best-ui-showcase-component v-else-if="currentView === 'best-ui'"></best-ui-showcase-component>
                 <!-- Add other components here -->
                 <div v-else>

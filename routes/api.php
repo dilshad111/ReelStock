@@ -164,6 +164,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('fg-dispatches/product-details/{productId}', [FGDispatchController::class, 'getProductDetails']);
 
     Route::get('fg-reports/stock', [FGReportController::class, 'stockReport']);
+    Route::get('fg-reports/inventory-email', [FGReportController::class, 'inventoryEmailReport']);
     Route::get('fg-reports/job', [FGReportController::class, 'jobReport']);
     Route::get('fg-reports/job-detail', [FGReportController::class, 'jobDetail']);
     Route::get('fg-reports/audit', [FGReportController::class, 'auditReport']);

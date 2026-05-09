@@ -41,6 +41,7 @@ const PERMISSION_KEY_MAP = {
     'fg-receipts': 'fg-receipts',
     'fg-dispatches': 'fg-dispatches',
     'fg-reports': 'fg-reports',
+    'fg-inventory-email': 'fg-inventory-email',
     'fg-dashboard': 'fg-dashboard',
     'approve_cartage': 'approve_cartage'
 };
@@ -79,6 +80,7 @@ const PERMISSION_KEYS = [
     'fg-receipts',
     'fg-dispatches',
     'fg-reports',
+    'fg-inventory-email',
     'fg-dashboard',
     'old-reels',
     'stock-alerts',
@@ -123,6 +125,7 @@ const VIEW_ORDER = [
     'fg-receipts',
     'fg-dispatches',
     'fg-reports',
+    'fg-inventory-email',
     'profile'
 ];
 
@@ -165,6 +168,7 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     'fg-receipts': 'fg-receipts',
     'fg-dispatches': 'fg-dispatches',
     'fg-reports': 'fg-reports',
+    'fg-inventory-email': 'fg-inventory-email',
     profile: 'profile'
 });
 
@@ -399,7 +403,7 @@ const app = createApp({
             });
         },
         fetchPermissions() {
-            if (!this.user || this.user.role?.name === 'Admin' || this.user.email === 'superadmin@qc.com') {
+            if (!this.user || this.user.email === 'superadmin@qc.com') {
                 this.permissions = createFullPermissions();
                 this.user.permissions = this.permissions;
                 this.permissionsLoaded = true;
@@ -409,16 +413,24 @@ const app = createApp({
                 return;
             }
             axios.get(`/api/user-permissions/${this.user.id}`).then(response => {
-                this.permissions = createEmptyPermissions();
-                response.data.forEach(perm => {
-                    if (this.permissions[perm.menu]) {
-                        this.permissions[perm.menu] = {
-                            can_view: !!perm.can_view,
-                            can_edit: !!perm.can_edit,
-                            can_see_amounts: !!perm.can_see_amounts
-                        };
-                    }
-                });
+                // If NO permissions are found AND user is Admin, give full access as a fallback
+                // This ensures existing Admins don't lose access until they are configured.
+                if (response.data.length === 0 && this.user.role?.name === 'Admin') {
+                    this.permissions = createFullPermissions();
+                } else {
+                    this.permissions = createEmptyPermissions();
+                    response.data.forEach(perm => {
+                        if (this.permissions[perm.menu]) {
+                            this.permissions[perm.menu] = {
+                                can_view: !!perm.can_view,
+                                can_add: !!perm.can_add,
+                                can_edit: !!perm.can_edit,
+                                can_delete: !!perm.can_delete,
+                                can_see_amounts: !!perm.can_see_amounts
+                            };
+                        }
+                    });
+                }
                 this.user.permissions = this.permissions;
                 this.permissionsLoaded = true;
                 if (!this.applyInitialRouteView({ replace: true })) {
@@ -481,7 +493,9 @@ const app = createApp({
             if (!this.permissionsLoaded) {
                 return false;
             }
-            if (this.user && (this.user.role?.name === 'Admin' || this.user.email === 'superadmin@qc.com')) {
+            // Only superadmin bypasses the granular permissions here
+            // Admin role will follow the permission object which was populated in fetchPermissions
+            if (this.user?.email === 'superadmin@qc.com') {
                 return true;
             }
             const permission = this.permissions[permKey];
@@ -585,6 +599,7 @@ import ProductComponent from './components/ProductComponent.vue';
 import FGReceiptComponent from './components/FGReceiptComponent.vue';
 import FGDispatchComponent from './components/FGDispatchComponent.vue';
 import FGReportComponent from './components/FGReportComponent.vue';
+import FGInventoryEmailComponent from './components/FGInventoryEmailComponent.vue';
 import FGDashboardComponent from './components/FGDashboardComponent.vue';
 
 app.component('supplier-component', SupplierComponent);
@@ -626,6 +641,7 @@ app.component('product-component', ProductComponent);
 app.component('fg-receipt-component', FGReceiptComponent);
 app.component('fg-dispatch-component', FGDispatchComponent);
 app.component('fg-report-component', FGReportComponent);
+app.component('fg-inventory-email-component', FGInventoryEmailComponent);
 app.component('fg-dashboard-component', FGDashboardComponent);
 
 /**

@@ -85,16 +85,13 @@
             <div class="col-md-4">
                 <el-card class="glass-card shadow-sm h-100">
                     <template #header>
-                        <span class="fw-bold"><i class="bi bi-pie-chart me-2 text-success"></i> Transporter Share</span>
-                    </template>
-                    <div class="chart-container d-flex flex-column align-items-center justify-content-center">
-                        <canvas id="transporterShareChart"></canvas>
-                        <div class="mt-3 text-center w-100" v-if="transporters.length">
-                            <div class="d-flex justify-content-between small px-3 mb-1">
-                                <span class="text-muted">Top Transporter:</span>
-                                <span class="fw-bold">{{ transporters[0].name }}</span>
-                            </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold"><i class="bi bi-pie-chart me-2 text-success"></i> Transporter Share</span>
+                            <i class="bi bi-info-circle text-muted small" title="Distribution by cartage value"></i>
                         </div>
+                    </template>
+                    <div class="chart-container share-chart-wrapper">
+                        <canvas id="transporterShareChart"></canvas>
                     </div>
                 </el-card>
             </div>
@@ -211,20 +208,22 @@ const renderCharts = (data) => {
                         label: 'Billing Amount (₨)',
                         data: labels.map(l => trendData[l].amount),
                         borderColor: '#6366f1',
-                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        backgroundColor: 'rgba(99, 102, 241, 0.08)',
                         fill: true,
-                        tension: 0.4,
-                        pointRadius: 4,
+                        tension: 0.45,
+                        pointRadius: 3,
+                        pointHoverRadius: 6,
+                        borderWidth: 3,
                         yAxisID: 'y'
                     },
                     {
                         label: 'Bill Count',
                         data: labels.map(l => trendData[l].count),
                         borderColor: '#10b981',
-                        backgroundColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.7)',
                         type: 'bar',
-                        barThickness: 10,
-                        borderRadius: 4,
+                        barThickness: 12,
+                        borderRadius: 6,
                         yAxisID: 'y1'
                     }
                 ]
@@ -233,10 +232,38 @@ const renderCharts = (data) => {
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: { intersect: false, mode: 'index' },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        align: 'end',
+                        labels: { boxWidth: 10, usePointStyle: true, font: { size: 12, weight: '600' } }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        padding: 12,
+                        cornerRadius: 8,
+                        titleFont: { size: 13, weight: 'bold' }
+                    }
+                },
                 scales: {
-                    y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Amount' } },
-                    y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Count' } },
-                    x: { grid: { display: false } }
+                    y: { 
+                        type: 'linear', 
+                        display: true, 
+                        position: 'left',
+                        grid: { borderDash: [5, 5], color: '#f1f5f9' },
+                        ticks: { font: { weight: '600' }, color: '#64748b' }
+                    },
+                    y1: { 
+                        type: 'linear', 
+                        display: true, 
+                        position: 'right', 
+                        grid: { drawOnChartArea: false },
+                        ticks: { font: { weight: '600' }, color: '#10b981' }
+                    },
+                    x: { 
+                        grid: { display: false },
+                        ticks: { font: { weight: '600' }, color: '#64748b' }
+                    }
                 }
             }
         });
@@ -251,18 +278,72 @@ const renderCharts = (data) => {
                 labels: data.transporters.map(t => t.name),
                 datasets: [{
                     data: data.transporters.map(t => t.amount),
-                    backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+                    backgroundColor: [
+                        '#6366f1', // Indigo
+                        '#10b981', // Emerald
+                        '#f59e0b', // Amber
+                        '#ef4444', // Red
+                        '#8b5cf6', // Violet
+                        '#06b6d4', // Cyan
+                        '#f43f5e'  // Rose
+                    ],
+                    hoverOffset: 12,
+                    borderRadius: 8,
+                    spacing: 4,
                     borderWidth: 0
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '70%',
+                cutout: '72%',
                 plugins: {
-                    legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true, padding: 20 } }
+                    legend: { 
+                        position: 'bottom', 
+                        labels: { 
+                            boxWidth: 10, 
+                            usePointStyle: true, 
+                            padding: 15,
+                            font: { size: 11, weight: '600' }
+                        } 
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        padding: 12,
+                        titleFont: { size: 14, weight: 'bold' },
+                        bodyFont: { size: 13 },
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: (context) => {
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return ` ₨ ${formatAmount(value)} (${percentage}%)`;
+                            }
+                        }
+                    }
                 }
-            }
+            },
+            plugins: [{
+                id: 'centerText',
+                afterDraw: (chart) => {
+                    const { ctx, chartArea: { top, bottom, left, right, width, height } } = chart;
+                    ctx.save();
+                    const total = chart.config.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                    
+                    // Total Label
+                    ctx.font = '600 12px Montserrat';
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('TOTAL VALUE', width / 2 + left, height / 2 + top - 10);
+                    
+                    // Amount
+                    ctx.font = 'bold 18px Montserrat';
+                    ctx.fillStyle = '#1e293b';
+                    ctx.fillText(`₨ ${formatAmount(total)}`, width / 2 + left, height / 2 + top + 12);
+                    ctx.restore();
+                }
+            }]
         });
     }
 };
@@ -360,6 +441,10 @@ onUnmounted(() => {
 .chart-container {
     height: 320px;
     width: 100%;
+}
+
+.share-chart-wrapper {
+    padding: 10px;
 }
 
 .professional-table :deep(.el-table__header th) {

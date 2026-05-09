@@ -11,7 +11,7 @@ class CartageBillController extends Controller
 {
     public function index()
     {
-        return response()->json(CartageBill::with(['transporter', 'approver', 'entries.customer', 'entries.shippingAddress', 'entries.subEntries'])->orderBy('id', 'desc')->get());
+        return response()->json(CartageBill::with(['transporter', 'approver', 'entries' => function($q) { $q->orderBy('id', 'asc'); }, 'entries.customer', 'entries.shippingAddress'])->orderBy('id', 'desc')->get());
     }
 
     public function store(Request $request)
@@ -130,7 +130,7 @@ class CartageBillController extends Controller
 
     public function show($id)
     {
-        $bill = CartageBill::with(['transporter', 'entries.customer', 'entries.shippingAddress', 'entries.subEntries'])->findOrFail($id);
+        $bill = CartageBill::with(['transporter', 'entries' => function($q) { $q->orderBy('id', 'asc'); }, 'entries.customer', 'entries.shippingAddress'])->findOrFail($id);
         return response()->json($bill);
     }
 

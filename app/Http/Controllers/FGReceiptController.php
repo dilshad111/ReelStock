@@ -30,9 +30,18 @@ class FGReceiptController extends Controller
                 $query->whereBetween('date', [$request->date_from, $request->date_to]);
             }
 
-            return response()->json(
-                $query->orderBy('id', 'desc')->paginate(50)
-            );
+            $totals = [
+                'total_quantity_produced' => (float)$query->sum('quantity_produced'),
+                'total_wastage' => (float)$query->sum('wastage'),
+            ];
+
+            $perPage = $request->input('per_page', 50);
+            $results = $query->orderBy('id', 'desc')->paginate($perPage);
+
+            return response()->json([
+                'pagination' => $results,
+                'totals' => $totals
+            ]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }

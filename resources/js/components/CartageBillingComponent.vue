@@ -38,7 +38,7 @@
                     </div>
 
                     <div class="table-responsive">
-                    <el-table :data="mainForm.entries" border class="mb-4 entry-table" :row-class-name="tableRowClassName">
+                    <el-table :data="mainForm.entries" border class="mb-4 entry-table" :row-class-name="tableRowClassName" :span-method="arraySpanMethod">
                         <el-table-column label="S. No." width="60" align="center">
                             <template #default="scope">
                                 {{ scope.$index + 1 }}
@@ -144,39 +144,74 @@
                     </div>
                 </div>
                 <el-table :data="filteredHistory" style="width: 100%" v-loading="loading" class="entry-table">
-                    <el-table-column prop="id" label="Bill #" width="120" sortable>
+                    <el-table-column prop="id" label="Bill #" width="100" sortable>
                         <template #default="scope">
-                            <span class="fw-bold text-primary">{{ formatBillId(scope.row.id) }}</span>
+                            <span class="bill-badge">{{ formatBillId(scope.row.id) }}</span>
                         </template>
                     </el-table-column>
-                    <el-table-column label="Billing Date" width="120" sortable>
+                    <el-table-column label="Billing Date" width="110" sortable>
                         <template #default="scope">
-                            {{ formatDate(scope.row.bill_date) }}
+                            <span class="text-slate-600">{{ formatDate(scope.row.bill_date) }}</span>
                         </template>
                     </el-table-column>
-                    <el-table-column prop="transporter.name" label="Transporter" min-width="150" />
-                    <el-table-column prop="bill_to" label="Bill To" min-width="150" />
-                    <el-table-column prop="total_amount" label="Bill Amount" width="130" align="right">
-                        <template #default="scope">
-                            <span class="fw-bold">Rs. {{ scope.row.total_amount.toLocaleString() }}</span>
+                    <el-table-column prop="transporter.name" label="Transporter" min-width="180" show-overflow-tooltip>
+                         <template #default="scope">
+                            <span class="fw-600">{{ scope.row.transporter?.name }}</span>
                         </template>
                     </el-table-column>
-                    <el-table-column prop="status" label="Status" width="120" align="center">
+                    <el-table-column prop="total_amount" label="Bill Amount" width="140" align="right">
                         <template #default="scope">
-                            <el-tag :type="scope.row.status === 'Approved' ? 'success' : 'warning'" effect="dark" round size="small">
+                            <span class="amount-text">Rs. {{ scope.row.total_amount.toLocaleString() }}</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="tax_amount" label="Tax Deducted" width="130" align="right">
+                        <template #default="scope">
+                            <span class="text-danger fw-600" v-if="scope.row.tax_amount > 0">Rs. {{ scope.row.tax_amount.toLocaleString() }}</span>
+                            <span class="text-muted" v-else>—</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="approver.name" label="Approval User" width="160" show-overflow-tooltip>
+                        <template #default="scope">
+                            <div v-if="scope.row.approver" class="d-flex align-items-center">
+                                <i class="bi bi-person-check-fill text-success me-2"></i>
+                                <span class="small fw-500">{{ scope.row.approver.name }}</span>
+                            </div>
+                            <span v-else class="text-muted small italic">Pending Approval</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="status" label="Status" width="100" align="center">
+                        <template #default="scope">
+                            <el-tag :type="scope.row.status === 'Approved' ? 'success' : 'warning'" effect="dark" round size="small" class="status-tag">
                                 {{ scope.row.status }}
                             </el-tag>
                         </template>
                     </el-table-column>
-                    <el-table-column label="Actions" width="280" align="right">
+                    <el-table-column label="Actions" width="110" align="center">
                         <template #default="scope">
-                            <el-button-group>
-                                <el-button v-if="scope.row.status === 'Pending' && canApprove" size="small" type="success" @click="openApproveDialog(scope.row)" title="Approve"><i class="bi bi-check-circle me-1"></i> Approve</el-button>
-                                <el-button size="small" type="info" @click="viewBillDetails(scope.row)" title="View"><i class="bi bi-eye"></i></el-button>
-                                <el-button size="small" type="warning" @click="editBill(scope.row)" title="Edit" :disabled="scope.row.status === 'Approved'"><i class="bi bi-pencil"></i></el-button>
-                                <el-button size="small" type="primary" @click="printExisting(scope.row)" title="Print"><i class="bi bi-printer"></i></el-button>
-                                <el-button size="small" type="danger" @click="deleteBill(scope.row)" title="Delete" :disabled="scope.row.status === 'Approved'"><i class="bi bi-trash"></i></el-button>
-                            </el-button-group>
+                            <el-dropdown trigger="click">
+                                <el-button type="primary" size="small" class="action-dropdown-btn">
+                                    Actions <i class="bi bi-chevron-down ms-1"></i>
+                                </el-button>
+                                <template #dropdown>
+                                    <el-dropdown-menu class="modern-dropdown">
+                                        <el-dropdown-item v-if="scope.row.status === 'Pending' && canApprove" @click="openApproveDialog(scope.row)">
+                                            <i class="bi bi-check-circle-fill text-success me-2"></i> Approve Bill
+                                        </el-dropdown-item>
+                                        <el-dropdown-item @click="viewBillDetails(scope.row)">
+                                            <i class="bi bi-eye-fill text-info me-2"></i> View Details
+                                        </el-dropdown-item>
+                                        <el-dropdown-item :disabled="scope.row.status === 'Approved'" @click="editBill(scope.row)">
+                                            <i class="bi bi-pencil-fill text-warning me-2"></i> Edit Bill
+                                        </el-dropdown-item>
+                                        <el-dropdown-item @click="printExisting(scope.row)">
+                                            <i class="bi bi-printer-fill text-primary me-2"></i> Print Bill
+                                        </el-dropdown-item>
+                                        <el-dropdown-item divided :disabled="scope.row.status === 'Approved'" @click="deleteBill(scope.row)" class="text-danger">
+                                            <i class="bi bi-trash-fill me-2"></i> Delete Bill
+                                        </el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </template>
+                            </el-dropdown>
                         </template>
                     </el-table-column>
                 </el-table>
@@ -231,10 +266,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="(entry, index) in currentBill.entries" :key="entry.id" :class="{'sub-row-print': entry.parent_entry_id}">
-                        <td align="center" :style="entry.parent_entry_id ? 'border-top: none;' : ''">{{ index + 1 }}</td>
-                        <td :style="entry.parent_entry_id && isSameAsParent(entry, 'entry_date') ? 'border-top: none; color: transparent;' : ''">
-                            {{ formatDate(entry.entry_date) }}
+                    <tr v-for="(entry, index) in currentBill.entries" :key="entry.id || entry.temp_id" :class="{'sub-row-print': isSameAsParent(entry)}">
+                        <td align="center" :style="isSameAsParent(entry) ? 'border-top: none;' : ''">{{ index + 1 }}</td>
+                        <td :style="isSameAsParent(entry, 'entry_date') ? 'border-top: none;' : ''">
+                            <span v-if="!isSameAsParent(entry, 'entry_date')">{{ formatDate(entry.entry_date) }}</span>
                         </td>
                         <td>
                             <div class="fw-bold">{{ entry.customer?.name }}</div>
@@ -243,16 +278,19 @@
                                 <span v-if="entry.is_return" class="ms-2 px-1 fw-bold" style="background: #000; color: #fff; border-radius: 2px;">
                                     ({{ entry.remarks || 'Return Cartage' }})
                                 </span>
+                                <span v-else-if="entry.is_second_location" class="ms-2 px-1 fw-bold" style="background: #000; color: #fff; border-radius: 2px;">
+                                    ({{ entry.remarks || 'Second Location' }})
+                                </span>
                             </div>
                         </td>
-                        <td :style="entry.parent_entry_id && isSameAsParent(entry, 'vehicle_number') ? 'border-top: none; color: transparent;' : ''">
-                            {{ entry.vehicle_number }}
+                        <td :style="isSameAsParent(entry, 'vehicle_number') ? 'border-top: none;' : ''">
+                            <span v-if="!isSameAsParent(entry, 'vehicle_number')">{{ entry.vehicle_number }}</span>
                         </td>
-                        <td :style="entry.parent_entry_id && isSameAsParent(entry, 'dc_number') ? 'border-top: none; color: transparent;' : ''">
-                            {{ entry.dc_number }}
+                        <td :style="isSameAsParent(entry, 'dc_number') ? 'border-top: none;' : ''">
+                            <span v-if="!isSameAsParent(entry, 'dc_number')">{{ entry.dc_number }}</span>
                         </td>
-                        <td :style="entry.parent_entry_id && isSameAsParent(entry, 'slip_no') ? 'border-top: none; color: transparent;' : ''">
-                            {{ entry.slip_no }}
+                        <td :style="isSameAsParent(entry, 'slip_no') ? 'border-top: none;' : ''">
+                            <span v-if="!isSameAsParent(entry, 'slip_no')">{{ entry.slip_no }}</span>
                         </td>
                         <td class="text-end fw-bold">{{ entry.amount.toLocaleString() }}</td>
                     </tr>
@@ -380,9 +418,9 @@ const props = defineProps({
 
 const canApprove = computed(() => {
     if (!props.user) return false;
-    // Admins always have access, others need explicit 'approve_cartage' view permission
-    const isAdmin = props.user.role?.name === 'Admin' || props.user.email === 'superadmin@qc.com';
-    return isAdmin || (props.user.permissions?.approve_cartage?.can_view);
+    // Superadmin always has access, others need explicit 'approve_cartage' view permission
+    if (props.user.email === 'superadmin@qc.com') return true;
+    return !!(props.user.permissions?.approve_cartage?.can_view);
 });
 
 const transporters = ref([]);
@@ -486,7 +524,7 @@ watch(() => mainForm.value.entries, (newEntries) => {
                 if (child.vehicle_id !== row.vehicle_id) child.vehicle_id = row.vehicle_id;
                 if (child.vehicle_number !== row.vehicle_number) child.vehicle_number = row.vehicle_number;
                 if (child.vehicle_type !== row.vehicle_type) child.vehicle_type = row.vehicle_type;
-                if (child.dc_number !== row.dc_number) child.dc_number = row.dc_number;
+                if (!child.is_second_location && child.dc_number !== row.dc_number) child.dc_number = row.dc_number;
                 if (child.slip_no !== row.slip_no) child.slip_no = row.slip_no;
                 
                 if (child.is_return) {
@@ -848,24 +886,28 @@ const formatDate = (dateString) => {
 };
 
 const isSameAsParent = (entry, field) => {
-    if (!entry.parent_entry_id && !entry.parent_temp_id) return false;
+    const entries = (currentBill.value && currentBill.value.entries) ? currentBill.value.entries : mainForm.value.entries;
+    if (!entries || entries.length === 0) return false;
     
-    const entries = currentBill.value ? currentBill.value.entries : mainForm.value.entries;
-    let parent;
+    const index = entries.findIndex(e => (e.id && e.id === entry.id) || (e.temp_id && e.temp_id === entry.temp_id));
+    if (index <= 0) return false;
     
-    if (entry.parent_entry_id) {
-        parent = entries.find(p => p.id === entry.parent_entry_id);
-    } else if (entry.parent_temp_id) {
-        parent = entries.find(p => p.temp_id === entry.parent_temp_id);
-    }
+    const prevEntry = entries[index - 1];
+    const isChild = (entry.parent_entry_id && String(entry.parent_entry_id) === String(prevEntry.id)) || 
+                    (entry.parent_temp_id && entry.parent_temp_id === prevEntry.temp_id) ||
+                    (entry.is_sub_row) || (entry.is_return) || (entry.is_second_location);
+
+    if (!isChild) return false;
+    if (!field) return true;
     
-    if (!parent) return false;
-    
+    const val1 = String(prevEntry[field] || '').trim();
+    const val2 = String(entry[field] || '').trim();
+
     if (field === 'entry_date') {
-        return formatDate(parent.entry_date) === formatDate(entry.entry_date);
+        return formatDate(prevEntry.entry_date) === formatDate(entry.entry_date);
     }
     
-    return parent[field] === entry[field];
+    return val1 === val2;
 };
 
 const amountToWords = (num) => {
@@ -886,6 +928,20 @@ const amountToWords = (num) => {
     return "Rupees " + inWords(Math.floor(num)).trim() + " Only";
 };
 
+const arraySpanMethod = ({ row, column, rowIndex, columnIndex }) => {
+    // Merge Date (1), Vehicle # (4), and Slip # (6)
+    if (columnIndex === 1 || columnIndex === 4 || columnIndex === 6) {
+        if (row.is_sub_row) {
+            return { rowspan: 0, colspan: 0 };
+        } else {
+            const children = mainForm.value.entries.filter(r => r.parent_temp_id === row.temp_id);
+            if (children.length > 0) {
+                return { rowspan: 1 + children.length, colspan: 1 };
+            }
+        }
+    }
+};
+
 const tableRowClassName = ({ row }) => {
     if (row.is_sub_row) {
         return 'sub-row';
@@ -898,9 +954,11 @@ const exportHistoryExcel = () => {
         'Bill #': formatBillId(bill.id),
         Date: formatDate(bill.bill_date),
         Transporter: bill.transporter?.name,
-        'Bill To': bill.bill_to,
-        Status: bill.status,
-        Amount: bill.total_amount
+        'Gross Amount': bill.total_amount,
+        'Tax Deducted': bill.tax_amount || 0,
+        'Net Amount': bill.net_amount || bill.total_amount,
+        'Approved By': bill.approver?.name || 'Pending',
+        Status: bill.status
     }));
     
     const worksheet = XLSX.utils.json_to_sheet(data);
@@ -928,15 +986,25 @@ const printHistory = () => {
     font-size: 15px;
 }
 .entry-table :deep(.el-table__header) th {
-    background-color: #f1f5f9;
-    color: #0f172a;
-    font-weight: 800;
-    font-size: 14px;
+    background-color: #f8fafc !important;
+    color: #475569 !important;
+    font-weight: 800 !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    padding: 12px 0 !important;
+    border-bottom: 2px solid #e2e8f0 !important;
 }
 .entry-table :deep(.el-table__row) td {
-    padding: 8px 0;
-    color: #1e293b;
-    font-size: 14px;
+    padding: 6px 0 !important;
+    color: #1e293b !important;
+    font-size: 13px !important;
+}
+.entry-table :deep(.el-table__cell) {
+    white-space: nowrap !important;
+}
+.entry-table :deep(.el-table__row:hover) td {
+    background-color: #f1f5f9 !important;
 }
 .entry-table :deep(.sub-row) {
     background-color: #f8fafc;
@@ -970,6 +1038,45 @@ const printHistory = () => {
 :deep(.el-date-editor .el-input__prefix) {
     margin-left: 8px;
     margin-right: 0;
+}
+
+.bill-badge {
+    background-color: #eff6ff;
+    color: #2563eb;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 12px;
+    border: 1px solid #dbeafe;
+}
+.amount-text {
+    font-weight: 800;
+    color: #0f172a;
+    font-size: 14px;
+}
+.status-tag {
+    font-weight: 700 !important;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    font-size: 10px !important;
+}
+.action-dropdown-btn {
+    font-weight: 700 !important;
+    border-radius: 6px !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.fw-600 { font-weight: 600; }
+.fw-500 { font-weight: 500; }
+.text-slate-600 { color: #475569; }
+.italic { font-style: italic; }
+
+.modern-dropdown :deep(.el-dropdown-menu__item) {
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    padding: 10px 16px !important;
+}
+.modern-dropdown :deep(.el-dropdown-menu__item i) {
+    font-size: 14px;
 }
 
 /* Print & Preview Styles */
@@ -1090,6 +1197,12 @@ const printHistory = () => {
     background: #f1f5f9;
     font-weight: 800;
     text-transform: uppercase;
+}
+.sub-row-print td {
+    border-top: 1px dashed #eee !important; /* Lighter dashed line for sub-rows */
+}
+.sub-row-print td[style*="border-top: none"] {
+    border-top: none !important;
 }
 
 .print-footer-container {

@@ -161,6 +161,7 @@ export default {
           { key: 'fg-receipts', name: 'Production Entry', hasAmounts: false },
           { key: 'fg-dispatches', name: 'Dispatch Entry', hasAmounts: false },
           { key: 'fg-reports', name: 'FG Reports', hasAmounts: false },
+          { key: 'fg-inventory-email', name: 'Inventory Email Report', hasAmounts: false },
         ]
       },
       {
@@ -309,6 +310,7 @@ export default {
             'fg-receipts': 'bi bi-download',
             'fg-dispatches': 'bi bi-upload',
             'fg-reports': 'bi bi-file-earmark-spreadsheet',
+            'fg-inventory-email': 'bi bi-envelope-at',
             users: 'bi bi-person-lines-fill',
             'user-rights': 'bi bi-shield-lock',
             'audit-log': 'bi bi-journal-text',

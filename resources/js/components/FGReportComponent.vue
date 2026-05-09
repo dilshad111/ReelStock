@@ -41,7 +41,7 @@
           <div class="card-header bg-light fw-bold"><i class="bi bi-person-circle me-2"></i>{{ group.customer }}</div>
           <div class="card-body p-0">
             <table class="table table-sm table-striped mb-0 small">
-              <thead><tr><th class="text-center">Item Code</th><th class="text-center" style="width: 35%;">Item Name</th><th class="text-center">Opening</th><th class="text-center">Produced</th><th class="text-center">Dispatched</th><th class="text-center fw-bold">Balance</th><th v-if="isAdmin" class="text-center">Amount</th></tr></thead>
+              <thead><tr><th class="text-center">Item Code</th><th class="text-center" style="width: 35%;">Item Name</th><th class="text-center">Opening</th><th class="text-center">Produced</th><th class="text-center">Dispatched</th><th class="text-center fw-bold">Balance</th><th v-if="canSeeAmounts" class="text-center">Amount</th></tr></thead>
               <tbody>
                 <tr v-for="p in group.products" :key="p.product_id">
                   <td class="fw-bold">{{ p.item_code }}</td><td>{{ p.item_name }}</td>
@@ -49,14 +49,14 @@
                   <td class="text-end text-success">{{ fmt(p.total_produced) }}</td>
                   <td class="text-end text-danger">{{ fmt(p.total_dispatched) }}</td>
                   <td class="text-end fw-bold" :class="p.current_balance > 0 ? 'text-primary' : 'text-danger'">{{ fmt(p.current_balance) }}</td>
-                  <td v-if="isAdmin" class="text-end fw-bold text-dark">{{ fmt(p.amount) }}</td>
+                  <td v-if="canSeeAmounts" class="text-end fw-bold text-dark">{{ fmt(p.amount) }}</td>
                 </tr>
                 <tr class="table-secondary fw-bold">
                   <td colspan="3">Total</td>
                   <td class="text-end text-success">{{ fmt(group.total_produced) }}</td>
                   <td class="text-end text-danger">{{ fmt(group.total_dispatched) }}</td>
                   <td class="text-end text-primary">{{ fmt(group.total_balance) }}</td>
-                  <td v-if="isAdmin" class="text-end text-success">{{ fmt(group.total_amount) }}</td>
+                  <td v-if="canSeeAmounts" class="text-end text-success">{{ fmt(group.total_amount) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -175,7 +175,10 @@ import axios from 'axios';
 import * as XLSX from 'xlsx';
 
 export default {
-  props: { user: { type: Object, default: null } },
+  props: { 
+    user: { type: Object, default: null },
+    canSeeAmounts: { type: Boolean, default: false }
+  },
   data() {
     return {
       activeTab: 'stock',
@@ -227,10 +230,6 @@ export default {
         parts.push(`Item Search: <strong>${filters.item_search}</strong>`);
       }
       return parts.length > 0 ? parts.join(' &nbsp;|&nbsp; ') : 'All Data';
-    },
-    isAdmin() {
-      // Logic for admin: check role_id or specific permission
-      return this.user && (this.user.role_id === 1 || (this.user.role && this.user.role.name.toLowerCase() === 'admin'));
     }
   },
   mounted() {
@@ -349,17 +348,17 @@ export default {
         this.stockData.forEach(group => {
           html += `<div class="customer-heading"><strong>Customer:</strong> ${group.customer}</div>`;
           html += `<table>
-            <thead><tr><th class="text-center">Item Code</th><th class="text-center" style="width: 35%;">Item Name</th><th class="text-center">Opening</th><th class="text-center">Produced</th><th class="text-center">Dispatched</th><th class="text-center">Balance</th>${this.isAdmin ? '<th class="text-center">Amount</th>' : ''}</tr></thead>
+            <thead><tr><th class="text-center">Item Code</th><th class="text-center" style="width: 35%;">Item Name</th><th class="text-center">Opening</th><th class="text-center">Produced</th><th class="text-center">Dispatched</th><th class="text-center">Balance</th>${this.canSeeAmounts ? '<th class="text-center">Amount</th>' : ''}</tr></thead>
             <tbody>`;
           group.products.forEach(p => {
             html += `<tr>
               <td class="fw-bold">${p.item_code}</td><td>${p.item_name}</td>
               <td class="text-end">${this.fmt(p.opening_balance)}</td><td class="text-end">${this.fmt(p.total_produced)}</td>
               <td class="text-end">${this.fmt(p.total_dispatched)}</td><td class="text-end fw-bold">${this.fmt(p.current_balance)}</td>
-              ${this.isAdmin ? `<td class="text-end fw-bold">${this.fmt(p.amount)}</td>` : ''}
+              ${this.canSeeAmounts ? `<td class="text-end fw-bold">${this.fmt(p.amount)}</td>` : ''}
             </tr>`;
           });
-          html += `<tr class="total-row"><td colspan="3" class="fw-bold">Total</td><td class="text-end fw-bold">${this.fmt(group.total_produced)}</td><td class="text-end fw-bold">${this.fmt(group.total_dispatched)}</td><td class="text-end fw-bold">${this.fmt(group.total_balance)}</td>${this.isAdmin ? `<td class="text-end fw-bold">${this.fmt(group.total_amount)}</td>` : ''}</tr>
+          html += `<tr class="total-row"><td colspan="3" class="fw-bold">Total</td><td class="text-end fw-bold">${this.fmt(group.total_produced)}</td><td class="text-end fw-bold">${this.fmt(group.total_dispatched)}</td><td class="text-end fw-bold">${this.fmt(group.total_balance)}</td>${this.canSeeAmounts ? `<td class="text-end fw-bold">${this.fmt(group.total_amount)}</td>` : ''}</tr>
             </tbody></table>`;
         });
       } else if (this.activeTab === 'job') {
@@ -413,7 +412,7 @@ export default {
               'Total Produced': Number(p.total_produced),
               'Total Dispatched': Number(p.total_dispatched),
               'Current Balance': Number(p.current_balance),
-              ...(this.isAdmin ? { 'Amount': Number(p.amount) } : {})
+              ...(this.canSeeAmounts ? { 'Amount': Number(p.amount) } : {})
             });
           });
         });

@@ -86,28 +86,69 @@ class SetupController extends Controller
     public function deleteTable(Request $request)
     {
         $request->validate([
-            'table' => 'required|string|in:reel_receipts,reel_issues,reel_returns,reels,suppliers,paper_qualities',
+            'table' => 'required|string',
         ]);
 
         $table = $request->table;
+
+        $excludedTables = [
+            'migrations',
+            'personal_access_tokens',
+            'users',
+            'roles',
+            'settings',
+            'user_permissions',
+            'failed_jobs',
+            'password_resets',
+            'reel_sequences'
+        ];
+
+        if (in_array($table, $excludedTables)) {
+            return response()->json(['message' => "Deleting data from this table is not allowed for safety."], 403);
+        }
+
+        // Check if table exists
+        $dbName = DB::getDatabaseName();
+        $tableExists = DB::select("SHOW TABLES LIKE '{$table}'");
+
+        if (empty($tableExists)) {
+            return response()->json(['message' => "Table '{$table}' does not exist in the database."], 404);
+        }
 
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         DB::table($table)->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        return response()->json(['message' => "Table {$table} data deleted successfully"]);
+        return response()->json(['message' => "Table '{$table}' data deleted successfully"]);
     }
 
     public function getTables()
     {
-        $tables = [
-            'reel_receipts',
-            'reel_issues',
-            'reel_returns',
-            'reels',
-            'suppliers',
-            'paper_qualities',
+        $allTables = DB::select('SHOW TABLES');
+        $dbName = DB::getDatabaseName();
+        $key = "Tables_in_{$dbName}";
+        
+        $excludedTables = [
+            'migrations',
+            'personal_access_tokens',
+            'users',
+            'roles',
+            'settings',
+            'user_permissions',
+            'failed_jobs',
+            'password_resets',
+            'reel_sequences'
         ];
+        
+        $tables = [];
+        foreach ($allTables as $table) {
+            $tableName = $table->$key;
+            if (!in_array($tableName, $excludedTables)) {
+                $tables[] = $tableName;
+            }
+        }
+        
+        sort($tables);
 
         return response()->json($tables);
     }

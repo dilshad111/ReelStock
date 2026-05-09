@@ -310,8 +310,7 @@ export default {
     },
     canSeeAmounts(menu) {
       if (!this.user || !this.user.permissions) return false;
-      const isAdmin = this.user.is_admin || this.user.role?.name === 'Admin' || this.user.email === 'superadmin@qc.com';
-      if (isAdmin) return true;
+      if (this.user.email === 'superadmin@qc.com') return true;
       // Permissions are stored as an object { menu_key: { ... } }
       const perm = this.user.permissions[menu];
       return perm ? !!perm.can_see_amounts : false;
