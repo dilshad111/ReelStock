@@ -158,114 +158,56 @@ export default {
     
     printReport() {
       const printWindow = window.open('', '_blank');
-      const timestamp = new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      if (!printWindow) {
+        this.$message.error('Please allow pop-ups to print');
+        return;
+      }
       
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Available Inventory - Quality Cartons</title>
-            <style>
-              @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-              @page { size: A4; margin: 8mm; }
-              body { 
-                font-family: 'Inter', -apple-system, sans-serif; 
-                margin: 0; 
-                padding: 0; 
-                color: #1a1a1a; 
-                line-height: 1.3; 
-                -webkit-print-color-adjust: exact;
-              }
-              .header-section {
-                display: flex;
-                align-items: center;
-                gap: 20px;
-                padding-bottom: 15px;
-                border-bottom: 2px solid #333;
-                margin-bottom: 0;
-              }
-              .logo { width: 75px; height: 75px; object-fit: contain; }
-              .company-info { flex-grow: 1; }
-              .company-name { font-size: 28px; font-weight: 800; color: #000; margin: 0; line-height: 1.1; }
-              .company-address { font-size: 13px; color: #555; margin-top: 4px; font-weight: 500; }
-              
-              .report-title-section {
-                text-align: center;
-                margin: 20px 0 15px 0;
-              }
-              .report-title { 
-                font-size: 20px; 
-                font-weight: 800; 
-                text-transform: uppercase; 
-                letter-spacing: 1.5px; 
-                margin-bottom: 4px;
-                display: inline-block;
-                padding-bottom: 4px;
-                border-bottom: 2px solid #000;
-              }
-              .filter-info { font-size: 12px; color: #666; font-style: italic; font-weight: 500; }
-              
-              table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-              th, td { border: 1px solid #333; padding: 6px 10px; font-size: 11px; }
-              th { 
-                background-color: #f1f1f1 !important; 
-                font-weight: 800; 
-                text-transform: uppercase; 
-                text-align: center; 
-                font-size: 11px; 
-                letter-spacing: 0.3px;
-              }
-              .text-end { text-align: right !important; }
-              .text-center { text-align: center !important; }
-              .fw-bold { font-weight: 700 !important; }
-              
-              .grand-total-row { background-color: #f9f9f9 !important; }
-              .grand-total-label { font-size: 13px; font-weight: 800; }
-              .grand-total-value { font-size: 14px; font-weight: 800; border-bottom: 3px double #000 !important; }
-              
-              .footer { 
-                position: fixed; 
-                bottom: 5px; 
-                left: 0; 
-                right: 0; 
-                font-size: 10px; 
-                text-align: center; 
-                color: #999; 
-                padding-top: 5px;
-                border-top: 1px solid #eee;
-              }
-              
-              @media print {
-                .no-print { display: none; }
-              }
-            </style>
-          </head>
-          <body>
-            <div class="header-section">
-              <img src="${this.companyLogo}" class="logo" alt="Logo">
-              <div class="company-info">
-                <div class="company-name">${this.companyName}</div>
-                <div class="company-address">${this.companyAddress}</div>
+      const itemsPerPage = 35; 
+      const pages = [];
+      for (let i = 0; i < this.reportData.length; i += itemsPerPage) {
+        pages.push(this.reportData.slice(i, i + itemsPerPage));
+      }
+
+      let pagesHtml = '';
+      pages.forEach((pageItems, pageIdx) => {
+        const pageTotal = pageItems.reduce((sum, item) => sum + item.quantity, 0);
+        const isLastPage = pageIdx === pages.length - 1;
+        const isSinglePage = pages.length === 1;
+
+        pagesHtml += `
+          <div class="print-page" style="${!isLastPage ? 'page-break-after: always;' : ''}">
+            ${pageIdx === 0 ? `
+              <div class="header-section">
+                <img src="${this.companyLogo}" class="logo" alt="Logo">
+                <div class="company-info">
+                  <div class="company-name">${this.companyName}</div>
+                  <div class="company-address">${this.companyAddress}</div>
+                </div>
               </div>
-            </div>
-            
-            <div class="report-title-section">
-              <div class="report-title">Available Inventory Report</div>
-              <div class="filter-info">${this.printFilterSummary}</div>
-            </div>
+              <div class="report-title-section">
+                <div class="report-title">Available Inventory Report</div>
+                <div class="filter-info">${this.printFilterSummary}</div>
+              </div>
+            ` : `
+              <div class="header-section" style="padding-bottom: 5px; margin-bottom: 10px;">
+                <div class="company-name" style="font-size: 16px;">${this.companyName} - Inventory Report (Contd.)</div>
+              </div>
+            `}
             
             <table class="main-report-table">
               <thead>
                 <tr>
                   <th style="width: 35%;">CUSTOMER</th>
-                  <th style="width: 12%;">ITEM CODE</th>
-                  <th style="width: 41%;">ITEM NAME</th>
+                  <th style="width: 15%;">ITEM CODE</th>
+                  <th style="width: 38%;">ITEM NAME</th>
                   <th class="text-end" style="width: 12%;">QUANTITY</th>
                 </tr>
               </thead>
               <tbody>
-                ${this.reportData.map(item => `
+                ${pageItems.map(item => `
                   <tr>
-                    <td style="white-space: nowrap;">${item.customer_name}</td>
+                    <td>${item.customer_name}</td>
                     <td class="fw-bold text-center">${item.item_code}</td>
                     <td>${item.item_name}</td>
                     <td class="text-end fw-bold">${this.fmt(item.quantity)}</td>
@@ -273,24 +215,58 @@ export default {
                 `).join('')}
               </tbody>
               <tfoot>
-                <tr class="grand-total-row">
-                  <td colspan="3" class="text-end grand-total-label">Grand Total:</td>
-                  <td class="text-end grand-total-value">${this.fmt(this.totalQuantity)}</td>
-                </tr>
+                ${!isSinglePage ? `
+                  <tr class="summary-row">
+                    <td colspan="3" class="text-end fw-bold">Page Total:</td>
+                    <td class="text-end fw-bold">${this.fmt(pageTotal)}</td>
+                  </tr>
+                ` : ''}
+                ${isLastPage ? `
+                  <tr class="grand-total-row">
+                    <td colspan="3" class="text-end grand-total-label">Grand Total:</td>
+                    <td class="text-end grand-total-value">${this.fmt(this.totalQuantity)}</td>
+                  </tr>
+                ` : ''}
               </tfoot>
             </table>
-            
-            <div class="footer">
-              This is a computer generated report printed on ${timestamp}
-            </div>
+          </div>
+        `;
+      });
+
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Available Inventory - ${this.companyName}</title>
+            <style>
+              @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+              @page { size: A4; margin: 10mm; }
+              body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; color: #000; }
+              .header-section { display: flex; align-items: center; gap: 20px; padding-bottom: 10px; border-bottom: 2px solid #000; }
+              .logo { width: 60px; height: 60px; object-fit: contain; }
+              .company-name { font-size: 24px; font-weight: 800; color: #000; margin: 0; }
+              .company-address { font-size: 11px; color: #333; margin-top: 2px; }
+              .report-title-section { text-align: center; margin: 15px 0; }
+              .report-title { font-size: 18px; font-weight: 800; text-transform: uppercase; margin-bottom: 2px; border-bottom: 2px solid #000; display: inline-block; padding-bottom: 2px; }
+              .filter-info { font-size: 11px; color: #333; font-style: italic; }
+              table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+              th, td { border: 1px solid #000; padding: 5px 8px; font-size: 10px; word-wrap: break-word; }
+              th { background-color: #f2f2f2 !important; font-weight: 800; text-transform: uppercase; text-align: center; }
+              .text-end { text-align: right !important; }
+              .text-center { text-align: center !important; }
+              .fw-bold { font-weight: 700 !important; }
+              .summary-row { background-color: #f2f2f2 !important; font-weight: bold; }
+              .grand-total-row { background-color: #eee !important; }
+              .grand-total-label { font-size: 12px; font-weight: 800; }
+              .grand-total-value { font-size: 12px; font-weight: 800; }
+            </style>
+          </head>
+          <body>
+            ${pagesHtml}
           </body>
         </html>
       `);
       printWindow.document.close();
-      setTimeout(() => {
-        printWindow.print();
-        // Close window after printing if needed, but usually user wants to see it
-      }, 500);
+      setTimeout(() => { printWindow.print(); }, 500);
     },
 
     exportToPDF() {

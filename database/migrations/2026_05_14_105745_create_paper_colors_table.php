@@ -13,8 +13,9 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('cartage_increment_logs', function (Blueprint $table) {
+        Schema::create('paper_colors', function (Blueprint $table) {
             $table->id();
+            $table->string('name')->unique();
             $table->timestamps();
         });
     }
@@ -26,6 +27,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('cartage_increment_logs');
+        Schema::dropIfExists('paper_colors');
     }
 };

@@ -8,6 +8,7 @@ const PERMISSION_KEY_MAP = {
     suppliers: 'suppliers',
     receipts: 'receipts',
     qualities: 'qualities',
+    'paper-colors': 'qualities',
     issues: 'issues',
     'return-supplier': 'return-supplier',
     'monthly-consumption': 'monthly-consumption',
@@ -43,13 +44,15 @@ const PERMISSION_KEY_MAP = {
     'fg-reports': 'fg-reports',
     'fg-inventory-email': 'fg-inventory-email',
     'fg-dashboard': 'fg-dashboard',
-    'approve_cartage': 'approve_cartage'
+    'approve_cartage': 'approve_cartage',
+    'qc-inspection': 'qc-inspection'
 };
 
 const PERMISSION_KEYS = [
     'dashboard',
     'suppliers',
     'qualities',
+    'paper-colors',
     'receipts',
     'issues',
     'return-supplier',
@@ -84,7 +87,8 @@ const PERMISSION_KEYS = [
     'fg-dashboard',
     'old-reels',
     'stock-alerts',
-    'reconciliation'
+    'reconciliation',
+    'qc-inspection'
 ];
 
 const VIEW_ORDER = [
@@ -126,6 +130,7 @@ const VIEW_ORDER = [
     'fg-dispatches',
     'fg-reports',
     'fg-inventory-email',
+    'qc-inspection',
     'profile'
 ];
 
@@ -135,6 +140,7 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     'management-dashboard': 'management-dashboard',
     suppliers: 'suppliers',
     qualities: 'qualities',
+    'paper-colors': 'qualities',
     receipts: 'receipts',
     issues: 'issues',
     'return-supplier': 'return-supplier',
@@ -169,6 +175,7 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     'fg-dispatches': 'fg-dispatches',
     'fg-reports': 'fg-reports',
     'fg-inventory-email': 'fg-inventory-email',
+    'qc-inspection': 'qc-inspection',
     profile: 'profile'
 });
 
@@ -558,6 +565,7 @@ const app = createApp({
 
 import SupplierComponent from './components/SupplierComponent.vue';
 import PaperQualityComponent from './components/PaperQualityComponent.vue';
+import PaperColorComponent from './components/PaperColorComponent.vue';
 import DashboardComponent from './components/DashboardComponent.vue';
 import ReelReceiptComponent from './components/ReelReceiptComponent.vue';
 import ReelIssueComponent from './components/ReelIssueComponent.vue';
@@ -601,9 +609,11 @@ import FGDispatchComponent from './components/FGDispatchComponent.vue';
 import FGReportComponent from './components/FGReportComponent.vue';
 import FGInventoryEmailComponent from './components/FGInventoryEmailComponent.vue';
 import FGDashboardComponent from './components/FGDashboardComponent.vue';
+import QcInspectionComponent from './components/QcInspectionComponent.vue';
 
 app.component('supplier-component', SupplierComponent);
 app.component('paper-quality-component', PaperQualityComponent);
+app.component('paper-color-component', PaperColorComponent);
 app.component('dashboard-component', DashboardComponent);
 app.component('transport-dashboard-component', TransportDashboardComponent);
 app.component('reel-receipt-component', ReelReceiptComponent);
@@ -643,6 +653,7 @@ app.component('fg-dispatch-component', FGDispatchComponent);
 app.component('fg-report-component', FGReportComponent);
 app.component('fg-inventory-email-component', FGInventoryEmailComponent);
 app.component('fg-dashboard-component', FGDashboardComponent);
+app.component('qc-inspection-component', QcInspectionComponent);
 
 /**
  * The following block of code may be used to automatically register your

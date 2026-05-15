@@ -8,7 +8,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "Inventory updated"
+git commit -m "QC Inspection Form"
 
 echo.
 echo Pushing to origin main...

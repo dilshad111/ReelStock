@@ -8,6 +8,7 @@ use App\Models\Setting;
 use App\Models\Reel;
 use App\Models\ReelReceipt;
 use App\Services\ReelNumberService;
+use App\Services\LotNumberService;
 
 class ReelReceiptController extends Controller
 {
@@ -88,11 +89,16 @@ class ReelReceiptController extends Controller
                 'rate_per_kg' => 'nullable|numeric|min:0',
                 'qc_status' => 'required|in:approved,rejected,on_hold',
                 'remarks' => 'nullable|string',
+                'po_number' => 'nullable|string',
+                'grn_number' => 'nullable|string',
             ]);
 
             $receipt = DB::transaction(function () use ($request) {
                 // Generate reel number with row-level lock (prevents race conditions)
                 $reelNo = ReelNumberService::generateNextNumber();
+
+                // Generate lot number
+                $lotNumber = LotNumberService::generateNextNumber();
 
                 $reel = Reel::create([
                     'reel_no' => $reelNo,
@@ -106,6 +112,9 @@ class ReelReceiptController extends Controller
 
                 return ReelReceipt::create([
                     'reel_id' => $reel->id,
+                    'lot_number' => $lotNumber,
+                    'po_number' => $request->po_number,
+                    'grn_number' => $request->grn_number,
                     'receiving_date' => $request->receiving_date,
                     'received_by' => $request->received_by,
                     'gsm' => $request->gsm,
@@ -135,6 +144,8 @@ class ReelReceiptController extends Controller
             'common.rate_per_kg' => 'nullable|numeric|min:0',
             'common.qc_status' => 'required|in:approved,rejected,on_hold',
             'common.remarks' => 'nullable|string',
+            'common.po_number' => 'nullable|string',
+            'common.grn_number' => 'nullable|string',
             'reels' => 'required|array|min:1',
             'reels.*.reel_size' => 'required|numeric|min:0',
             'reels.*.reel_weight' => 'required|numeric|min:0',
@@ -143,6 +154,10 @@ class ReelReceiptController extends Controller
         $receipts = DB::transaction(function () use ($request) {
             // Reserve all reel numbers at once with row-level lock
             $reelNumbers = ReelNumberService::generateNextNumbers(count($request->reels));
+            
+            // Generate a single shared lot number for the entire bulk
+            $lotNumber = LotNumberService::generateNextNumber();
+            
             $createdReceipts = [];
 
             foreach ($request->reels as $index => $reelData) {
@@ -158,6 +173,9 @@ class ReelReceiptController extends Controller
 
                 $createdReceipts[] = ReelReceipt::create([
                     'reel_id' => $reel->id,
+                    'lot_number' => $lotNumber,
+                    'po_number' => $request->common['po_number'] ?? null,
+                    'grn_number' => $request->common['grn_number'] ?? null,
                     'receiving_date' => $request->common['receiving_date'],
                     'received_by' => $request->common['received_by'],
                     'gsm' => $request->common['gsm'],

@@ -144,6 +144,11 @@
                     </div>
                 </div>
                 <el-table :data="filteredHistory" style="width: 100%" v-loading="loading" class="entry-table">
+                    <el-table-column label="S. No." width="60" align="center">
+                        <template #default="scope">
+                            {{ scope.$index + 1 }}
+                        </template>
+                    </el-table-column>
                     <el-table-column prop="id" label="Bill #" width="100" sortable>
                         <template #default="scope">
                             <span class="bill-badge">{{ formatBillId(scope.row.id) }}</span>
@@ -950,7 +955,8 @@ const tableRowClassName = ({ row }) => {
 };
 
 const exportHistoryExcel = () => {
-    const data = filteredHistory.value.map(bill => ({
+    const data = filteredHistory.value.map((bill, index) => ({
+        'S. No.': index + 1,
         'Bill #': formatBillId(bill.id),
         Date: formatDate(bill.bill_date),
         Transporter: bill.transporter?.name,

@@ -165,6 +165,12 @@ export default {
         ]
       },
       {
+        category: 'QC Inspection',
+        items: [
+          { key: 'qc-inspection', name: 'Reel Inspection', hasAmounts: false },
+        ]
+      },
+      {
         category: 'Transport Management',
         items: [
           { key: 'customers', name: 'Customer Management', hasAmounts: false },
@@ -311,6 +317,7 @@ export default {
             'fg-dispatches': 'bi bi-upload',
             'fg-reports': 'bi bi-file-earmark-spreadsheet',
             'fg-inventory-email': 'bi bi-envelope-at',
+            'qc-inspection': 'bi bi-clipboard2-check',
             users: 'bi bi-person-lines-fill',
             'user-rights': 'bi bi-shield-lock',
             'audit-log': 'bi bi-journal-text',

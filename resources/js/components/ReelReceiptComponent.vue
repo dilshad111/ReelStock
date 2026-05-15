@@ -45,6 +45,14 @@
                   <label>Reel received by</label>
                   <input v-model="bulkData.common.received_by" type="text" class="form-control" required>
                 </div>
+                <div class="mb-3">
+                  <label>P.O. Number</label>
+                  <input v-model="bulkData.common.po_number" type="text" class="form-control" placeholder="Purchase Order #">
+                </div>
+                <div class="mb-3">
+                  <label>GRN Number</label>
+                  <input v-model="bulkData.common.grn_number" type="text" class="form-control" placeholder="GRN #">
+                </div>
               </div>
               <div class="col-md-6">
                 <h6>Quality Details (Shared)</h6>
@@ -259,6 +267,7 @@
           <th width="50"><input type="checkbox" @change="toggleSelectAll" :checked="allSelected"></th>
           <th>S. No.</th>
           <th>Reel No.</th>
+          <th>Lot #</th>
           <th>Date</th>
           <th class="text-start">Supplier</th>
           <th class="text-start">Paper Quality</th>
@@ -280,6 +289,7 @@
               </a>
               <span v-else>N/A</span>
             </td>
+            <td><span class="badge bg-secondary">{{ r.lot_number || '-' }}</span></td>
             <td>{{ formatDate(r.receiving_date) }}</td>
             <td class="text-start">{{ r.reel?.supplier ? r.reel.supplier.name : 'N/A' }}</td>
             <td class="text-start">{{ r.reel?.paper_quality_display }}</td>

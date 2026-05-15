@@ -60,6 +60,26 @@
             </div>
           </div>
         </div>
+        <div class="col-md-6">
+          <div class="card mb-3">
+            <div class="card-header">
+              <h5>QC Module Settings</h5>
+            </div>
+            <div class="card-body">
+              <form @submit.prevent="updateQcSettings">
+                <div class="mb-3">
+                  <label for="defaultInspector" class="form-label">Default Inspector Name</label>
+                  <input type="text" class="form-control" id="defaultInspector" v-model="defaultInspector" placeholder="Enter default inspector name">
+                </div>
+                <div class="mb-3">
+                  <label for="defaultApprovedBy" class="form-label">Default Approved By Name</label>
+                  <input type="text" class="form-control" id="defaultApprovedBy" v-model="defaultApprovedBy" placeholder="Enter default approved by name">
+                </div>
+                <button type="submit" class="btn btn-primary">Update QC Settings</button>
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="row">
@@ -116,7 +136,9 @@ export default {
       companyAddress: '',
       logoPreview: '',
       selectedTable: '',
-      tables: []
+      tables: [],
+      defaultInspector: '',
+      defaultApprovedBy: ''
     };
   },
   mounted() {
@@ -149,6 +171,8 @@ export default {
         if (response.data.company_logo) {
           this.logoPreview = '/storage/' + response.data.company_logo;
         }
+        this.defaultInspector = response.data.qc_default_inspector || '';
+        this.defaultApprovedBy = response.data.qc_default_approved_by || '';
       }).catch(error => {
         console.error('Error fetching settings:', error);
         alert('Failed to load settings');
@@ -209,6 +233,19 @@ export default {
       }).catch(error => {
         console.error('Error updating company info:', error);
         alert('Failed to update company information');
+      });
+    },
+    updateQcSettings() {
+      if (!this.isSuperAdmin()) return;
+      const promises = [
+        axios.post('/api/setup/settings', { key: 'qc_default_inspector', value: this.defaultInspector }),
+        axios.post('/api/setup/settings', { key: 'qc_default_approved_by', value: this.defaultApprovedBy })
+      ];
+      Promise.all(promises).then(() => {
+        alert('QC settings updated successfully');
+      }).catch(error => {
+        console.error('Error updating QC settings:', error);
+        alert('Failed to update QC settings');
       });
     },
     handleLogoUpload(event) {

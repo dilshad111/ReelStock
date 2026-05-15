@@ -12,6 +12,9 @@ class ReelReceipt extends Model implements Auditable
 
     protected $fillable = [
         'reel_id',
+        'lot_number',
+        'po_number',
+        'grn_number',
         'receiving_date',
         'received_by',
         'gsm',

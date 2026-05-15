@@ -9,7 +9,7 @@ class PaperQualityController extends Controller
 {
     public function index()
     {
-        return response()->json(PaperQuality::all());
+        return response()->json(PaperQuality::with('paperColor')->get());
     }
 
     public function store(Request $request)
@@ -17,6 +17,16 @@ class PaperQualityController extends Controller
         $request->validate([
             'quality' => 'required|string',
             'gsm_range' => 'required|string',
+            'min_gsm' => 'nullable|numeric|min:0',
+            'max_gsm' => 'nullable|numeric|min:0',
+            'min_bursting' => 'nullable|numeric|min:0',
+            'max_bursting' => 'nullable|numeric|min:0',
+            'min_moisture' => 'nullable|numeric|min:0',
+            'max_moisture' => 'nullable|numeric|min:0',
+            'min_cobb' => 'nullable|numeric|min:0',
+            'max_cobb' => 'nullable|numeric|min:0',
+            'paper_color' => 'nullable|string',
+            'paper_color_id' => 'nullable|exists:paper_colors,id',
         ]);
 
         // Generate item_code
@@ -42,6 +52,21 @@ class PaperQualityController extends Controller
 
     public function update(Request $request, $id)
     {
+        $request->validate([
+            'quality' => 'sometimes|string',
+            'gsm_range' => 'sometimes|string',
+            'min_gsm' => 'nullable|numeric|min:0',
+            'max_gsm' => 'nullable|numeric|min:0',
+            'min_bursting' => 'nullable|numeric|min:0',
+            'max_bursting' => 'nullable|numeric|min:0',
+            'min_moisture' => 'nullable|numeric|min:0',
+            'max_moisture' => 'nullable|numeric|min:0',
+            'min_cobb' => 'nullable|numeric|min:0',
+            'max_cobb' => 'nullable|numeric|min:0',
+            'paper_color' => 'nullable|string',
+            'paper_color_id' => 'nullable|exists:paper_colors,id',
+        ]);
+
         $quality = PaperQuality::findOrFail($id);
         $quality->update($request->all());
         return response()->json($quality);

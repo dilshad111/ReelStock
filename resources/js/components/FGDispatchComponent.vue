@@ -2,9 +2,17 @@
   <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2 class="page-title"><i class="bi bi-arrow-up-circle-fill text-primary"></i> FG Dispatch Entry</h2>
-      <button @click="showForm = true; editing = false; resetForm()" class="btn btn-purple shadow-sm px-4 py-2">
-        <i class="bi bi-plus-circle-fill me-1"></i> Add Dispatch
-      </button>
+      <div class="d-flex gap-2">
+        <button @click="printPage" class="btn btn-outline-primary shadow-sm px-3">
+          <i class="bi bi-printer-fill me-1"></i> Print List
+        </button>
+        <button @click="printPage" class="btn btn-outline-danger shadow-sm px-3">
+          <i class="bi bi-file-earmark-pdf-fill me-1"></i> PDF
+        </button>
+        <button @click="showForm = true; editing = false; resetForm()" class="btn btn-purple shadow-sm px-4 py-2">
+          <i class="bi bi-plus-circle-fill me-1"></i> Add Dispatch
+        </button>
+      </div>
     </div>
 
     <div v-if="showForm" class="row mb-5 fade-in">
@@ -207,9 +215,9 @@
             <tr>
               <th class="ps-4">S.No.</th>
               <th>Date</th>
+              <th class="text-center">Job #</th>
               <th>Customer</th>
               <th>Product</th>
-              <th class="text-center">Job #</th>
               <th class="text-center">DC #</th>
               <th class="text-end">Qty Dispatched</th>
               <th class="text-center pe-4">Actions</th>
@@ -219,6 +227,7 @@
             <tr v-for="(d, index) in dispatches" :key="d.id">
               <td class="ps-4 text-muted small">{{ (pagination.current_page - 1) * pagination.per_page + index + 1 }}</td>
               <td class="fw-bold">{{ formatDate(d.date) }}</td>
+              <td class="text-center"><span class="badge bg-primary-subtle text-primary px-3">{{ d.job_number || '-' }}</span></td>
               <td><span class="text-dark">{{ d.customer?.name }}</span></td>
               <td>
                 <div class="d-flex flex-column">
@@ -226,9 +235,8 @@
                   <span class="badge bg-light text-muted border-0 p-0 text-start">Code: {{ d.product?.item_code }}</span>
                 </div>
               </td>
-              <td class="text-center"><span class="badge bg-primary-subtle text-primary px-3">{{ d.job_number || '-' }}</span></td>
               <td class="text-center fw-bold text-dark">{{ d.dc_number }}</td>
-              <td class="text-end fw-bold text-danger h5 mb-0">{{ formatNumber(d.quantity_dispatched) }}</td>
+              <td class="text-end fw-bold text-danger mb-0">{{ formatNumber(d.quantity_dispatched) }}</td>
               <td class="text-center pe-4">
                 <div class="btn-group shadow-sm rounded">
                   <button @click="showDetail(d)" class="btn btn-sm btn-white text-info border-end" title="View"><i class="bi bi-eye-fill"></i></button>
@@ -249,12 +257,12 @@
           <tfoot v-if="dispatches.length > 0">
             <tr class="table-info fw-bold">
               <td colspan="6" class="text-end ps-4">Page Total:</td>
-              <td class="text-end text-danger h5 mb-0">{{ formatNumber(pageTotal) }}</td>
+              <td class="text-end text-danger mb-0">{{ formatNumber(pageTotal) }}</td>
               <td></td>
             </tr>
             <tr class="table-secondary fw-bold" v-if="grandTotal > 0">
               <td colspan="6" class="text-end ps-4">Grand Total:</td>
-              <td class="text-end text-danger h5 mb-0">{{ formatNumber(grandTotal) }}</td>
+              <td class="text-end text-danger mb-0">{{ formatNumber(grandTotal) }}</td>
               <td></td>
             </tr>
           </tfoot>
@@ -314,6 +322,12 @@
           </div>
           <div class="modal-footer py-2">
             <button type="button" class="btn btn-secondary btn-sm" @click="selectedEntry = null">Close</button>
+            <button type="button" class="btn btn-primary btn-sm" @click="printDispatch(selectedEntry)">
+              <i class="bi bi-printer me-1"></i> Print
+            </button>
+            <button type="button" class="btn btn-danger btn-sm" @click="printDispatch(selectedEntry)">
+              <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+            </button>
             <button type="button" class="btn btn-warning btn-sm" @click="editDispatch(selectedEntry); selectedEntry = null">Edit Entry</button>
           </div>
         </div>
@@ -358,7 +372,10 @@ export default {
       searchTimeout: null,
       pagination: { current_page: 1, last_page: 1, per_page: 50, total: 0 },
       grandTotal: 0,
-      selectedEntry: null
+      selectedEntry: null,
+      companyName: 'QUALITY CARTONS (PVT.) LTD.',
+      companyAddress: 'Plot# 46, Sector 24, Korangi Industrial Area Karachi',
+      companyLogo: window.location.origin + '/images/quality-cartons-logo.svg'
     };
   },
   computed: {
@@ -369,9 +386,21 @@ export default {
   },
   mounted() {
     if (localStorage.getItem('token')) axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
-    this.fetchCustomers(); this.fetchDispatches();
+    this.fetchCustomers(); this.fetchDispatches(); this.fetchSettings();
   },
   methods: {
+    fetchSettings() {
+      axios.get('/api/setup/settings').then(response => {
+        const data = response.data || {};
+        if (data.company_name) this.companyName = data.company_name;
+        if (data.company_address) this.companyAddress = data.company_address;
+        if (data.company_logo) {
+          this.companyLogo = window.location.origin + '/storage/' + data.company_logo;
+        } else {
+          this.companyLogo = window.location.origin + '/images/quality-cartons-logo.svg';
+        }
+      }).catch(error => { console.error('Error fetching settings:', error); });
+    },
     fetchCustomers() { axios.get('/api/customers').then(r => { this.customers = r.data; }); },
     
     fetchJobData() {
@@ -508,7 +537,183 @@ export default {
         .catch(err => { this.$message.error(err.response?.data?.error || 'Cannot delete.'); });
     },
     formatDate(d) { if (!d) return '-'; return new Date(d).toLocaleDateString('en-GB'); },
-    formatNumber(v) { return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 }); }
+    formatNumber(v) { return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 }); },
+    printDispatch(d) {
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        alert('Please allow pop-ups to print.');
+        return;
+      }
+      const now = new Date();
+      const timestamp = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>DC #${d.dc_number} - ${this.companyName}</title>
+            <style>
+              @page { size: A4 portrait; margin: 10mm; }
+              body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; color: #333; }
+              .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #444; padding-bottom: 15px; margin-bottom: 25px; }
+              .logo { width: 80px; height: 80px; object-fit: contain; }
+              .company-info { text-align: center; flex-grow: 1; }
+              .company-name { font-size: 24px; font-weight: bold; color: #1a2a6c; margin-bottom: 5px; }
+              .company-address { font-size: 12px; color: #666; }
+              .dc-title { text-align: center; font-size: 20px; font-weight: bold; text-decoration: underline; margin-bottom: 20px; text-transform: uppercase; }
+              .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+              .info-box { border: 1px solid #ddd; padding: 10px; border-radius: 4px; }
+              .info-label { font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 4px; }
+              .info-value { font-size: 14px; font-weight: bold; }
+              table { width: 100%; border-collapse: collapse; margin-bottom: 50px; }
+              th, td { border: 1px solid #ddd; padding: 12px 15px; text-align: left; }
+              th { background-color: #f8f9fa; font-size: 12px; text-transform: uppercase; }
+              .text-end { text-align: right; }
+              .footer { margin-top: 50px; display: flex; justify-content: space-between; }
+              .signature-box { width: 200px; border-top: 1px solid #333; text-align: center; padding-top: 5px; font-size: 12px; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <img src="${this.companyLogo}" alt="Logo" class="logo">
+              <div class="company-info">
+                <div class="company-name">${this.companyName}</div>
+                <div class="company-address">${this.companyAddress}</div>
+              </div>
+              <div style="width: 80px;"></div>
+            </div>
+            <div class="dc-title">Delivery Challan</div>
+            <div class="info-grid">
+              <div class="info-box">
+                <div class="info-label">Customer</div>
+                <div class="info-value">${d.customer?.name || 'N/A'}</div>
+              </div>
+              <div class="info-box">
+                <div class="info-label">DC Details</div>
+                <div class="info-value">DC #: ${d.dc_number}</div>
+                <div class="info-value">Date: ${this.formatDate(d.date)}</div>
+                <div class="info-value">Job #: ${d.job_number || 'N/A'}</div>
+              </div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th width="50">S#</th>
+                  <th>Product Description</th>
+                  <th class="text-end">Quantity</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td>
+                    <strong>${d.product?.item_name || 'N/A'}</strong><br>
+                    <small>Code: ${d.product?.item_code || 'N/A'}</small>
+                  </td>
+                  <td class="text-end"><strong>${this.formatNumber(d.quantity_dispatched)}</strong></td>
+                </tr>
+              </tbody>
+            </table>
+            <div style="margin-bottom: 40px;">
+              <strong>Remarks:</strong> ${d.remarks || 'No remarks.'}
+            </div>
+            <div class="footer">
+              <div class="signature-box">Receiver's Signature</div>
+              <div class="signature-box">For ${this.companyName}</div>
+            </div>
+            <div style="margin-top: 30px; font-size: 10px; color: #999; text-align: center;">
+              Printed on: ${timestamp}
+            </div>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+    },
+    printPage() {
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        alert('Please allow pop-ups to print.');
+        return;
+      }
+      const now = new Date();
+      const timestamp = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      
+      const sortedDispatches = [...this.dispatches].sort((a, b) => new Date(a.date) - new Date(b.date));
+      
+      let tableRows = '';
+      sortedDispatches.forEach((d, index) => {
+        tableRows += `
+          <tr>
+            <td class="text-center">${(this.pagination.current_page - 1) * this.pagination.per_page + index + 1}</td>
+            <td class="text-center">${this.formatDate(d.date)}</td>
+            <td class="text-center">${d.job_number || '-'}</td>
+            <td class="text-start">${d.customer?.name || '-'}</td>
+            <td class="text-start">${d.product?.item_code || ''} - ${d.product?.item_name || '-'}</td>
+            <td class="text-center">${d.dc_number}</td>
+            <td class="text-end">${this.formatNumber(d.quantity_dispatched)}</td>
+          </tr>
+        `;
+      });
+
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>FG Dispatch List - ${this.companyName}</title>
+            <style>
+              @page { size: A4 portrait; margin: 10mm; }
+              body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 10px; color: #000; }
+              .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
+              .company-name { font-size: 22px; font-weight: bold; color: #000; }
+              .report-title { font-size: 16px; margin-top: 5px; text-transform: uppercase; font-weight: bold; color: #000; }
+              table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 9px; table-layout: fixed; border: 1px solid #000; }
+              th, td { border: 1px solid #000; padding: 4px 6px; word-wrap: break-word; color: #000; }
+              th { background-color: #f2f2f2; font-weight: bold; text-align: center; text-transform: uppercase; color: #000; }
+              .text-end { text-align: right; }
+              .text-start { text-align: left; }
+              .text-center { text-align: center; }
+              .footer { margin-top: 20px; font-size: 9px; color: #000; text-align: center; }
+              .summary-row { background-color: #f2f2f2; font-weight: bold; color: #000; }
+              .grand-total-row { background-color: #e9ecef; font-weight: bold; font-size: 10px; color: #000; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <div class="company-name">${this.companyName}</div>
+              <div class="report-title">Finished Goods Dispatch List</div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th width="25">S#</th>
+                  <th width="60">Date</th>
+                  <th width="55">Job #</th>
+                  <th width="110">Customer</th>
+                  <th>Item Name</th>
+                  <th width="50">DC #</th>
+                  <th width="50">Qty</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRows}
+              </tbody>
+              <tfoot>
+                ${(this.pageTotal !== this.grandTotal && this.grandTotal > 0) ? `
+                <tr class="summary-row">
+                  <td colspan="6" class="text-end">Page Total:</td>
+                  <td class="text-end">${this.formatNumber(this.pageTotal)}</td>
+                </tr>` : ''}
+                ${this.grandTotal > 0 ? `
+                <tr class="grand-total-row">
+                  <td colspan="6" class="text-end">Grand Total:</td>
+                  <td class="text-end">${this.formatNumber(this.grandTotal)}</td>
+                </tr>` : ''}
+              </tfoot>
+            </table>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+    }
   }
 };
 </script>
@@ -529,8 +734,8 @@ export default {
 .custom-history-table thead th { background: transparent; border-bottom: 2px solid #f1f3f5; }
 .custom-history-table tbody tr:last-child td { border-bottom: none; }
 
-.custom-main-table thead th { font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; padding: 1rem 0.5rem; }
-.custom-main-table tbody td { padding: 1rem 0.5rem; }
+.custom-main-table thead th { font-weight: 700; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.5px; padding: 0.75rem 0.5rem; }
+.custom-main-table tbody td { padding: 0.5rem 0.5rem; font-size: 0.8rem; }
 
 .fade-in { animation: fadeIn 0.3s ease-in-out; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

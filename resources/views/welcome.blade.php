@@ -715,6 +715,7 @@
                                 <span>Paper</span>
                             </template>
                             <el-menu-item index="qualities" v-if="canView('qualities')">Paper Qualities</el-menu-item>
+                            <el-menu-item index="paper-colors" v-if="canView('paper-colors')">Paper Colors</el-menu-item>
                             <el-menu-item index="receipts" v-if="canView('receipts')">Receipts</el-menu-item>
                             <el-menu-item index="issues" v-if="canView('issues')">Reel Issue</el-menu-item>
                             <el-menu-item index="return-supplier" v-if="canView('return-supplier')">Return to Supp.</el-menu-item>
@@ -733,6 +734,14 @@
                             <el-menu-item index="reel-stock-count" v-if="canView('reel-stock-count')">Stock Count</el-menu-item>
                             <el-menu-item index="usage-intelligence" v-if="canView('usage-intelligence')">Usage Intel.</el-menu-item>
                             <el-menu-item index="old-reels" v-if="canView('old-reels')">Old Reels Report</el-menu-item>
+                        </el-sub-menu>
+                        
+                        <el-sub-menu index="qc-module" v-if="canView('qc-inspection')">
+                            <template #title>
+                                <i class="bi bi-clipboard2-check-fill me-2" style="color: #2dd4bf !important;"></i>
+                                <span>QC Inspection</span>
+                            </template>
+                            <el-menu-item index="qc-inspection" v-if="canView('qc-inspection')">Reel Inspection</el-menu-item>
                         </el-sub-menu>
                     </el-sub-menu>
 
@@ -765,6 +774,8 @@
                         <el-menu-item index="fg-reports" v-if="canView('fg-reports')">FG Reports</el-menu-item>
                         <el-menu-item index="fg-inventory-email" v-if="canView('fg-inventory-email')">Inventory Email</el-menu-item>
                     </el-sub-menu>
+
+
 
                     <el-sub-menu index="users" v-if="canView('users') || canView('audit-log')">
                         <template #title>
@@ -848,6 +859,7 @@
                 <transport-dashboard-component v-else-if="currentView === 'transport-dashboard'" :user="user"></transport-dashboard-component>
                 <supplier-component v-else-if="currentView === 'suppliers'" :user="user"></supplier-component>
                 <paper-quality-component v-else-if="currentView === 'qualities'" :user="user"></paper-quality-component>
+                <paper-color-component v-else-if="currentView === 'paper-colors'" :user="user"></paper-color-component>
                 <reel-receipt-component v-else-if="currentView === 'receipts'" :user="user"></reel-receipt-component>
                 <reel-issue-component v-else-if="currentView === 'issues'" :user="user"></reel-issue-component>
                 <reel-return-supplier-component v-else-if="currentView === 'return-supplier'" :user="user"></reel-return-supplier-component>
@@ -882,6 +894,7 @@
                 <fg-dispatch-component v-else-if="currentView === 'fg-dispatches'" :user="user"></fg-dispatch-component>
                 <fg-report-component v-else-if="currentView === 'fg-reports'" :user="user" :can-see-amounts="canSeeAmounts('fg-reports')"></fg-report-component>
                 <fg-inventory-email-component v-else-if="currentView === 'fg-inventory-email'" :user="user"></fg-inventory-email-component>
+                <qc-inspection-component v-else-if="currentView === 'qc-inspection'" :user="user"></qc-inspection-component>
                 <best-ui-showcase-component v-else-if="currentView === 'best-ui'"></best-ui-showcase-component>
                 <!-- Add other components here -->
                 <div v-else>

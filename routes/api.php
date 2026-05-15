@@ -33,6 +33,8 @@ use App\Http\Controllers\FGReceiptController;
 use App\Http\Controllers\FGDispatchController;
 use App\Http\Controllers\FGReportController;
 use App\Http\Controllers\VehicleTypeController;
+use App\Http\Controllers\QcInspectionController;
+use App\Http\Controllers\PaperColorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -62,6 +64,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Roles
     Route::get('roles', [RoleController::class, 'index']);
+
+    // Paper Colors
+    Route::apiResource('paper-colors', PaperColorController::class);
 
     // Paper Qualities
     Route::apiResource('paper-qualities', PaperQualityController::class);
@@ -170,4 +175,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('fg-reports/audit', [FGReportController::class, 'auditReport']);
     Route::get('fg-reports/filters', [FGReportController::class, 'getFilters']);
     Route::get('fg-dashboard', [FGReportController::class, 'dashboard']);
+
+    // QC Inspection Module
+    Route::get('qc-inspections/open-lots', [QcInspectionController::class, 'openLots']);
+    Route::get('qc-inspections/lot-details/{lotNumber}', [QcInspectionController::class, 'getLotDetails']);
+    Route::get('qc-inspections/{id}/report', [QcInspectionController::class, 'report']);
+    Route::apiResource('qc-inspections', QcInspectionController::class);
 });
