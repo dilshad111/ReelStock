@@ -1,66 +1,72 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ReelStock - Paper Reel & Inventory Management System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+ReelStock is a professional-grade web application designed specifically for carton manufacturing facilities. It provides a comprehensive solution for tracking paper reels, managing quality control, optimizing transport logistics, and monitoring finished goods inventory.
 
-## About Laravel
+## 🚀 Key Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### 📦 Reel Management
+- **Intake & Receipt:** Track incoming reels with auto-generated serial numbers and lot tracking.
+- **Consumption Tracking:** Real-time weight synchronization as reels are issued to production.
+- **Balance Management:** Automated calculation of partially used reels and stock availability.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 🧪 Quality Control
+- **Inspection Logs:** Record GSM, Bursting Strength, Moisture, and Cob test results.
+- **Status Workflows:** Approved, Rejected, and On-Hold statuses for incoming materials.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 🚛 Transport & Logistics
+- **Cartage Billing:** Manage transport rates per customer and vehicle type.
+- **Rate Increments:** Track historical fuel/service rate adjustments.
+- **Vehicle Tracking:** Maintain a database of transporters and vehicles.
 
-## Learning Laravel
+### 🏭 Finished Goods
+- **Job-Based Tracking:** Track produced cartons against specific jobs.
+- **Dispatch Management:** Streamlined workflow for shipping finished products to customers.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 📊 Intelligence & Reporting
+- **Predictive Analytics:** Estimate future paper consumption based on historical trends.
+- **Audit Logs:** Full history of every data change for accountability.
+- **Inventory Alerts:** Automated notifications for low stock levels.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## 🛠 Tech Stack
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- **Backend:** Laravel 9 (PHP 8.2)
+- **Frontend:** Vue 3, Element Plus, Bootstrap 5
+- **Database:** MySQL
+- **Build System:** Vite
 
-## Laravel Sponsors
+## ⚙️ Installation
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd reelStock
+   ```
 
-### Premium Partners
+2. **Install Dependencies:**
+   ```bash
+   composer install
+   npm install
+   ```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+3. **Environment Setup:**
+   - Copy `.env.example` to `.env`
+   - Configure your database settings.
+   - Run `php artisan key:generate`
 
-## Contributing
+4. **Database Migration:**
+   ```bash
+   php artisan migrate --seed
+   ```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+5. **Build & Run:**
+   ```bash
+   npm run dev
+   ```
 
-## Code of Conduct
+## 📄 Documentation
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+For full technical documentation, architecture diagrams, and API references, please see the [System Documentation](file:///C:/Users/HP/.gemini/antigravity/brain/f2ba5333-d9be-42f7-9293-189f2dea088b/system_documentation.md).
 
-## Security Vulnerabilities
+## 🛡 License
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is proprietary and confidential. Unauthorized copying or distribution is prohibited.

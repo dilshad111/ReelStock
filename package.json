@@ -18,6 +18,9 @@
     },
     "dependencies": {
         "element-plus": "^2.13.1",
+        "laravel-echo": "^2.3.4",
+        "pinia": "^3.0.4",
+        "pusher-js": "^8.5.0",
         "xlsx": "^0.18.5"
     }
 }

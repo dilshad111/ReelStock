@@ -14,7 +14,7 @@ class FGReceipt extends Model implements Auditable
     protected $table = 'fg_receipts';
 
     protected $fillable = [
-        'date', 'customer_id', 'product_id', 'job_number',
+        'date', 'customer_id', 'product_id', 'job_card_id', 'job_number',
         'production_date', 'quantity_produced', 'carton_price', 'wastage',
         'remarks', 'created_by'
     ];
@@ -35,6 +35,11 @@ class FGReceipt extends Model implements Auditable
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function jobCard()
+    {
+        return $this->belongsTo(JobCard::class);
     }
 
     public function creator()

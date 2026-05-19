@@ -21,6 +21,10 @@ Route::get('/login', function () {
     return redirect('/');
 })->name('login');
 
+use App\Http\Controllers\JobCardController;
+
+Route::get('/job-cards/{id}/print', [JobCardController::class, 'print']);
+
 Route::get('/{any}', function () {
     return view('welcome');
 })->where('any', '.*');

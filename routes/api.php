@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\PaperQualityController;
+use App\Http\Controllers\UnitOfMeasureController;
 use App\Http\Controllers\ReelReceiptController;
 use App\Http\Controllers\ReelIssueController;
 use App\Http\Controllers\ReelReturnController;
@@ -35,6 +36,12 @@ use App\Http\Controllers\FGReportController;
 use App\Http\Controllers\VehicleTypeController;
 use App\Http\Controllers\QcInspectionController;
 use App\Http\Controllers\PaperColorController;
+use App\Http\Controllers\RMItemController;
+use App\Http\Controllers\RMReceiptController;
+use App\Http\Controllers\RMConsumptionController;
+use App\Http\Controllers\RMDashboardController;
+use App\Http\Controllers\RMReportController;
+use App\Http\Controllers\JobCardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -67,6 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Paper Colors
     Route::apiResource('paper-colors', PaperColorController::class);
+    Route::apiResource('unit-of-measures', UnitOfMeasureController::class);
 
     // Paper Qualities
     Route::apiResource('paper-qualities', PaperQualityController::class);
@@ -156,6 +164,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('cartage-bills/pending-count', [CartageBillController::class, 'getPendingCount']);
     Route::get('cartage-bills/next-id', [CartageBillController::class, 'getNextId']);
     Route::post('cartage-bills/{id}/approve', [CartageBillController::class, 'approve']);
+    Route::post('cartage-bills/{id}/unapprove', [CartageBillController::class, 'unapprove']);
     Route::apiResource('cartage-bills', CartageBillController::class);
 
     // Finished Goods Inventory Module
@@ -181,4 +190,27 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('qc-inspections/lot-details/{lotNumber}', [QcInspectionController::class, 'getLotDetails']);
     Route::get('qc-inspections/{id}/report', [QcInspectionController::class, 'report']);
     Route::apiResource('qc-inspections', QcInspectionController::class);
+
+    // Raw Material Inventory Module
+    Route::apiResource('rm-items', RMItemController::class);
+    Route::get('rm-receipts/next-grn', [RMReceiptController::class, 'nextGrnNo']);
+    Route::apiResource('rm-receipts', RMReceiptController::class);
+    Route::apiResource('rm-consumptions', RMConsumptionController::class);
+    Route::get('rm-dashboard', [RMDashboardController::class, 'index']);
+    
+    Route::prefix('rm-reports')->group(function() {
+        Route::get('inventory', [RMReportController::class, 'currentInventory']);
+        Route::get('ledger', [RMReportController::class, 'stockLedger']);
+        Route::get('receiving', [RMReportController::class, 'receivingReport']);
+        Route::get('consumption', [RMReportController::class, 'consumptionReport']);
+    });
+
+    // Production / Job Card Routes
+    Route::get('/job-cards', [JobCardController::class, 'index']);
+    Route::get('/job-cards/dashboard', [JobCardController::class, 'dashboard']);
+    Route::get('/job-cards/active-list', [JobCardController::class, 'activeJobCards']);
+    Route::get('/job-cards/{id}', [JobCardController::class, 'show']);
+    Route::post('/job-cards', [JobCardController::class, 'store']);
+    Route::post('/job-cards/record-production', [JobCardController::class, 'recordProduction']);
+    Route::put('/job-cards/{id}/status', [JobCardController::class, 'updateStatus']);
 });

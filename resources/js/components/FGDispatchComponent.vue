@@ -9,7 +9,7 @@
         <button @click="printPage" class="btn btn-outline-danger shadow-sm px-3">
           <i class="bi bi-file-earmark-pdf-fill me-1"></i> PDF
         </button>
-        <button @click="showForm = true; editing = false; resetForm()" class="btn btn-purple shadow-sm px-4 py-2">
+        <button @click="showForm = true; editing = false; resetForm(); $nextTick(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); })" class="btn btn-purple shadow-sm px-4 py-2">
           <i class="bi bi-plus-circle-fill me-1"></i> Add Dispatch
         </button>
       </div>
@@ -375,7 +375,8 @@ export default {
       selectedEntry: null,
       companyName: 'QUALITY CARTONS (PVT.) LTD.',
       companyAddress: 'Plot# 46, Sector 24, Korangi Industrial Area Karachi',
-      companyLogo: window.location.origin + '/images/quality-cartons-logo.svg'
+      companyLogo: window.location.origin + '/images/quality-cartons-logo.svg',
+      originalQty: null
     };
   },
   computed: {
@@ -410,6 +411,9 @@ export default {
       axios.get(`/api/fg-dispatches/job-details/${this.form.job_number}`)
         .then(r => {
           this.jobInfo = r.data;
+          if (this.editing && this.originalQty) {
+            this.jobInfo.balance = (parseFloat(this.jobInfo.balance) || 0) + parseFloat(this.originalQty);
+          }
           this.form.customer_id = r.data.customer.id;
           this.fetchProductsByCustomer(); // Load products for the customer
           this.form.product_id = r.data.product.id;
@@ -462,6 +466,9 @@ export default {
         axios.get(`/api/fg-dispatches/product-details/${this.form.product_id}`)
             .then(r => {
                 this.jobInfo = r.data;
+                if (this.editing && this.originalQty) {
+                  this.jobInfo.balance = (parseFloat(this.jobInfo.balance) || 0) + parseFloat(this.originalQty);
+                }
                 this.form.job_number = 'MANUAL/OPENING';
                 this.manualMode = false;
                 this.$message.success('Stock details fetched.');
@@ -482,6 +489,14 @@ export default {
         if (r.data.totals) {
           this.grandTotal = r.data.totals.total_quantity_dispatched;
         }
+      }).catch(err => {
+        if (axios.isCancel(err)) return;
+        if (err.response?.data?.errors) {
+          const msgs = Object.values(err.response.data.errors).flat().join('\n');
+          this.$message.error(msgs);
+        } else {
+          this.$message.error(err.response?.data?.error || err.response?.data?.message || 'Error fetching dispatches.');
+        }
       });
     },
     showDetail(d) {
@@ -492,6 +507,7 @@ export default {
     clearFilters() { this.filters = { customer_id: '', job_number: '', dc_number: '', date_from: '', date_to: '', per_page: 50 }; this.fetchDispatches(); },
     
     resetForm() { 
+      this.originalQty = null;
       this.form = { id: null, date: new Date().toISOString().substr(0, 10), customer_id: '', product_id: '', job_number: '', dc_number: '', quantity_dispatched: '', remarks: '' }; 
       this.jobInfo = { job_number: '', customer: null, product: null, balance: null, total_produced: 0, total_dispatched: 0, history: [] };
       this.manualMode = true;
@@ -512,6 +528,7 @@ export default {
     },
 
     editDispatch(d) {
+      this.originalQty = d.quantity_dispatched;
       this.form = { 
         id: d.id, 
         date: d.date?.split('T')[0], 
@@ -529,6 +546,9 @@ export default {
       }
       this.editing = true; 
       this.showForm = true;
+      this.$nextTick(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
     },
 
     deleteDispatch(d) {

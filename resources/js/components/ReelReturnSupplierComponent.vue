@@ -281,6 +281,8 @@
 
 <script>
 import axios from 'axios';
+import { mapState, mapWritableState, mapActions } from 'pinia';
+import { useReelReturnStore } from '../stores/useReelReturnStore';
 
 const CHALLAN_PREFIX = 'RT';
 const CHALLAN_PADDING = 3;
@@ -307,11 +309,9 @@ export default {
   },
   data() {
     return {
-      returns: [],
       returnEntries: [],
       reel: null,
       latestReceipt: null,
-      loading: false,
       showForm: false,
       formData: defaultFormState(),
       editingId: null,
@@ -325,12 +325,20 @@ export default {
     };
   },
   computed: {
+    ...mapState(useReelReturnStore, ['returns', 'isLoading', 'error']),
+    loading() {
+        return this.isLoading;
+    },
     filteredReturns() {
-      if (!this.returnSearch) {
-        return this.returns;
+      let result = this.returns;
+      if (this.returnSearch) {
+        const term = this.returnSearch.trim().toLowerCase();
+        result = result.filter((item) => item?.reel?.reel_no?.toLowerCase().includes(term));
       }
-      const term = this.returnSearch.trim().toLowerCase();
-      return this.returns.filter((item) => item?.reel?.reel_no?.toLowerCase().includes(term));
+      if (this.selectedChallanFilter) {
+        result = result.filter((item) => item.challan_no === this.selectedChallanFilter);
+      }
+      return result;
     },
     isEditing() {
       return this.editingId !== null;
@@ -355,13 +363,24 @@ export default {
     user() {
       this.ensureAuthHeader();
     },
+    returns() {
+        this.recalculateNextChallan();
+    }
   },
   mounted() {
     this.ensureAuthHeader();
     this.fetchReturns();
     this.fetchSuppliers();
+    this.setupRealtimeListener();
   },
   methods: {
+    ...mapActions(useReelReturnStore, {
+      fetchReturnsStore: 'fetchReturns',
+      saveReturnStore: 'saveReturn',
+      updateReturnStore: 'updateReturn',
+      deleteReturnStore: 'deleteReturn',
+      setupRealtimeListener: 'setupRealtimeListener'
+    }),
     ensureAuthHeader() {
       const token = localStorage.getItem('token');
       if (token) {
@@ -404,25 +423,7 @@ export default {
       }
     },
     fetchReturns() {
-      this.loading = true;
-      axios
-        .get('/api/reel-returns', { params: { returned_to: 'supplier' } })
-        .then((response) => {
-          const data = Array.isArray(response.data) ? response.data : [];
-          this.returns = data.map((item) => ({
-            ...item,
-            challan_no: item.challan_no || this.formatChallanNumber(this.parseChallanNumber(item.id) || 0),
-            return_to_supplier: item.return_to_supplier || null,
-          }));
-          this.recalculateNextChallan();
-        })
-        .catch((error) => {
-          console.error('Error fetching supplier returns:', error);
-          alert('Failed to load supplier returns.');
-        })
-        .finally(() => {
-          this.loading = false;
-        });
+        this.fetchReturnsStore();
     },
     fetchSuppliers() {
       axios
@@ -520,11 +521,11 @@ export default {
         return;
       }
 
-      const request = this.editingId
-        ? axios.put(`/api/reel-returns/${this.editingId}`, payload)
-        : axios.post('/api/reel-returns', payload);
+      const action = this.editingId
+        ? this.updateReturnStore(this.editingId, payload)
+        : this.saveReturnStore(payload);
 
-      request
+      action
         .then(() => {
           this.handleSaveSuccess(this.editingId ? 'Return updated successfully.' : 'Return recorded successfully.');
         })
@@ -576,14 +577,15 @@ export default {
       try {
         const challanNo = this.currentBatchChallanNo || this.formatChallanNumber(this.nextChallanIndex);
         const challanNumberValue = challanNo;
-        const requests = this.returnEntries.map((entry) => {
+        
+        for (const entry of this.returnEntries) {
           const { reel, ...payload } = entry;
-          return axios.post('/api/reel-returns', {
+          await this.saveReturnStore({
             ...payload,
             challan_no: challanNumberValue,
           });
-        });
-        await Promise.all(requests);
+        }
+        
         alert('All returns submitted successfully.');
         const lastNumber = this.parseChallanNumber(challanNumberValue);
         if (Number.isFinite(lastNumber)) {
@@ -592,7 +594,6 @@ export default {
         this.returnEntries = [];
         this.currentBatchChallanNo = null;
         this.clearForm();
-        this.fetchReturns();
       } catch (error) {
         const message = error.response?.data?.error || 'Failed to submit one of the returns.';
         alert(message);
@@ -619,28 +620,22 @@ export default {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     deleteReturn(item) {
-      console.log('Attempting to delete return:', item);
-      console.log('Item ID:', item?.id);
       if (!item || !item.id) {
-        console.error('Delete failed: Invalid item or missing ID', item);
-        alert('Error: Cannot delete this item because it is missing an ID. Please refresh the page and try again.');
         return;
       }
       if (!confirm('Are you sure you want to delete this return?')) {
         return;
       }
-      axios
-        .delete(`/api/reel-returns/${item.id}`)
+      this.deleteReturnStore(item.id)
         .then(() => {
           alert('Return deleted successfully.');
           if (this.editingId === item.id) {
             this.clearForm();
             this.showForm = false;
           }
-          this.fetchReturns();
         })
         .catch((error) => {
-          const message = error.response?.data?.error || 'Failed to delete return.';
+          const message = error.response?.data?.error || error.response?.data?.message || 'Failed to delete return.';
           alert(message);
         });
     },

@@ -47,4 +47,50 @@ class Handler extends ExceptionHandler
             //
         });
     }
+
+    /**
+     * Render an exception into an HTTP response.
+     */
+    public function render($request, Throwable $e)
+    {
+        if ($request->is('api/*') || $request->expectsJson()) {
+            return $this->handleApiException($request, $e);
+        }
+
+        return parent::render($request, $e);
+    }
+
+    private function handleApiException($request, Throwable $e)
+    {
+        $e = $this->prepareException($e);
+
+        $response = [
+            'success' => false,
+            'message' => $e->getMessage() ?: 'Server Error',
+        ];
+
+        if ($e instanceof \Illuminate\Validation\ValidationException) {
+            $response['message'] = 'Validation Error';
+            $response['errors'] = $e->errors();
+            return response()->json($response, $e->status);
+        }
+
+        if ($e instanceof \Illuminate\Auth\AuthenticationException) {
+            $response['message'] = 'Unauthenticated';
+            return response()->json($response, 401);
+        }
+
+        if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException || $e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
+            $response['message'] = 'Resource not found';
+            return response()->json($response, 404);
+        }
+
+        $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
+
+        if (config('app.debug')) {
+            $response['trace'] = $e->getTrace();
+        }
+
+        return response()->json($response, $statusCode);
+    }
 }

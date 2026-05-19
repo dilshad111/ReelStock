@@ -155,6 +155,11 @@ class CartageBillController extends Controller
     public function approve(Request $request, $id)
     {
         $bill = CartageBill::findOrFail($id);
+
+        $allowedRoles = ['Admin', 'Super Admin'];
+        if (!$request->user()->role || !in_array($request->user()->role->name, $allowedRoles)) {
+            return response()->json(['error' => 'Unauthorized. Only administrators can approve bills.'], 403);
+        }
         
         $request->validate([
             'tax_type' => 'nullable|string',
@@ -171,6 +176,27 @@ class CartageBillController extends Controller
             'net_amount' => $request->net_amount,
             'approved_by' => auth()->id(),
             'approved_at' => now(),
+        ]);
+
+        return response()->json($bill->load('approver'));
+    }
+
+    public function unapprove(Request $request, $id)
+    {
+        $bill = CartageBill::findOrFail($id);
+
+        if (!$request->user()->role || $request->user()->role->name !== 'Super Admin') {
+            return response()->json(['error' => 'Unauthorized. Only Super Administrators can unapprove bills.'], 403);
+        }
+
+        $bill->update([
+            'status' => 'Pending',
+            'tax_type' => null,
+            'tax_percentage' => 0,
+            'tax_amount' => 0,
+            'net_amount' => $bill->total_amount, // Revert net amount to original total
+            'approved_by' => null,
+            'approved_at' => null,
         ]);
 
         return response()->json($bill->load('approver'));

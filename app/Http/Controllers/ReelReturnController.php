@@ -6,145 +6,57 @@ use Illuminate\Http\Request;
 use App\Models\Reel;
 use App\Models\ReelReturn;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
+use App\Http\Requests\Inventory\StoreReelReturnRequest;
+use App\Domains\Inventory\DTOs\ReelReturnDTO;
+use App\Domains\Inventory\Actions\CreateReelReturnAction;
+use App\Domains\Inventory\Actions\FetchReelReturnsAction;
+use App\Domains\Inventory\Actions\UpdateReelReturnAction;
+use App\Domains\Inventory\Actions\DeleteReelReturnAction;
+use App\Http\Resources\Inventory\ReelReturnResource;
 
 class ReelReturnController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, FetchReelReturnsAction $action)
     {
-        $query = ReelReturn::with(['reel.paperQuality', 'reel.supplier', 'reel.receipts' => function ($q) {
-            $q->orderByDesc('receiving_date');
-        }, 'returnToSupplier']);
-
-        if ($request->filled('returned_to')) {
-            $query->where('returned_to', $request->input('returned_to'));
+        try {
+            $returns = $action->execute($request->all());
+            return response()->json($returns);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage(), 500);
         }
-
-        return response()->json($query->orderByDesc('return_date')->orderByDesc('created_at')->get());
     }
 
-    public function store(Request $request)
+    public function store(StoreReelReturnRequest $request, CreateReelReturnAction $action)
     {
-        $request->validate([
-            'reel_no' => 'required|string|exists:reels',
-            'challan_no' => 'nullable|string|max:50',
-            'return_date' => 'required|date',
-            'remaining_weight' => 'required|numeric|min:0',
-            'returned_to' => 'required|in:stock,supplier',
-            'return_location' => 'nullable|string|in:GoDown,Factory',
-            'condition' => 'required|in:good,damaged,qc_required',
-            'vehicle_number' => 'nullable|string|max:50',
-            'return_to_supplier_id' => 'nullable|exists:suppliers,id',
-            'remarks' => 'nullable|string',
-        ]);
-
-        $reel = Reel::where('reel_no', $request->reel_no)->first();
-
-        if (!$reel) {
-            return response()->json(['error' => 'Reel not found'], 404);
-        }
-
-        $latestIssue = $reel->issues()->orderByDesc('issue_date')->orderByDesc('created_at')->first();
-        $latestStockReturn = $reel->returns()->where('returned_to', 'stock')->orderByDesc('return_date')->orderByDesc('created_at')->first();
-
-        $hasIssueHistory = $latestIssue !== null;
-        $alreadyInStock = !$hasIssueHistory;
-
-        if ($hasIssueHistory && $latestStockReturn) {
-            $issueDate = $latestIssue->issue_date ? Carbon::parse($latestIssue->issue_date) : null;
-            $issueCreated = $latestIssue->created_at;
-            $returnDate = $latestStockReturn->return_date ? Carbon::parse($latestStockReturn->return_date) : null;
-            $returnCreated = $latestStockReturn->created_at;
-
-            if ($issueDate && $returnDate) {
-                if ($returnDate->gt($issueDate)) {
-                    $alreadyInStock = true;
-                } elseif ($returnDate->eq($issueDate)) {
-                    if ($returnCreated && $issueCreated && $returnCreated->gte($issueCreated)) {
-                        $alreadyInStock = true;
-                    }
-                } else {
-                    $alreadyInStock = false;
-                }
-            } elseif (!$issueDate && $returnDate) {
-                $alreadyInStock = true;
-            } elseif ($issueDate && !$returnDate) {
-                $alreadyInStock = false;
-            } elseif ($returnCreated && $issueCreated) {
-                $alreadyInStock = $returnCreated->gte($issueCreated);
+        try {
+            $dto = ReelReturnDTO::fromRequest($request);
+            $return = $action->execute($dto);
+            
+            return $this->success(
+                new ReelReturnResource($return->load('reel.paperQuality', 'reel.supplier')),
+                'Reel return created successfully.',
+                201
+            );
+        } catch (\Exception $e) {
+            $statusCode = $e->getCode() ?: 500;
+            if ($statusCode < 100 || $statusCode > 599) {
+                $statusCode = 500;
             }
-
-            if (!$alreadyInStock) {
-                $hasNewIssueAfterReturn = $reel->issues()
-                    ->where(function ($query) use ($latestStockReturn) {
-                        $query->where('issue_date', '>', $latestStockReturn->return_date)
-                              ->orWhere(function ($inner) use ($latestStockReturn) {
-                                  $inner->where('issue_date', $latestStockReturn->return_date)
-                                        ->where('created_at', '>', $latestStockReturn->created_at);
-                              });
-                    })
-                    ->exists();
-                $alreadyInStock = !$hasNewIssueAfterReturn;
-            }
+            return $this->error($e->getMessage(), $statusCode);
         }
-
-        if ($request->remaining_weight > $reel->original_weight) {
-            return response()->json(['error' => 'Remaining weight cannot exceed original weight'], 400);
-        }
-
-        if ($request->returned_to === 'supplier' && $request->remaining_weight > $reel->balance_weight) {
-            return response()->json(['error' => 'Returned weight cannot exceed current balance weight'], 400);
-        }
-
-        if ($request->returned_to === 'stock' && (!$hasIssueHistory || $alreadyInStock)) {
-            return response()->json(['error' => 'This reel is already in the stock.'], 400);
-        }
-
-        $challanNo = null;
-        if ($request->returned_to === 'supplier') {
-            // Use provided challan_no if available, otherwise generate new one
-            if ($request->filled('challan_no')) {
-                $challanNo = $request->challan_no;
-            } else {
-                $challanNo = 'RT' . str_pad($this->generateNextChallanSequence(), 4, '0', STR_PAD_LEFT);
-            }
-        }
-
-        $return = ReelReturn::create([
-            'reel_id' => $reel->id,
-            'challan_no' => $challanNo,
-            'return_date' => $request->return_date,
-            'remaining_weight' => $request->remaining_weight,
-            'returned_to' => $request->returned_to,
-            'return_location' => $request->return_location,
-            'condition' => $request->condition,
-            'vehicle_number' => $request->vehicle_number,
-            'return_to_supplier_id' => $request->return_to_supplier_id,
-            'remarks' => $request->remarks,
-        ]);
-
-        if ($request->returned_to === 'stock') {
-            $reel->balance_weight = $request->remaining_weight;
-        } else {
-            $reel->balance_weight = max($reel->balance_weight - $request->remaining_weight, 0);
-        }
-
-        $this->updateReelStatus($reel);
-        
-        // Validate and sync balance with transaction history
-        $this->validateAndSyncBalance($reel);
-        $reel->save();
-
-        return response()->json($return->load('reel.paperQuality', 'reel.supplier'), 201);
     }
 
     public function show($id)
     {
-        $return = ReelReturn::with('reel')->findOrFail($id);
-        return response()->json($return);
+        try {
+            $return = ReelReturn::with('reel')->findOrFail($id);
+            return $this->success(new ReelReturnResource($return));
+        } catch (\Exception $e) {
+            return $this->error('Reel return not found', 404);
+        }
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, UpdateReelReturnAction $action)
     {
         $request->validate([
             'return_date' => 'required|date',
@@ -157,121 +69,35 @@ class ReelReturnController extends Controller
             'remarks' => 'nullable|string',
         ]);
 
-        return DB::transaction(function () use ($request, $id) {
+        try {
             $return = ReelReturn::with('reel')->lockForUpdate()->findOrFail($id);
+            $updatedReturn = $action->execute($return, $request->all());
 
-            if ($return->returned_to !== 'supplier') {
-                return response()->json(['error' => 'Only supplier returns can be edited.'], 400);
+            return $this->success(
+                new ReelReturnResource($updatedReturn),
+                'Reel return updated successfully.'
+            );
+        } catch (\Exception $e) {
+            $statusCode = $e->getCode() ?: 500;
+            if ($statusCode < 100 || $statusCode > 599) {
+                $statusCode = 500;
             }
-
-            $reel = $return->reel;
-            if (!$reel) {
-                return response()->json(['error' => 'Associated reel not found.'], 404);
-            }
-
-            $oldWeight = (float) $return->remaining_weight;
-            $restoredBalance = min($reel->balance_weight + $oldWeight, $reel->original_weight);
-            $newWeight = (float) $request->remaining_weight;
-
-            // Use a small epsilon for floating point comparison (increased to 0.01 to cover potential rounding differences)
-            if ($newWeight > $restoredBalance + 0.01) {
-                return response()->json(['error' => 'Returned weight cannot exceed current balance weight.'], 400);
-            }
-
-            $return->return_date = $request->return_date;
-            $return->remaining_weight = $newWeight;
-            $return->return_location = $request->return_location;
-            $return->condition = $request->condition;
-            $return->vehicle_number = $request->vehicle_number;
-            $return->return_to_supplier_id = $request->return_to_supplier_id;
-            $return->remarks = $request->remarks;
-            $return->save();
-
-            $reel->balance_weight = max($restoredBalance - $newWeight, 0);
-            $this->updateReelStatus($reel);
-            
-            // Validate and sync balance with transaction history
-            $this->validateAndSyncBalance($reel);
-            $reel->save();
-
-            return response()->json($return->load('reel.paperQuality', 'reel.supplier'));
-        });
-    }
-
-    public function destroy($id)
-    {
-        return DB::transaction(function () use ($id) {
-            $return = ReelReturn::lockForUpdate()->findOrFail($id);
-            $reel = Reel::lockForUpdate()->findOrFail($return->reel_id);
-
-            if ($return->returned_to !== 'supplier') {
-                return response()->json(['error' => 'Only supplier returns can be deleted.'], 400);
-            }
-
-            // Delete the return first so it's not included in the recalculation
-            $return->delete();
-
-            // Synchronize balance from transaction history
-            $this->validateAndSyncBalance($reel);
-            $this->updateReelStatus($reel);
-            $reel->save();
-
-            return response()->json(['message' => 'Return deleted successfully.']);
-        });
-    }
-
-    protected function updateReelStatus(Reel $reel): void
-    {
-        // First, check if reel was returned to supplier
-        // This takes priority over balance-based status
-        $supplierReturn = $reel->returns()
-            ->where('returned_to', 'supplier')
-            ->orderBy('return_date', 'desc')
-            ->first();
-        
-        if ($supplierReturn) {
-            $reel->status = 'returned_to_supplier';
-            return;
-        }
-        
-        // If not returned to supplier, set status based on balance
-        if ($reel->balance_weight <= 0) {
-            $reel->status = 'fully_used';
-        } elseif ($reel->balance_weight < $reel->original_weight) {
-            $reel->status = 'partially_used';
-        } else {
-            $reel->status = 'in_stock';
+            return $this->error($e->getMessage(), $statusCode);
         }
     }
 
-    protected function generateNextChallanSequence(): int
+    public function destroy($id, DeleteReelReturnAction $action)
     {
-        $challans = ReelReturn::whereNotNull('challan_no')
-            ->pluck('challan_no');
-
-        $max = 0;
-
-        foreach ($challans as $challan) {
-            $sequence = $this->parseChallanSequence($challan);
-            if ($sequence > $max) {
-                $max = $sequence;
+        try {
+            $action->execute($id);
+            return $this->success(null, 'Return deleted successfully.');
+        } catch (\Exception $e) {
+            $statusCode = $e->getCode() ?: 400;
+            if ($statusCode < 100 || $statusCode > 599) {
+                $statusCode = 400;
             }
+            return $this->error($e->getMessage(), $statusCode);
         }
-
-        return $max + 1;
-    }
-
-    protected function parseChallanSequence(?string $challanNo): int
-    {
-        if (!$challanNo) {
-            return 0;
-        }
-
-        if (preg_match('/^RT(\d+)$/', strtoupper($challanNo), $matches)) {
-            return (int) $matches[1];
-        }
-
-        return 0;
     }
 
     public function fetchReel($reel_no)
@@ -284,7 +110,7 @@ class ReelReturnController extends Controller
             }
         ])->where('reel_no', $reel_no)->first();
         if (!$reel) {
-            return response()->json(['message' => 'Reel not found'], 404);
+            return $this->error('Reel not found', 404);
         }
         $latestReceipt = $reel->receipts->first();
         $reel->setRelation('latest_receipt', $latestReceipt);
@@ -333,42 +159,6 @@ class ReelReturnController extends Controller
 
         $reel->setAttribute('has_issue_history', $hasIssueHistory);
         $reel->setAttribute('already_in_stock', $alreadyInStock);
-        return response()->json($reel);
-    }
-
-    /**
-     * Validate and synchronize balance_weight with transaction history
-     * This ensures the stored balance matches the calculated balance from all transactions
-     *
-     * @param Reel $reel
-     * @return bool Returns true if balance is synchronized, false if discrepancy detected
-     */
-    protected function validateAndSyncBalance(Reel $reel): bool
-    {
-        // Calculate balance from transaction history
-        $totalConsumed = $reel->issues()->sum('net_consumed_weight');
-        $totalReturnedToSupplier = $reel->returns()->where('returned_to', 'supplier')->sum('remaining_weight');
-        $calculatedBalance = max($reel->original_weight - $totalConsumed - $totalReturnedToSupplier, 0);
-        
-        // Allow small floating-point differences (0.01 kg tolerance)
-        $difference = abs($calculatedBalance - $reel->balance_weight);
-        
-        if ($difference > 0.01) {
-            // Log the discrepancy
-            \Log::warning('Balance weight discrepancy detected in return operation', [
-                'reel_no' => $reel->reel_no,
-                'stored_balance' => $reel->balance_weight,
-                'calculated_balance' => $calculatedBalance,
-                'difference' => $difference,
-                'action' => 'auto_correcting'
-            ]);
-            
-            // Auto-correct the balance
-            $reel->balance_weight = max($calculatedBalance, 0);
-            
-            return false; // Indicates a discrepancy was found and fixed
-        }
-        
-        return true; // Balance is synchronized
+        return $this->success($reel);
     }
 }

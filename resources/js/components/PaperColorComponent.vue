@@ -24,14 +24,14 @@
     <table class="table table-striped table-sm small">
       <thead>
         <tr>
-          <th>ID</th>
+          <th>S.No.</th>
           <th>Color Name</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="c in colors" :key="c.id">
-          <td>{{ c.id }}</td>
+        <tr v-for="(c, index) in colors" :key="c.id">
+          <td>{{ index + 1 }}</td>
           <td>{{ c.name }}</td>
           <td>
             <button @click="editColor(c)" class="btn btn-sm btn-warning">Edit</button>

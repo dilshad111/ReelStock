@@ -14,6 +14,15 @@ class PaperQualityController extends Controller
 
     public function store(Request $request)
     {
+        if ($request->has('paper_color') && !is_string($request->paper_color)) {
+            $paperColorData = $request->paper_color;
+            if (is_array($paperColorData) && isset($paperColorData['name'])) {
+                $request->merge(['paper_color' => $paperColorData['name']]);
+            } else {
+                $request->request->remove('paper_color');
+            }
+        }
+
         $request->validate([
             'quality' => 'required|string',
             'gsm_range' => 'required|string',
@@ -29,19 +38,11 @@ class PaperQualityController extends Controller
             'paper_color_id' => 'nullable|exists:paper_colors,id',
         ]);
 
-        // Generate item_code
-        $words = explode(' ', $request->quality);
-        $prefix = '';
-        for ($i = 0; $i < min(3, count($words)); $i++) {
-            $prefix .= strtoupper(substr($words[$i], 0, 1));
-        }
-
-        $lastCode = PaperQuality::where('item_code', 'like', $prefix . '%')->orderBy('item_code', 'desc')->first();
-        $nextNum = $lastCode ? intval(substr($lastCode->item_code, strlen($prefix))) + 1 : 1;
-        $itemCode = $prefix . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
+        // Always generate item_code from quality name
+        $itemCode = $this->generateItemCode($request->quality);
 
         $quality = PaperQuality::create(array_merge($request->all(), ['item_code' => $itemCode]));
-        return response()->json($quality, 201);
+        return response()->json($quality->load('paperColor'), 201);
     }
 
     public function show($id)
@@ -52,6 +53,15 @@ class PaperQualityController extends Controller
 
     public function update(Request $request, $id)
     {
+        if ($request->has('paper_color') && !is_string($request->paper_color)) {
+            $paperColorData = $request->paper_color;
+            if (is_array($paperColorData) && isset($paperColorData['name'])) {
+                $request->merge(['paper_color' => $paperColorData['name']]);
+            } else {
+                $request->request->remove('paper_color');
+            }
+        }
+
         $request->validate([
             'quality' => 'sometimes|string',
             'gsm_range' => 'sometimes|string',
@@ -68,8 +78,15 @@ class PaperQualityController extends Controller
         ]);
 
         $quality = PaperQuality::findOrFail($id);
-        $quality->update($request->all());
-        return response()->json($quality);
+        $data = $request->all();
+
+        // Always regenerate item_code when quality name changes
+        if ($request->has('quality') && $request->quality !== $quality->quality) {
+            $data['item_code'] = $this->generateItemCode($request->quality, $quality->id);
+        }
+
+        $quality->update($data);
+        return response()->json($quality->load('paperColor'));
     }
 
     public function destroy($id)
@@ -78,4 +95,38 @@ class PaperQualityController extends Controller
         $quality->delete();
         return response()->json(['message' => 'Paper quality deleted']);
     }
+
+    /**
+     * Generate a unique item_code from the quality name.
+     * Takes first letter of each word (up to 3 words) as prefix,
+     * then appends a 3-digit sequence number.
+     *
+     * @param string $qualityName  The quality/paper name
+     * @param int|null $excludeId  ID to exclude from duplicate check (for updates)
+     * @return string
+     */
+    private function generateItemCode(string $qualityName, ?int $excludeId = null): string
+    {
+        $words = explode(' ', $qualityName);
+        $prefix = '';
+        $wordCount = 0;
+        foreach ($words as $word) {
+            $clean = preg_replace('/[^A-Za-z0-9]/', '', $word);
+            if ($clean !== '') {
+                $prefix .= strtoupper(substr($clean, 0, 1));
+                $wordCount++;
+                if ($wordCount >= 3) break;
+            }
+        }
+
+        $query = PaperQuality::where('item_code', 'like', $prefix . '%');
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+        $lastCode = $query->orderBy('item_code', 'desc')->first();
+
+        $nextNum = $lastCode ? intval(substr($lastCode->item_code, strlen($prefix))) + 1 : 1;
+        return $prefix . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
+    }
 }
+

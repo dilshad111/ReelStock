@@ -185,11 +185,12 @@
 
 <script>
 import axios from 'axios';
+import { mapState, mapWritableState, mapActions } from 'pinia';
+import { useReelIssueStore } from '../stores/useReelIssueStore';
 
 export default {
   data() {
     return {
-      issues: [],
       reel: null,
       reelHistory: [],
       formData: {
@@ -208,24 +209,17 @@ export default {
       companyLogo: window.location.origin + '/images/quality-cartons-logo.svg',
       companyName: 'QUALITY CARTONS (PVT.) LTD.',
       companyAddress: 'Plot# 46, Sector 24, Korangi Industrial Area Karachi',
-      pagination: {
-        current_page: 1,
-        last_page: 1,
-        per_page: 50,
-        total: 0
-      },
-      filters: {
-        date_from: '',
-        date_to: ''
-      },
       searchTimeout: null,
     };
   },
   mounted() {
     this.fetchIssues();
     this.fetchSettings();
+    this.setupRealtimeListener();
   },
   computed: {
+    ...mapState(useReelIssueStore, ['issues', 'pagination', 'isLoading', 'error']),
+    ...mapWritableState(useReelIssueStore, ['filters']),
     calculatedBalance() {
       const issued = Number(this.formData.quantity_issued) || 0;
       const returned = Number(this.formData.return_to_stock_weight) || 0;
@@ -254,31 +248,24 @@ export default {
     }
   },
   methods: {
+    ...mapActions(useReelIssueStore, {
+      fetchIssuesStore: 'fetchIssues',
+      saveIssueStore: 'saveIssue',
+      updateIssueStore: 'updateIssue',
+      deleteIssueStore: 'deleteIssue',
+      setFiltersStore: 'setFilters',
+      clearFiltersStore: 'clearFilters',
+      setupRealtimeListener: 'setupRealtimeListener'
+    }),
     fetchIssues(page = 1) {
-      let url = `/api/reel-issues?page=${page}`;
-      if (this.filters.date_from) url += `&date_from=${this.filters.date_from}`;
-      if (this.filters.date_to) url += `&date_to=${this.filters.date_to}`;
-      if (this.issueSearch) url += `&search=${encodeURIComponent(this.issueSearch)}`;
-      
-      axios.get(url).then(response => {
-        if (response.data && response.data.data) {
-          this.issues = response.data.data;
-          this.pagination = {
-            current_page: response.data.current_page,
-            last_page: response.data.last_page,
-            per_page: response.data.per_page,
-            total: response.data.total
-          };
-        } else {
-          this.issues = response.data;
-        }
-      });
+      if (this.issueSearch !== this.filters.search) {
+        this.filters.search = this.issueSearch;
+      }
+      this.fetchIssuesStore(page);
     },
     clearFilters() {
-      this.filters.date_from = '';
-      this.filters.date_to = '';
       this.issueSearch = '';
-      this.fetchIssues(1);
+      this.clearFiltersStore();
     },
     handleSearch() {
       if (this.searchTimeout) clearTimeout(this.searchTimeout);
@@ -369,16 +356,15 @@ export default {
         return;
       }
 
-      const request = this.editingIssueId
-        ? axios.put(`/api/reel-issues/${this.editingIssueId}`, payload)
-        : axios.post('/api/reel-issues', payload);
+      const action = this.editingIssueId
+        ? this.updateIssueStore(this.editingIssueId, payload)
+        : this.saveIssueStore(payload);
 
-      request.then(() => {
+      action.then(() => {
         alert('Issue saved successfully.');
-        this.fetchIssues(this.pagination.current_page);
         this.cancel();
       }).catch(error => {
-        const message = error.response?.data?.error || 'Failed to save issue.';
+        const message = error.response?.data?.error || error.response?.data?.message || 'Failed to save issue.';
         alert(message);
       });
     },
@@ -431,16 +417,15 @@ export default {
       if (!confirm('Are you sure you want to delete this issue?')) {
         return;
       }
-      axios.delete(`/api/reel-issues/${issue.id}`)
+      this.deleteIssueStore(issue.id)
         .then(() => {
           alert('Issue deleted successfully.');
           if (this.editingIssueId === issue.id) {
             this.cancel();
           }
-          this.fetchIssues(this.pagination.current_page);
         })
         .catch(error => {
-          const message = error.response?.data?.error || 'Failed to delete issue.';
+          const message = error.response?.data?.error || error.response?.data?.message || 'Failed to delete issue.';
           alert(message);
         });
     },

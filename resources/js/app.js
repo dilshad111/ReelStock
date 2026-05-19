@@ -1,3 +1,4 @@
+import './bootstrap';
 import { createApp } from 'vue';
 import axios from 'axios';
 
@@ -45,7 +46,15 @@ const PERMISSION_KEY_MAP = {
     'fg-inventory-email': 'fg-inventory-email',
     'fg-dashboard': 'fg-dashboard',
     'approve_cartage': 'approve_cartage',
-    'qc-inspection': 'qc-inspection'
+    'qc-inspection': 'qc-inspection',
+    'rm-dashboard': 'rm-dashboard',
+    'rm-items': 'rm-items',
+    'rm-receipts': 'rm-receipts',
+    'rm-consumptions': 'rm-consumptions',
+    'rm-reports': 'rm-reports',
+    'unit-of-measures': 'rm-items',
+    'job-cards': 'job-cards',
+    'production-dashboard': 'production-dashboard'
 };
 
 const PERMISSION_KEYS = [
@@ -88,7 +97,14 @@ const PERMISSION_KEYS = [
     'old-reels',
     'stock-alerts',
     'reconciliation',
-    'qc-inspection'
+    'qc-inspection',
+    'rm-dashboard',
+    'rm-items',
+    'rm-receipts',
+    'rm-consumptions',
+    'rm-reports',
+    'job-cards',
+    'production-dashboard'
 ];
 
 const VIEW_ORDER = [
@@ -131,6 +147,14 @@ const VIEW_ORDER = [
     'fg-reports',
     'fg-inventory-email',
     'qc-inspection',
+    'rm-dashboard',
+    'rm-items',
+    'rm-receipts',
+    'rm-consumptions',
+    'rm-reports',
+    'unit-of-measures',
+    'job-cards',
+    'production-dashboard',
     'profile'
 ];
 
@@ -176,6 +200,14 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     'fg-reports': 'fg-reports',
     'fg-inventory-email': 'fg-inventory-email',
     'qc-inspection': 'qc-inspection',
+    'rm-dashboard': 'rm-dashboard',
+    'rm-items': 'rm-items',
+    'rm-receipts': 'rm-receipts',
+    'rm-consumptions': 'rm-consumptions',
+    'rm-reports': 'rm-reports',
+    'unit-of-measures': 'unit-of-measures',
+    'job-cards': 'job-cards',
+    'production-dashboard': 'production-dashboard',
     profile: 'profile'
 });
 
@@ -579,7 +611,6 @@ import UserComponent from './components/UserComponent.vue';
 import UserRightsComponent from './components/UserRightsComponent.vue';
 import AuditLogComponent from './components/AuditLogComponent.vue';
 import ReportsComponent from './components/ReportsComponent.vue';
-import ThemeSelectorComponent from './components/ThemeSelectorComponent.vue';
 import ScrollToTopComponent from './components/ScrollToTopComponent.vue';
 import SetupComponent from './components/SetupComponent.vue';
 import BestUiShowcaseComponent from './components/BestUiShowcaseComponent.vue';
@@ -611,6 +642,16 @@ import FGInventoryEmailComponent from './components/FGInventoryEmailComponent.vu
 import FGDashboardComponent from './components/FGDashboardComponent.vue';
 import QcInspectionComponent from './components/QcInspectionComponent.vue';
 
+import RMItemComponent from './components/RMItemComponent.vue';
+import RMReceiptComponent from './components/RMReceiptComponent.vue';
+import RMConsumptionComponent from './components/RMConsumptionComponent.vue';
+import RMDashboardComponent from './components/RMDashboardComponent.vue';
+import RMReportComponent from './components/RMReportComponent.vue';
+import UnitOfMeasureComponent from './components/UnitOfMeasureComponent.vue';
+import JobCardComponent from './components/JobCardComponent.vue';
+import ProductionDashboardComponent from './components/ProductionDashboardComponent.vue';
+import ThemeSelectorComponent from './components/ThemeSelectorComponent.vue';
+
 app.component('supplier-component', SupplierComponent);
 app.component('paper-quality-component', PaperQualityComponent);
 app.component('paper-color-component', PaperColorComponent);
@@ -628,7 +669,6 @@ app.component('user-rights-component', UserRightsComponent);
 app.component('audit-log-component', AuditLogComponent);
 app.component('login-component', LoginComponent);
 app.component('reports-component', ReportsComponent);
-app.component('theme-selector-component', ThemeSelectorComponent);
 app.component('scroll-to-top-component', ScrollToTopComponent);
 app.component('setup-component', SetupComponent);
 app.component('reel-stock-count-report-component', ReelStockCountReportComponent);
@@ -655,6 +695,16 @@ app.component('fg-inventory-email-component', FGInventoryEmailComponent);
 app.component('fg-dashboard-component', FGDashboardComponent);
 app.component('qc-inspection-component', QcInspectionComponent);
 
+app.component('rm-item-component', RMItemComponent);
+app.component('rm-receipt-component', RMReceiptComponent);
+app.component('rm-consumption-component', RMConsumptionComponent);
+app.component('rm-dashboard-component', RMDashboardComponent);
+app.component('rm-report-component', RMReportComponent);
+app.component('unit-of-measure-component', UnitOfMeasureComponent);
+app.component('job-card-component', JobCardComponent);
+app.component('production-dashboard-component', ProductionDashboardComponent);
+app.component('theme-selector-component', ThemeSelectorComponent);
+
 /**
  * The following block of code may be used to automatically register your
  * Vue components. It will recursively scan this directory for the Vue
@@ -668,7 +718,10 @@ app.component('qc-inspection-component', QcInspectionComponent);
 // });
 import ElementPlus from 'element-plus';
 import 'element-plus/dist/index.css';
+import { createPinia } from 'pinia';
 
+const pinia = createPinia();
+app.use(pinia);
 app.use(ElementPlus);
 
 app.mount('#app');

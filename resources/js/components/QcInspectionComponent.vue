@@ -142,8 +142,8 @@
         <tbody>
           <tr v-for="(d,i) in formData.details" :key="i">
             <td class="px-3"><span class="reel-no-badge">{{d.reel_no}}</span></td>
-            <td>{{d.reel_size}}"</td>
-            <td>{{Math.round(d.original_weight).toLocaleString()}} kg</td>
+            <td><input v-model.number="d.reel_size" type="number" step="0.01" min="0" class="form-control form-control-sm text-center" style="width:80px"></td>
+            <td><input v-model.number="d.reel_weight" type="number" step="0.01" min="0" class="form-control form-control-sm text-center" style="width:100px"></td>
             <td><input v-model.number="d.gsm" type="number" step="0.01" min="0" class="form-control form-control-sm text-center" :class="{'is-invalid':isFailed(d,'gsm')}" @input="validateRow(d)"></td>
             <td><input v-model.number="d.bursting" type="number" step="0.01" min="0" class="form-control form-control-sm text-center" :class="{'is-invalid':isFailed(d,'bursting')}" @input="validateRow(d)"></td>
             <td><input v-model.number="d.moisture" type="number" step="0.01" min="0" class="form-control form-control-sm text-center" :class="{'is-invalid':isFailed(d,'moisture')}" @input="validateRow(d)"></td>
@@ -288,7 +288,7 @@ export default {
     saveInspection(){
       if(!this.formData.inspection_date||!this.formData.inspector_name){alert('Please fill inspection date and inspector name');return}
       const payload={lot_number:this.formData.lot_number,paper_quality_id:this.formData.paper_quality_id,supplier_id:this.formData.supplier_id,po_number:this.formData.po_number,grn_number:this.formData.grn_number,received_date:this.formData.received_date,inspection_date:this.formData.inspection_date,inspector_name:this.formData.inspector_name,remarks:this.formData.remarks,
-        details:this.formData.details.map(d=>({reel_id:d.reel_id,gsm:d.gsm||null,bursting:d.bursting||null,moisture:d.moisture||null,ash:d.ash||null,cobb:d.cobb||null}))};
+        details:this.formData.details.map(d=>({reel_id:d.reel_id,reel_size:d.reel_size||null,reel_weight:d.reel_weight||null,gsm:d.gsm||null,bursting:d.bursting||null,moisture:d.moisture||null,ash:d.ash||null,cobb:d.cobb||null}))};
       const req=this.editingId?axios.put(`/api/qc-inspections/${this.editingId}`,payload):axios.post('/api/qc-inspections',payload);
       req.then(r=>{
         if(r.data.qc_status==='rejected')this.showRejectionModal=true;
@@ -307,27 +307,182 @@ export default {
     deleteInspection(id){if(confirm('Delete this inspection?'))axios.delete(`/api/qc-inspections/${id}`).then(()=>this.fetchHistory())},
     printReport(id){
       axios.get(`/api/qc-inspections/${id}/report`).then(r=>{
-        const d=r.data;const w=window.open('','_blank','width=900,height=700');
-        w.document.write(`<html><head><title>QC Report - ${d.lot_number}</title><style>body{font-family:Arial;margin:20px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #333;padding:6px 8px;font-size:12px}th{background:#e0e0e0}.fail{color:red;font-weight:bold}.header{text-align:center;margin-bottom:20px}h1{margin:0;font-size:20px}h3{margin:5px 0}.info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin:10px 0}.info-item{padding:5px;border:1px solid #ddd}.status-approved{color:green;font-weight:bold}.status-rejected{color:red;font-weight:bold}@media print{@page{size:A4;margin:10mm}}</style></head><body>
-        <div class="header"><h1>QUALITY CARTONS (PVT.) LTD.</h1><h3>QC Inspection Report</h3></div>
-        <div class="info-grid">
-        <div class="info-item"><strong>Lot #:</strong> ${d.lot_number}</div>
-        <div class="info-item"><strong>Paper:</strong> ${d.paper_quality?.quality||''} ${d.paper_quality?.gsm_range||''}</div>
-        <div class="info-item"><strong>Paper Color:</strong> ${d.paper_color||'N/A'}</div>
-        <div class="info-item"><strong>Supplier:</strong> ${d.supplier?.name||''}</div>
-        <div class="info-item"><strong>PO #:</strong> ${d.po_number||'N/A'}</div>
-        <div class="info-item"><strong>GRN #:</strong> ${d.grn_number||'N/A'}</div>
-        <div class="info-item"><strong>Received:</strong> ${d.received_date||''}</div>
-        <div class="info-item"><strong>Inspected:</strong> ${d.inspection_date||''}</div>
-        <div class="info-item"><strong>Inspector:</strong> ${d.inspector_name||''}</div>
-        </div>
-        <table><thead><tr><th>Reel No</th><th>GSM</th><th>Bursting</th><th>Moisture</th><th>Ash</th><th>Cobb</th><th>Result</th></tr></thead><tbody>
-        ${(d.details||[]).map(det=>`<tr><td>${det.reel_no||''}</td><td class="${det.failed_params?.includes('gsm')?'fail':''}">${det.gsm||'-'}</td><td class="${det.failed_params?.includes('bursting')?'fail':''}">${det.bursting||'-'}</td><td class="${det.failed_params?.includes('moisture')?'fail':''}">${det.moisture||'-'}</td><td>${det.ash||'-'}</td><td class="${det.failed_params?.includes('cobb')?'fail':''}">${det.cobb||'-'}</td><td>${det.is_passed?'PASS':'<span class="fail">FAIL</span>'}</td></tr>`).join('')}
-        <tr style="font-weight:bold;background:#f5f5f5"><td>Average</td><td>${d.avg_gsm||'-'}</td><td>${d.avg_bursting||'-'}</td><td>${d.avg_moisture||'-'}</td><td>-</td><td>${d.avg_cobb||'-'}</td><td class="status-${d.qc_status}">${d.qc_status?.toUpperCase()}</td></tr>
-        </tbody></table>
-        ${d.criteria?`<p><strong>Quality Criteria:</strong> Min GSM: ${d.criteria.min_gsm||'N/A'} | Min Bursting: ${d.criteria.min_bursting||'N/A'} | Max Moisture: ${d.criteria.max_moisture||'N/A'} | Max Cobb: ${d.criteria.max_cobb||'N/A'}</p>`:''}
-        ${d.remarks?`<p><strong>Remarks:</strong> ${d.remarks}</p>`:''}
-        </body></html>`);w.document.close();w.print();
+        const d=r.data;
+        const details = d.details || [];
+        const companyName = this.settings?.company_name || 'QUALITY CARTONS (PVT.) LTD.';
+        const companyAddress = this.settings?.company_address || '';
+
+        // Determine which test columns have at least one entered value
+        const testCols = [
+          { key: 'gsm', label: 'GSM', avg: d.avg_gsm, criteriaMin: d.criteria?.min_gsm, criteriaMax: d.criteria?.max_gsm },
+          { key: 'bursting', label: 'Bursting (KSC)', avg: d.avg_bursting, criteriaMin: d.criteria?.min_bursting, criteriaMax: d.criteria?.max_bursting },
+          { key: 'moisture', label: 'Moisture (%)', avg: d.avg_moisture, criteriaMin: d.criteria?.min_moisture, criteriaMax: d.criteria?.max_moisture },
+          { key: 'ash', label: 'Ash (%)', avg: null, criteriaMin: null, criteriaMax: null },
+          { key: 'cobb', label: 'Cobb (GSM)', avg: d.avg_cobb, criteriaMin: d.criteria?.min_cobb, criteriaMax: d.criteria?.max_cobb },
+        ];
+        const activeCols = testCols.filter(col => details.some(det => det[col.key] !== null && det[col.key] !== undefined && det[col.key] !== ''));
+
+        // Check if reel_size or reel_weight have data
+        const hasSize = details.some(det => det.reel_size);
+        const hasWeight = details.some(det => det.reel_weight);
+
+        // Build table header
+        let thead = '<th style="width:40px">#</th><th>Reel No</th>';
+        if (hasSize) thead += '<th>Size</th>';
+        if (hasWeight) thead += '<th>Weight (kg)</th>';
+        activeCols.forEach(col => thead += `<th>${col.label}</th>`);
+        thead += '<th style="width:70px">Result</th>';
+
+        // Build table body rows
+        let tbody = '';
+        details.forEach((det, idx) => {
+          let cls = det.is_passed === false ? 'fail-row' : '';
+          tbody += `<tr class="${cls}"><td style="text-align:center">${idx + 1}</td><td class="reel-no">${det.reel_no || ''}</td>`;
+          if (hasSize) tbody += `<td style="text-align:center">${det.reel_size ? det.reel_size + '"' : '-'}</td>`;
+          if (hasWeight) tbody += `<td style="text-align:right">${det.reel_weight ? Number(det.reel_weight).toLocaleString() : '-'}</td>`;
+          activeCols.forEach(col => {
+            const val = det[col.key];
+            const isFail = det.failed_params?.includes(col.key);
+            tbody += `<td style="text-align:center" class="${isFail ? 'fail-val' : ''}">${val !== null && val !== undefined && val !== '' ? val : '-'}</td>`;
+          });
+          tbody += `<td style="text-align:center">${det.is_passed === false ? '<span class="fail-badge">FAIL</span>' : '<span class="pass-badge">PASS</span>'}</td></tr>`;
+        });
+
+        // Average row
+        let avgRow = `<td colspan="${1 + 1 + (hasSize ? 1 : 0) + (hasWeight ? 1 : 0)}" style="text-align:right;font-weight:700;padding-right:12px">Average</td>`;
+        activeCols.forEach(col => {
+          avgRow += `<td style="text-align:center;font-weight:700">${col.avg || '-'}</td>`;
+        });
+        avgRow += `<td></td>`;
+
+        // Build criteria section (only if criteria exists)
+        let criteriaHtml = '';
+        if (d.criteria) {
+          const criteriaItems = activeCols.filter(col => col.criteriaMin || col.criteriaMax).map(col => {
+            let parts = [];
+            if (col.criteriaMin) parts.push(`Min: ${col.criteriaMin}`);
+            if (col.criteriaMax) parts.push(`Max: ${col.criteriaMax}`);
+            return `<div class="criteria-item"><span class="criteria-label">${col.label}</span><span class="criteria-value">${parts.join(' | ')}</span></div>`;
+          });
+          if (criteriaItems.length > 0) {
+            criteriaHtml = `<div class="criteria-section"><div class="criteria-title">Quality Acceptance Criteria</div><div class="criteria-grid">${criteriaItems.join('')}</div></div>`;
+          }
+        }
+
+        // Status
+        const statusClass = d.qc_status === 'approved' ? 'status-approved' : 'status-rejected';
+        const statusText = d.qc_status?.toUpperCase() || 'PENDING';
+
+        const w = window.open('', '_blank', 'width=900,height=700');
+        w.document.write(`<html><head><title>QC Report - ${d.lot_number}</title>
+<style>
+  @page { size: A4 portrait; margin: 12mm 15mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; font-size: 11px; line-height: 1.4; padding: 0; }
+
+  .report-page { width: 100%; max-width: 210mm; margin: 0 auto; padding: 20px; }
+
+  /* Header */
+  .report-header { text-align: center; border-bottom: 3px solid #1e40af; padding-bottom: 12px; margin-bottom: 15px; }
+  .company-name { font-size: 22px; font-weight: 800; color: #1e293b; letter-spacing: 1px; margin-bottom: 2px; }
+  .company-address { font-size: 10px; color: #64748b; margin-bottom: 8px; }
+  .report-title { font-size: 16px; font-weight: 700; color: #1e40af; text-transform: uppercase; letter-spacing: 2px; margin-top: 6px; background: #eff6ff; padding: 6px 0; border-radius: 4px; }
+
+  /* Info Grid */
+  .info-section { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; margin-bottom: 15px; }
+  .info-item { padding: 7px 10px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; display: flex; gap: 6px; }
+  .info-item:nth-child(3n) { border-right: none; }
+  .info-item:nth-last-child(-n+3) { border-bottom: none; }
+  .info-label { font-weight: 700; color: #475569; font-size: 10px; text-transform: uppercase; min-width: 70px; white-space: nowrap; }
+  .info-value { font-weight: 600; color: #1e293b; }
+
+  /* Table */
+  .results-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 11px; }
+  .results-table th { background: #1e293b; color: #fff; font-weight: 700; padding: 8px 6px; text-align: center; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .results-table th:first-child { border-radius: 6px 0 0 0; }
+  .results-table th:last-child { border-radius: 0 6px 0 0; }
+  .results-table td { padding: 6px; border: 1px solid #e2e8f0; }
+  .results-table tbody tr:nth-child(even) { background: #f8fafc; }
+  .results-table tbody tr:hover { background: #eff6ff; }
+  .reel-no { font-weight: 700; color: #1e40af; }
+  .fail-row { background: #fef2f2 !important; }
+  .fail-val { color: #dc2626; font-weight: 700; }
+  .pass-badge { background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 9px; }
+  .fail-badge { background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 9px; }
+  .avg-row { background: #f1f5f9 !important; border-top: 2px solid #94a3b8; }
+
+  /* Criteria */
+  .criteria-section { margin-bottom: 12px; border: 1px solid #bfdbfe; border-radius: 6px; overflow: hidden; }
+  .criteria-title { background: #eff6ff; color: #1e40af; font-weight: 700; padding: 6px 12px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #bfdbfe; }
+  .criteria-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+  .criteria-item { padding: 6px 12px; border-right: 1px solid #e2e8f0; text-align: center; }
+  .criteria-item:last-child { border-right: none; }
+  .criteria-label { display: block; font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+  .criteria-value { display: block; font-size: 11px; font-weight: 600; color: #1e293b; margin-top: 2px; }
+
+  /* Status */
+  .overall-status { text-align: center; margin: 15px 0; padding: 12px; border-radius: 8px; font-size: 18px; font-weight: 800; letter-spacing: 2px; }
+  .status-approved { background: #dcfce7; color: #166534; border: 2px solid #86efac; }
+  .status-rejected { background: #fee2e2; color: #991b1b; border: 2px solid #fca5a5; }
+
+  /* Remarks */
+  .remarks-section { padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 15px; }
+  .remarks-label { font-weight: 700; color: #475569; font-size: 10px; text-transform: uppercase; }
+  .remarks-text { margin-top: 3px; color: #1e293b; }
+
+  /* Signatures */
+  .signature-section { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 30px; margin-top: 40px; padding-top: 10px; }
+  .signature-block { text-align: center; }
+  .signature-line { border-top: 1px solid #94a3b8; margin-top: 40px; padding-top: 6px; font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; }
+  .signature-name { font-size: 10px; color: #94a3b8; margin-top: 2px; }
+
+  /* Print */
+  @media print {
+    body { padding: 0; }
+    .report-page { padding: 0; max-width: 100%; }
+  }
+</style></head><body>
+<div class="report-page">
+  <div class="report-header">
+    <div class="company-name">${companyName}</div>
+    ${companyAddress ? `<div class="company-address">${companyAddress}</div>` : ''}
+    <div class="report-title">QC Inspection Report</div>
+  </div>
+
+  <div class="info-section">
+    <div class="info-item"><span class="info-label">Lot No:</span><span class="info-value">${d.lot_number}</span></div>
+    <div class="info-item"><span class="info-label">Paper:</span><span class="info-value">${d.paper_quality?.quality || ''} ${d.paper_quality?.gsm_range ? '(' + d.paper_quality.gsm_range + ')' : ''}</span></div>
+    <div class="info-item"><span class="info-label">Color:</span><span class="info-value">${d.paper_color || 'N/A'}</span></div>
+    <div class="info-item"><span class="info-label">Supplier:</span><span class="info-value">${d.supplier?.name || ''}</span></div>
+    <div class="info-item"><span class="info-label">PO No:</span><span class="info-value">${d.po_number || 'N/A'}</span></div>
+    <div class="info-item"><span class="info-label">GRN No:</span><span class="info-value">${d.grn_number || 'N/A'}</span></div>
+    <div class="info-item"><span class="info-label">Received:</span><span class="info-value">${d.received_date || '-'}</span></div>
+    <div class="info-item"><span class="info-label">Inspected:</span><span class="info-value">${d.inspection_date || '-'}</span></div>
+    <div class="info-item"><span class="info-label">Inspector:</span><span class="info-value">${d.inspector_name || '-'}</span></div>
+  </div>
+
+  ${criteriaHtml}
+
+  <table class="results-table">
+    <thead><tr>${thead}</tr></thead>
+    <tbody>${tbody}
+      <tr class="avg-row">${avgRow}</tr>
+    </tbody>
+  </table>
+
+  <div class="overall-status ${statusClass}">OVERALL RESULT: ${statusText}</div>
+
+  ${d.remarks ? `<div class="remarks-section"><div class="remarks-label">Remarks</div><div class="remarks-text">${d.remarks}</div></div>` : ''}
+
+  <div class="signature-section">
+    <div class="signature-block"><div class="signature-line">QC Inspector</div><div class="signature-name">${d.inspector_name || ''}</div></div>
+    <div class="signature-block"><div class="signature-line">QC Manager</div><div class="signature-name"></div></div>
+    <div class="signature-block"><div class="signature-line">Plant Head</div><div class="signature-name"></div></div>
+  </div>
+</div>
+</body></html>`);
+        w.document.close();
+        setTimeout(() => w.print(), 300);
       })
     },
     formatDate(d){if(!d)return'-';const dt=new Date(d);return isNaN(dt)?'-':`${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()}`},

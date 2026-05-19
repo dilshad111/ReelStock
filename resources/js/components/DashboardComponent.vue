@@ -144,6 +144,61 @@
         </div>
       </el-tab-pane>
 
+      <el-tab-pane label="Live Stock (High Density)" name="livestock">
+        <div v-if="loadingOperational" class="text-center py-5">
+          <div class="spinner-grow text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+          <p class="mt-3 text-muted">Scanning godown...</p>
+        </div>
+        <div v-else-if="dashboard">
+          <div class="card shadow-sm border-0">
+            <div class="card-header bg-transparent border-0 pt-3 d-flex justify-content-between align-items-center">
+              <h6 class="fw-bold mb-0 text-slate-700"><i class="bi bi-list-task"></i> Comprehensive Stock List</h6>
+              <div class="d-flex gap-2">
+                <input v-model="stockSearch" type="text" class="form-control form-control-sm" style="width: 250px;" placeholder="Filter by Reel #, Quality, or Supplier...">
+              </div>
+            </div>
+            <div class="card-body pt-0">
+              <div class="table-responsive" style="max-height: 70vh; overflow-y: auto;">
+                <table class="table table-sm table-hover text-nowrap align-middle high-density-table">
+                  <thead class="table-light sticky-top">
+                    <tr>
+                      <th>Reel No.</th>
+                      <th>Paper Quality</th>
+                      <th>Supplier</th>
+                      <th class="text-center">Size</th>
+                      <th class="text-center">Original Wt</th>
+                      <th class="text-center">Balance Wt</th>
+                      <th class="text-center">Status</th>
+                      <th class="text-center">Location</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="reel in filteredStockList" :key="reel.id">
+                      <td class="fw-bold text-primary">{{ reel.reel_no }}</td>
+                      <td>{{ reel.paper_quality?.quality }}</td>
+                      <td class="small">{{ reel.supplier?.name }}</td>
+                      <td class="text-center">{{ reel.reel_size }}"</td>
+                      <td class="text-center text-muted small">{{ formatNumber(reel.original_weight) }}</td>
+                      <td class="text-center fw-bold">{{ formatNumber(reel.balance_weight || reel.original_weight) }}</td>
+                      <td class="text-center">
+                        <span :class="['badge rounded-pill', reel.balance_weight < reel.original_weight ? 'bg-warning-soft text-warning' : 'bg-success-soft text-success']">
+                          {{ reel.balance_weight < reel.original_weight ? 'Partial' : 'Full' }}
+                        </span>
+                      </td>
+                      <td class="text-center">
+                        <span :class="['badge rounded-pill', getReelLocation(reel) === 'Factory' ? 'bg-indigo-soft text-indigo' : 'bg-info-soft text-info']">
+                          {{ getReelLocation(reel) }}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </el-tab-pane>
+
       <el-tab-pane label="Management Dashboard" name="management" v-if="canViewManagement">
         <!-- MANAGEMENT DASHBOARD CONTENT -->
         <div v-if="loadingManagement" class="text-center py-5">
@@ -322,22 +377,43 @@
 </template>
 
 <script>
-import axios from 'axios';
+import { mapState, mapActions, mapWritableState } from 'pinia';
+import { useDashboardStore } from '../stores/useDashboardStore';
 
 export default {
   props: ['user', 'canViewManagement', 'initialTab'],
   data() {
     return {
       activeTab: this.initialTab || 'operational',
-      dashboard: null,
-      managementData: null,
-      timeRange: 30,
-      loadingOperational: true,
-      loadingManagement: false,
-      charts: {}
+      charts: {},
+      stockSearch: ''
     };
   },
   computed: {
+    ...mapState(useDashboardStore, {
+      dashboard: 'operationalData',
+      managementData: 'managementData',
+      loadingOperational: state => state.loading.operational,
+      loadingManagement: state => state.loading.management,
+    }),
+    ...mapWritableState(useDashboardStore, ['timeRange']),
+    filteredStockList() {
+      if (!this.dashboard?.full_stock) return [];
+      if (!this.stockSearch) return this.dashboard.full_stock;
+      
+      const search = this.stockSearch.toLowerCase();
+      return this.dashboard.full_stock.filter(reel => 
+        reel.reel_no.toLowerCase().includes(search) ||
+        (reel.paper_quality?.quality && reel.paper_quality.quality.toLowerCase().includes(search)) ||
+        (reel.supplier?.name && reel.supplier.name.toLowerCase().includes(search))
+      );
+    },
+    getReelLocation() {
+      return (reel) => {
+        const latestReturn = reel.returns?.[0]; // Assumes returns are ordered descending in backend or frontend
+        return latestReturn ? latestReturn.return_location : 'GoDown';
+      };
+    },
     operationalKpis() {
       if (!this.dashboard) return [];
       return [
@@ -350,28 +426,25 @@ export default {
   },
   mounted() {
     this.fetchActiveDashboard();
+    this.setupRealtimeListener();
   },
   methods: {
+    ...mapActions(useDashboardStore, [
+      'fetchOperationalDashboard',
+      'fetchManagementDashboard',
+      'setupRealtimeListener'
+    ]),
     handleTabChange() { this.fetchActiveDashboard(); },
     fetchActiveDashboard() {
-      if (this.activeTab === 'operational') this.fetchOperationalDashboard();
-      else this.fetchManagementDashboard();
-    },
-    fetchOperationalDashboard() {
-      this.loadingOperational = true;
-      axios.get(`/api/dashboard?range=${this.timeRange}`).then(response => {
-        this.dashboard = response.data;
-        this.loadingOperational = false;
-        this.$nextTick(() => this.renderOperationalCharts());
-      }).catch(error => { console.error(error); this.loadingOperational = false; });
-    },
-    fetchManagementDashboard() {
-      this.loadingManagement = true;
-      axios.get(`/api/management-dashboard?range=${this.timeRange}`).then(response => {
-        this.managementData = response.data;
-        this.loadingManagement = false;
-        this.$nextTick(() => this.renderManagementCharts());
-      }).catch(error => { console.error(error); this.loadingManagement = false; });
+      if (this.activeTab === 'operational') {
+        this.fetchOperationalDashboard().then(() => {
+          this.$nextTick(() => this.renderOperationalCharts());
+        });
+      } else {
+        this.fetchManagementDashboard().then(() => {
+          this.$nextTick(() => this.renderManagementCharts());
+        });
+      }
     },
     renderOperationalCharts() {
       this.destroyCharts();
@@ -581,4 +654,11 @@ export default {
 .bg-gradient-premium { background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%); }
 .custom-dashboard-tabs :deep(.el-tabs__item) { font-weight: 600; font-size: 1rem; height: 50px; }
 .custom-dashboard-tabs :deep(.el-tabs__active-bar) { background-color: #6366f1; height: 3px; }
+
+.high-density-table { font-size: 0.85rem; }
+.high-density-table th { padding: 0.5rem; font-weight: 700; color: #475569; }
+.high-density-table td { padding: 0.4rem 0.5rem; }
+.sticky-top { top: -1px; z-index: 10; box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
+.bg-indigo-soft { background-color: #e0e7ff; }
+.indigo { color: #6366f1; }
 </style>

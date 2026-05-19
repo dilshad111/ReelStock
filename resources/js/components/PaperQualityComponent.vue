@@ -6,7 +6,7 @@
         <button @click="printQualities" class="btn btn-outline-primary px-3">
           <i class="bi bi-printer-fill me-1"></i> Print Master
         </button>
-        <button @click="showForm = !showForm" class="btn btn-purple shadow-sm px-3">
+        <button @click="showForm = !showForm" class="btn btn-primary shadow-sm px-3">
           <i class="bi bi-plus-circle-fill me-1"></i> Add Paper Quality
         </button>
       </div>
@@ -17,19 +17,25 @@
         <h5>{{ editing ? 'Edit Paper Quality' : 'Add Paper Quality' }}</h5>
         <form @submit.prevent="saveQuality">
           <div class="row">
-            <div class="col-md-4">
+            <div class="col-md-3">
               <div class="mb-3">
                 <label class="form-label fw-bold">Quality Name</label>
                 <input v-model="quality.quality" type="text" class="form-control" placeholder="e.g. Testliner" required>
               </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
+              <div class="mb-3">
+                <label class="form-label fw-bold">Item Code <span class="badge bg-info text-dark ms-1" style="font-size:0.65rem">Auto</span></label>
+                <input v-model="quality.item_code" type="text" class="form-control font-monospace fw-bold" placeholder="Auto-generated" readonly style="background:#f0f4ff;border-color:#b6c5f7;color:#3b5bdb">
+              </div>
+            </div>
+            <div class="col-md-3">
               <div class="mb-3">
                 <label class="form-label fw-bold">GSM Range</label>
                 <input v-model="quality.gsm_range" type="text" class="form-control" placeholder="e.g. 100-150" required>
               </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
               <div class="mb-3">
                 <label class="form-label fw-bold">Paper Color</label>
                 <div class="input-group">
@@ -197,6 +203,7 @@ export default {
       colors: [],
       quality: { 
         quality: '', 
+        item_code: '',
         gsm_range: '', 
         paper_color_id: null, 
         min_gsm: '', 
@@ -215,7 +222,12 @@ export default {
     };
   },
   mounted() { if (this.user) this.setAuthAndFetch(); },
-  watch: { user(v) { if (v) this.setAuthAndFetch(); } },
+  watch: { 
+    user(v) { if (v) this.setAuthAndFetch(); },
+    'quality.quality'(newVal) {
+      this.autoGenerateItemCode(newVal);
+    }
+  },
   methods: {
     setAuthAndFetch() {
       if (localStorage.getItem('token')) axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
@@ -232,6 +244,38 @@ export default {
     },
     fetchQualities() { axios.get('/api/paper-qualities').then(r => { this.qualities = r.data; }); },
     fetchColors() { axios.get('/api/paper-colors').then(r => { this.colors = r.data; }); },
+    autoGenerateItemCode(qualityName) {
+      if (!qualityName || !qualityName.trim()) {
+        this.quality.item_code = '';
+        return;
+      }
+      // Build prefix from first letter of each word (up to 3 words)
+      const words = qualityName.trim().split(/\s+/);
+      let prefix = '';
+      let count = 0;
+      for (const word of words) {
+        const clean = word.replace(/[^A-Za-z0-9]/g, '');
+        if (clean) {
+          prefix += clean.charAt(0).toUpperCase();
+          count++;
+          if (count >= 3) break;
+        }
+      }
+      if (!prefix) {
+        this.quality.item_code = '';
+        return;
+      }
+      // Find the next available sequence number by checking existing qualities
+      const currentId = this.quality.id || null;
+      const existingCodes = this.qualities
+        .filter(q => q.id !== currentId && q.item_code && q.item_code.startsWith(prefix))
+        .map(q => {
+          const numPart = q.item_code.substring(prefix.length);
+          return parseInt(numPart, 10) || 0;
+        });
+      const nextNum = existingCodes.length > 0 ? Math.max(...existingCodes) + 1 : 1;
+      this.quality.item_code = prefix + String(nextNum).padStart(3, '0');
+    },
     showColorPrompt() {
       const name = prompt('Enter new color name:');
       if (name) {
@@ -258,6 +302,7 @@ export default {
     cancel() {
       this.quality = { 
         quality: '', 
+        item_code: '',
         gsm_range: '', 
         paper_color_id: null, 
         min_gsm: '', 
@@ -285,10 +330,8 @@ export default {
         tableRows += `
           <tr>
             <td class="text-center">${index + 1}</td>
-            <td class="fw-bold">${q.item_code}</td>
-            <td>${q.quality}</td>
-            <td>${q.gsm_range}</td>
-            <td>${q.paper_color?.name || '-'}</td>
+            <td class="item-code">${q.item_code || '-'}</td>
+            <td class="quality-name">${q.quality}${q.gsm_range ? ' <span class="gsm-range">(' + q.gsm_range + ')</span>' : ''}</td>
             <td class="text-center">${q.min_gsm || '-'}</td>
             <td class="text-center">${q.max_gsm || '-'}</td>
             <td class="text-center">${q.min_bursting || '-'}</td>
@@ -306,57 +349,80 @@ export default {
           <head>
             <title>Paper Quality Master List - ${this.companyName}</title>
             <style>
-              @page { size: A4 landscape; margin: 10mm; }
-              body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; color: #333; }
-              .header { text-align: center; border-bottom: 2px solid #1a2a6c; padding-bottom: 10px; margin-bottom: 20px; }
-              .company-name { font-size: 24px; font-weight: bold; color: #1a2a6c; }
-              .report-title { font-size: 18px; margin-top: 5px; text-transform: uppercase; font-weight: bold; }
-              table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 10px; }
-              th, td { border: 1px solid #ccc; padding: 6px 8px; }
-              th { background-color: #f8f9fa; font-weight: bold; text-align: center; text-transform: uppercase; }
+              @page { size: A4 portrait; margin: 12mm 10mm; }
+              * { box-sizing: border-box; margin: 0; padding: 0; }
+              body { font-family: 'Segoe UI', Arial, sans-serif; color: #000; font-size: 9px; line-height: 1.3; padding: 0; }
+              .report-page { width: 100%; max-width: 210mm; margin: 0 auto; padding: 15px; }
+
+              .report-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 12px; }
+              .company-name { font-size: 20px; font-weight: 800; color: #000; letter-spacing: 1px; }
+              .company-address { font-size: 9px; color: #333; margin-top: 2px; }
+              .report-title { font-size: 14px; font-weight: 700; color: #000; text-transform: uppercase; letter-spacing: 2px; margin-top: 6px; padding: 5px 0; }
+              .print-date { font-size: 9px; color: #555; margin-top: 4px; }
+
+              table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 8.5px; border: 1px solid #000; }
+              th { background: #e5e7eb; color: #000; font-weight: 700; padding: 5px 4px; text-align: center; font-size: 7.5px; text-transform: uppercase; letter-spacing: 0.3px; border: 1px solid #000; }
+              th.group-header { background: #d1d5db; border-bottom: 1px solid #000; }
+              th.sub-header { background: #e5e7eb; font-size: 7px; border: 1px solid #000; }
+              td { border: 1px solid #000; padding: 4px 5px; color: #000; }
+              tbody tr:nth-child(even) { background: #f9fafb; }
               .text-center { text-align: center; }
-              .fw-bold { font-weight: bold; }
-              .footer { margin-top: 30px; font-size: 10px; color: #999; text-align: right; }
+              .fw-bold { font-weight: 700; }
+              .item-code { font-weight: 700; color: #000; font-family: 'Consolas', monospace; }
+              .quality-name { font-weight: 600; color: #000; }
+              .gsm-range { color: #555; font-weight: 400; font-size: 8px; }
+              .color-badge { background: #e5e7eb; color: #000; padding: 1px 6px; border-radius: 8px; font-size: 7.5px; font-weight: 600; }
+
+              .footer { margin-top: 20px; padding-top: 8px; border-top: 1px solid #000; display: flex; justify-content: space-between; font-size: 8px; color: #555; }
+              .total-count { font-size: 9px; color: #000; font-weight: 600; margin-top: 8px; }
+
+              @media print {
+                body { padding: 0; }
+                .report-page { padding: 0; max-width: 100%; }
+              }
             </style>
           </head>
           <body>
-            <div class="header">
-              <div class="company-name">${this.companyName}</div>
-              <div class="report-title">Paper Quality Standards Master List</div>
-              <div style="font-size: 12px; margin-top: 5px;">Printed on: ${timestamp}</div>
-            </div>
-            <table>
-              <thead>
-                <tr>
-                  <th rowspan="2">S#</th>
-                  <th rowspan="2">Item Code</th>
-                  <th rowspan="2">Quality Name</th>
-                  <th rowspan="2">GSM Range</th>
-                  <th rowspan="2">Paper Color</th>
-                  <th colspan="2">GSM Standards</th>
-                  <th colspan="2">Bursting (PSI)</th>
-                  <th colspan="2">Moisture (%)</th>
-                  <th colspan="2">Cobb (g/m²)</th>
-                </tr>
-                <tr>
-                  <th>Min</th><th>Max</th>
-                  <th>Min</th><th>Max</th>
-                  <th>Min</th><th>Max</th>
-                  <th>Min</th><th>Max</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${tableRows}
-              </tbody>
-            </table>
-            <div class="footer">
-              This is a computer generated quality standard report.
+            <div class="report-page">
+              <div class="report-header">
+                <div class="company-name">${this.companyName}</div>
+                ${this.companyAddress ? '<div class="company-address">' + this.companyAddress + '</div>' : ''}
+                <div class="report-title">Paper Quality Standards Master</div>
+                <div class="print-date">Generated: ${timestamp}</div>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th rowspan="2" style="width:25px">S#</th>
+                    <th rowspan="2" style="width:60px">Code</th>
+                    <th rowspan="2">Quality Name</th>
+                    <th colspan="2" class="group-header">GSM</th>
+                    <th colspan="2" class="group-header">Bursting</th>
+                    <th colspan="2" class="group-header">Moisture</th>
+                    <th colspan="2" class="group-header">Cobb</th>
+                  </tr>
+                  <tr>
+                    <th class="sub-header">Min</th><th class="sub-header">Max</th>
+                    <th class="sub-header">Min</th><th class="sub-header">Max</th>
+                    <th class="sub-header">Min</th><th class="sub-header">Max</th>
+                    <th class="sub-header">Min</th><th class="sub-header">Max</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${tableRows}
+                </tbody>
+              </table>
+              <div class="total-count">Total Qualities: ${this.qualities.length}</div>
+              <div class="footer">
+                <span>Computer generated report — ${this.companyName}</span>
+                <span>${timestamp}</span>
+              </div>
             </div>
           </body>
         </html>
       `);
       printWindow.document.close();
-      printWindow.print();
+      setTimeout(() => printWindow.print(), 300);
     }
   }
 };

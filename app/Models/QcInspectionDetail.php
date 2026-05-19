@@ -14,6 +14,8 @@ class QcInspectionDetail extends Model implements Auditable
         'qc_inspection_id',
         'reel_id',
         'reel_no',
+        'reel_size',
+        'reel_weight',
         'gsm',
         'bursting',
         'moisture',
@@ -24,6 +26,8 @@ class QcInspectionDetail extends Model implements Auditable
     ];
 
     protected $casts = [
+        'reel_size' => 'decimal:2',
+        'reel_weight' => 'decimal:2',
         'gsm' => 'decimal:2',
         'bursting' => 'decimal:2',
         'moisture' => 'decimal:2',

@@ -335,6 +335,8 @@
 <script>
 import axios from 'axios';
 import { reactive } from 'vue';
+import { mapStores, mapWritableState, mapActions } from 'pinia';
+import { useReelReceiptStore } from '../stores/useReelReceiptStore';
 
 export default {
   props: {
@@ -345,7 +347,6 @@ export default {
   },
   data() {
     return {
-      receipts: reactive([]),
       suppliers: [],
       qualities: [],
       selectedReceipts: [], // Array of selected receipt IDs
@@ -388,18 +389,6 @@ export default {
       reelPadding: 6,
       reelNextNumber: 1,
       pendingNextNumber: null,
-      pagination: {
-        current_page: 1,
-        last_page: 1,
-        per_page: 50,
-        total: 0
-      },
-      filters: {
-        quality_id: '',
-        supplier_id: '',
-        date_from: '',
-        date_to: ''
-      },
       qualitySearch: '',
       supplierSearch: '',
       showQualityDrop: false,
@@ -408,6 +397,7 @@ export default {
     };
   },
   computed: {
+    ...mapWritableState(useReelReceiptStore, ['receipts', 'pagination', 'filters', 'isLoading']),
     receiptList() {
       return this.receipts;
     },
@@ -461,6 +451,7 @@ export default {
     });
     this.fetchSuppliers();
     this.fetchQualities();
+    this.setupRealtimeListener();
   },
   methods: {
     fetchReelSettings() {
@@ -855,41 +846,23 @@ export default {
       const gsm = pq.gsm_range ? ` ${pq.gsm_range}` : '';
       return `${name}${gsm}`;
     },
-    fetchReceipts(params = {}) {
-      // Merge with active filters
-      const queryParams = {
-        ...this.filters,
-        ...params
-      };
+    ...mapActions(useReelReceiptStore, {
+      fetchReceiptsFromStore: 'fetchReceipts',
+      saveReceiptToStore: 'saveReceipt',
+      setFilters: 'setFilters',
+      clearFilters: 'clearFilters',
+      setupRealtimeListener: 'setupRealtimeListener'
+    }),
+    fetchReceipts(page = 1) {
       if (this.reelSearch) {
-        queryParams.reel_no = this.reelSearch;
+        this.filters.reel_no = this.reelSearch;
       }
-      
-      axios.get('/api/reel-receipts', { params: queryParams }).then(response => {
-        if (response.data.data && Array.isArray(response.data.data)) {
-          this.receipts = response.data.data;
-          this.pagination = {
-            current_page: response.data.current_page,
-            last_page: response.data.last_page,
-            per_page: response.data.per_page,
-            total: response.data.total
-          };
-          if (response.data.reel_prefix) {
-            this.reelPrefix = response.data.reel_prefix;
-          }
-          this.$nextTick(() => {
-            this.$forceUpdate();
-          });
-        } else {
-          alert('Error loading receipts: ' + (response.data.error || 'Unknown error'));
-          this.receipts = reactive([]);
-        }
+      this.fetchReceiptsFromStore(page).then(() => {
         // Clear selections when data is refreshed
         this.selectedReceipts = [];
-      }).catch(error => {
-        console.error('Error fetching receipts:', error);
-        alert('Failed to load receipts. Please check your connection.');
-        this.receipts = reactive([]);
+        this.$nextTick(() => {
+            this.$forceUpdate();
+        });
       });
     },
     debouncedFetch() {
@@ -897,7 +870,7 @@ export default {
         clearTimeout(this.searchTimeout);
       }
       this.searchTimeout = setTimeout(() => {
-        this.fetchReceipts();
+        this.fetchReceipts(1);
       }, 500);
     },
     selectQuality(q) {

@@ -202,6 +202,9 @@
                                         <el-dropdown-item v-if="scope.row.status === 'Pending' && canApprove" @click="openApproveDialog(scope.row)">
                                             <i class="bi bi-check-circle-fill text-success me-2"></i> Approve Bill
                                         </el-dropdown-item>
+                                        <el-dropdown-item v-if="scope.row.status === 'Approved' && canUnapprove" @click="unapproveBill(scope.row)">
+                                            <i class="bi bi-arrow-counterclockwise text-danger me-2"></i> Unapprove Bill
+                                        </el-dropdown-item>
                                         <el-dropdown-item @click="viewBillDetails(scope.row)">
                                             <i class="bi bi-eye-fill text-info me-2"></i> View Details
                                         </el-dropdown-item>
@@ -423,9 +426,15 @@ const props = defineProps({
 
 const canApprove = computed(() => {
     if (!props.user) return false;
-    // Superadmin always has access, others need explicit 'approve_cartage' view permission
-    if (props.user.email === 'superadmin@qc.com') return true;
+    // Superadmin and Admin always have access, others need explicit 'approve_cartage' view permission
+    const roleName = props.user.role?.name;
+    if (roleName === 'Super Admin' || roleName === 'Admin') return true;
     return !!(props.user.permissions?.approve_cartage?.can_view);
+});
+
+const canUnapprove = computed(() => {
+    if (!props.user) return false;
+    return props.user.role?.name === 'Super Admin';
 });
 
 const transporters = ref([]);
@@ -878,6 +887,24 @@ const submitApproval = async () => {
         ElMessage.error('Error approving bill');
     } finally {
         submittingApproval.value = false;
+    }
+};
+
+const unapproveBill = async (bill) => {
+    try {
+        await ElMessageBox.confirm('Are you sure you want to unapprove this bill? This will set its status back to Pending.', 'Warning', { 
+            confirmButtonText: 'Yes, Unapprove',
+            cancelButtonText: 'No',
+            type: 'warning' 
+        });
+        await axios.post(`/api/cartage-bills/${bill.id}/unapprove`);
+        ElMessage.success('Bill unapproved successfully');
+        fetchHistory();
+        emit('update-pending-count');
+    } catch (e) {
+        if (e !== 'cancel') {
+            ElMessage.error('Error unapproving bill');
+        }
     }
 };
 

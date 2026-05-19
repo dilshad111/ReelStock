@@ -144,7 +144,7 @@
             <tr v-for="r in jobDetail.receipts" :key="r.id">
               <td>{{ formatDate(r.date) }}</td>
               <td class="text-end text-success fw-bold">{{ fmt(r.quantity_produced) }}</td>
-              <td class="text-end fw-bold text-dark">{{ fmt(r.carton_price) }}</td>
+              <td class="text-end fw-bold text-dark">{{ fmtRate(r.carton_price) }}</td>
               <td class="text-end">{{ fmt(r.wastage) }}</td>
               <td>{{ r.remarks || '-' }}</td>
             </tr>
@@ -261,24 +261,58 @@ export default {
     fetchStockReport() {
       const params = { ...this.stockFilters };
       Object.keys(params).forEach(k => { if (!params[k]) delete params[k]; });
-      axios.get('/api/fg-reports/stock', { params }).then(r => { this.stockData = r.data; });
+      axios.get('/api/fg-reports/stock', { params })
+        .then(r => { this.stockData = r.data; })
+        .catch(err => {
+          if (axios.isCancel(err)) return;
+          if (err.response?.data?.errors) {
+            const msgs = Object.values(err.response.data.errors).flat().join('\n');
+            this.$message.error(msgs);
+          } else {
+            this.$message.error(err.response?.data?.error || err.response?.data?.message || 'Error fetching stock report.');
+          }
+        });
     },
     fetchJobReport(page = 1) {
       const params = { page, ...this.jobFilters };
       Object.keys(params).forEach(k => { if (!params[k]) delete params[k]; });
-      axios.get('/api/fg-reports/job', { params }).then(r => { this.jobData = r.data.data || r.data; });
+      axios.get('/api/fg-reports/job', { params })
+        .then(r => { this.jobData = r.data.data || r.data; })
+        .catch(err => {
+          if (axios.isCancel(err)) return;
+          if (err.response?.data?.errors) {
+            const msgs = Object.values(err.response.data.errors).flat().join('\n');
+            this.$message.error(msgs);
+          } else {
+            this.$message.error(err.response?.data?.error || err.response?.data?.message || 'Error fetching job report.');
+          }
+        });
     },
     debouncedJobFetch() { clearTimeout(this.searchTimeout); this.searchTimeout = setTimeout(() => this.fetchJobReport(), 400); },
     debouncedStockFetch() { clearTimeout(this.stockSearchTimeout); this.stockSearchTimeout = setTimeout(() => this.fetchStockReport(), 400); },
     debouncedAuditFetch() { clearTimeout(this.auditSearchTimeout); this.auditSearchTimeout = setTimeout(() => this.fetchAuditReport(), 400); },
     showJobDetail(job) {
       axios.get('/api/fg-reports/job-detail', { params: { job_number: job.job_number, product_id: job.product_id } })
-        .then(r => { this.jobDetail = r.data; this.showJobModal = true; });
+        .then(r => { this.jobDetail = r.data; this.showJobModal = true; })
+        .catch(err => {
+          if (axios.isCancel(err)) return;
+          this.$message.error(err.response?.data?.error || err.response?.data?.message || 'Error fetching job details.');
+        });
     },
     fetchAuditReport(page = 1) {
       const params = { page, ...this.auditFilters };
       Object.keys(params).forEach(k => { if (!params[k]) delete params[k]; });
-      axios.get('/api/fg-reports/audit', { params }).then(r => { this.auditData = r.data.data || r.data; });
+      axios.get('/api/fg-reports/audit', { params })
+        .then(r => { this.auditData = r.data.data || r.data; })
+        .catch(err => {
+          if (axios.isCancel(err)) return;
+          if (err.response?.data?.errors) {
+            const msgs = Object.values(err.response.data.errors).flat().join('\n');
+            this.$message.error(msgs);
+          } else {
+            this.$message.error(err.response?.data?.error || err.response?.data?.message || 'Error fetching ledger report.');
+          }
+        });
     },
     typeBadge(type) {
       const map = { opening: 'bg-info', receipt: 'bg-success', dispatch: 'bg-danger', adjustment: 'bg-warning text-dark' };
@@ -286,6 +320,7 @@ export default {
     },
     formatDate(d) { if (!d) return '-'; return new Date(d).toLocaleDateString('en-GB'); },
     fmt(v) { return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 }); },
+    fmtRate(v) { return Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
 
     // ===== Export Functions =====
     printReport() {

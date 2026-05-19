@@ -12,6 +12,13 @@
           <div class="row">
             <div class="col-md-4">
               <div class="mb-3">
+                <label>Job Card (Link) <span class="text-muted small">(Optional)</span></label>
+                <select v-model="form.job_card_id" @change="onJobCardChange" class="form-control">
+                  <option value="">Select Job Card</option>
+                  <option v-for="jc in activeJobCards" :key="jc.id" :value="jc.id">{{ jc.job_card_no }} - {{ jc.product?.item_name }}</option>
+                </select>
+              </div>
+              <div class="mb-3">
                 <label>Date <span class="text-danger">*</span></label>
                 <input v-model="form.date" type="date" class="form-control" required>
               </div>
@@ -126,7 +133,7 @@
           <td class="fw-bold text-primary">{{ r.job_number }}</td>
           <td>{{ formatDate(r.production_date) }}</td>
           <td class="text-end fw-bold text-success">{{ formatNumber(r.quantity_produced) }}</td>
-          <td class="text-end fw-bold text-dark">{{ formatNumber(r.carton_price) }}</td>
+          <td class="text-end fw-bold text-dark">{{ formatRate(r.carton_price) }}</td>
           <td class="text-end">{{ formatNumber(r.wastage) }}</td>
           <td>
             <button @click="showDetail(r)" class="btn btn-sm btn-info me-1" title="View"><i class="bi bi-eye"></i></button>
@@ -202,7 +209,7 @@
               </div>
               <div class="col-md-4 border-top pt-3">
                 <label class="small text-muted fw-bold d-block">Carton Price</label>
-                <span class="fw-bold">{{ formatNumber(selectedEntry.carton_price) }}</span>
+                <span class="fw-bold">{{ formatRate(selectedEntry.carton_price) }}</span>
               </div>
               <div class="col-md-4 border-top pt-3">
                 <label class="small text-muted fw-bold d-block">Wastage</label>
@@ -210,7 +217,7 @@
               </div>
               <div class="col-md-4 border-top pt-3">
                 <label class="small text-muted fw-bold d-block">Amount</label>
-                <span class="fw-bold text-dark">{{ formatNumber(selectedEntry.quantity_produced * selectedEntry.carton_price) }}</span>
+                <span class="fw-bold text-dark">{{ formatRate(selectedEntry.quantity_produced * selectedEntry.carton_price) }}</span>
               </div>
               <div class="col-md-12 border-top pt-3">
                 <label class="small text-muted fw-bold d-block">Remarks</label>
@@ -239,9 +246,9 @@ export default {
   data() {
     const today = new Date().toISOString().substr(0, 10);
     return {
-      receipts: [], customers: [], allProducts: [], filteredProducts: [],
+      receipts: [], customers: [], allProducts: [], filteredProducts: [], activeJobCards: [],
       showForm: false, editing: false,
-      form: { id: null, date: today, customer_id: '', product_id: '', job_number: '', production_date: today, quantity_produced: '', carton_price: '', wastage: 0, remarks: '' },
+      form: { id: null, date: today, customer_id: '', product_id: '', job_card_id: '', job_number: '', production_date: today, quantity_produced: '', carton_price: '', wastage: 0, remarks: '' },
       filters: { customer_id: '', job_number: '', date_from: '', date_to: '', per_page: 50 },
       searchTimeout: null,
       pagination: { current_page: 1, last_page: 1, per_page: 50, total: 0 },
@@ -261,10 +268,23 @@ export default {
   },
   mounted() {
     if (localStorage.getItem('token')) axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
-    this.fetchCustomers(); this.fetchReceipts();
+    this.fetchCustomers(); this.fetchReceipts(); this.fetchActiveJobCards();
   },
   methods: {
     fetchCustomers() { axios.get('/api/customers').then(r => { this.customers = r.data; }); },
+    fetchActiveJobCards() { axios.get('/api/job-cards/active-list').then(r => { this.activeJobCards = r.data; }); },
+    onJobCardChange() {
+      if (this.form.job_card_id) {
+        const jc = this.activeJobCards.find(j => j.id === this.form.job_card_id);
+        if (jc) {
+          this.form.customer_id = jc.customer_id;
+          this.onCustomerChange();
+          this.form.product_id = jc.fg_product_id;
+          this.form.job_number = jc.job_card_no;
+          this.onProductChange();
+        }
+      }
+    },
     onCustomerChange() {
       this.form.product_id = '';
       if (this.form.customer_id) {
@@ -294,6 +314,14 @@ export default {
             wastage: r.data.totals.total_wastage
           };
         }
+      }).catch(err => {
+        if (axios.isCancel(err)) return;
+        if (err.response?.data?.errors) {
+          const msgs = Object.values(err.response.data.errors).flat().join('\n');
+          this.$message.error(msgs);
+        } else {
+          this.$message.error(err.response?.data?.error || err.response?.data?.message || 'Error fetching receipts.');
+        }
       });
     },
     showDetail(r) {
@@ -302,15 +330,22 @@ export default {
     debouncedFetch() { clearTimeout(this.searchTimeout); this.searchTimeout = setTimeout(() => this.fetchReceipts(), 400); },
     goToPage(p) { if (p >= 1 && p <= this.pagination.last_page) this.fetchReceipts(p); },
     clearFilters() { this.filters = { customer_id: '', job_number: '', date_from: '', date_to: '', per_page: 50 }; this.fetchReceipts(); },
-    resetForm() { const t = new Date().toISOString().substr(0, 10); this.form = { id: null, date: t, customer_id: '', product_id: '', job_number: '', production_date: t, quantity_produced: '', carton_price: '', wastage: 0, remarks: '' }; this.filteredProducts = []; },
+    resetForm() { const t = new Date().toISOString().substr(0, 10); this.form = { id: null, date: t, customer_id: '', product_id: '', job_card_id: '', job_number: '', production_date: t, quantity_produced: '', carton_price: '', wastage: 0, remarks: '' }; this.filteredProducts = []; },
     saveReceipt() {
       if (!this.form.customer_id || !this.form.product_id || !this.form.job_number || !this.form.quantity_produced) { this.$message.error('Fill required fields.'); return; }
       const action = this.editing ? axios.put(`/api/fg-receipts/${this.form.id}`, this.form) : axios.post('/api/fg-receipts', this.form);
       action.then(() => { this.$message.success(this.editing ? 'Updated!' : 'Saved!'); this.showForm = false; this.fetchReceipts(); })
-        .catch(err => { this.$message.error(err.response?.data?.error || 'Failed.'); });
+        .catch(err => {
+          if (err.response?.data?.errors) {
+            const msgs = Object.values(err.response.data.errors).flat().join('\n');
+            this.$message.error(msgs);
+          } else {
+            this.$message.error(err.response?.data?.error || err.response?.data?.message || 'Failed.');
+          }
+        });
     },
     editReceipt(r) {
-      this.form = { id: r.id, date: r.date?.split('T')[0], customer_id: r.customer_id, product_id: r.product_id, job_number: r.job_number, production_date: r.production_date?.split('T')[0], quantity_produced: r.quantity_produced, carton_price: r.carton_price, wastage: r.wastage, remarks: r.remarks };
+      this.form = { id: r.id, date: r.date?.split('T')[0], customer_id: r.customer_id, product_id: r.product_id, job_card_id: r.job_card_id || '', job_number: r.job_number, production_date: r.production_date?.split('T')[0], quantity_produced: r.quantity_produced, carton_price: r.carton_price, wastage: r.wastage, remarks: r.remarks };
       this.onCustomerChange();
       this.editing = true; this.showForm = true;
     },
@@ -320,7 +355,8 @@ export default {
         .catch(err => { this.$message.error(err.response?.data?.error || 'Cannot delete.'); });
     },
     formatDate(d) { if (!d) return '-'; const dt = new Date(d); return dt.toLocaleDateString('en-GB'); },
-    formatNumber(v) { return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 }); }
+    formatNumber(v) { return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 }); },
+    formatRate(v) { return Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   }
 };
 </script>

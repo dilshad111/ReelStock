@@ -151,6 +151,7 @@ export default {
           { key: 'reel-stock-count', name: 'Stock Count', hasAmounts: true },
           { key: 'usage-intelligence', name: 'Usage Intelligence', hasAmounts: true },
           { key: 'old-reels', name: 'Old Reels Report', hasAmounts: true },
+          { key: 'reconciliation', name: 'Stock Reconciliation', hasAmounts: false },
         ]
       },
       {
@@ -162,6 +163,23 @@ export default {
           { key: 'fg-dispatches', name: 'Dispatch Entry', hasAmounts: false },
           { key: 'fg-reports', name: 'FG Reports', hasAmounts: false },
           { key: 'fg-inventory-email', name: 'Inventory Email Report', hasAmounts: false },
+        ]
+      },
+      {
+        category: 'Raw Materials Inventory',
+        items: [
+          { key: 'rm-dashboard', name: 'RM Dashboard', hasAmounts: false },
+          { key: 'rm-items', name: 'Material Master', hasAmounts: false },
+          { key: 'rm-receipts', name: 'RM Receiving (GRN)', hasAmounts: true },
+          { key: 'rm-consumptions', name: 'RM Consumption', hasAmounts: true },
+          { key: 'rm-reports', name: 'RM Reports', hasAmounts: true },
+        ]
+      },
+      {
+        category: 'Production & Job Cards',
+        items: [
+          { key: 'job-cards', name: 'Production Job Cards', hasAmounts: false },
+          { key: 'production-dashboard', name: 'Production Analytics', hasAmounts: false },
         ]
       },
       {
@@ -318,6 +336,13 @@ export default {
             'fg-reports': 'bi bi-file-earmark-spreadsheet',
             'fg-inventory-email': 'bi bi-envelope-at',
             'qc-inspection': 'bi bi-clipboard2-check',
+            'rm-dashboard': 'bi bi-layers',
+            'rm-items': 'bi bi-box-fill',
+            'rm-receipts': 'bi bi-file-earmark-arrow-down',
+            'rm-consumptions': 'bi bi-file-earmark-arrow-up',
+            'rm-reports': 'bi bi-clipboard-data',
+            'job-cards': 'bi bi-card-checklist',
+            'production-dashboard': 'bi bi-cpu',
             users: 'bi bi-person-lines-fill',
             'user-rights': 'bi bi-shield-lock',
             'audit-log': 'bi bi-journal-text',

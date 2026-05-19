@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h2><i class="bi bi-receipt"></i> Reel Receipt Report</h2>

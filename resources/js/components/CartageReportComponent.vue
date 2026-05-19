@@ -216,6 +216,7 @@ const fetchReport = async () => {
         reportData.value = res.data;
         if (reportData.value.length === 0) ElMessage.warning('No records found for these filters');
     } catch (e) {
+        if (axios.isCancel(e)) return;
         ElMessage.error('Error fetching report');
     } finally {
         loading.value = false;

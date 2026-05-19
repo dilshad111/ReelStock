@@ -87,7 +87,7 @@
           <td>{{ p.customer?.name }}</td>
           <td class="fw-bold">{{ p.item_code }}</td>
           <td>{{ p.item_name }}</td>
-          <td class="text-end">{{ p.rate ? formatNumber(p.rate) : '-' }}</td>
+          <td class="text-end">{{ p.rate ? formatRate(p.rate) : '-' }}</td>
           <td class="text-end">{{ formatNumber(p.opening_balance) }}</td>
           <td class="text-end fw-bold" :class="p.current_balance > 0 ? 'text-success' : 'text-danger'">{{ formatNumber(p.current_balance) }}</td>
           <td>
@@ -192,6 +192,7 @@ export default {
       this.form = { id: p.id, customer_id: p.customer_id, item_code: p.item_code, item_name: p.item_name, rate: p.rate || '', opening_balance: Math.floor(p.opening_balance) };
       this.editing = true;
       this.showForm = true;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     deleteProduct(p) {
       if (!confirm(`Delete product "${p.item_name}"?`)) return;
@@ -202,7 +203,8 @@ export default {
         this.$message.error(err.response?.data?.error || 'Cannot delete product.');
       });
     },
-    formatNumber(v) { return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 0 }); }
+    formatNumber(v) { return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 0 }); },
+    formatRate(v) { return Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   }
 };
 </script>

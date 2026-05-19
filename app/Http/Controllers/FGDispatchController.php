@@ -119,36 +119,81 @@ class FGDispatchController extends Controller
 
         return DB::transaction(function () use ($request, $id) {
             $dispatch = FGDispatch::findOrFail($id);
+            $oldProductId = $dispatch->product_id;
+            $newProductId = (int)$request->product_id;
             $oldQty = (float)$dispatch->quantity_dispatched;
             $newQty = (float)$request->quantity_dispatched;
-            $diff = $newQty - $oldQty;
 
-            $lastLedger = FGStockLedger::where('product_id', $request->product_id)
-                ->latest('id')->lockForUpdate()->first();
-            $currentBalance = $lastLedger ? (float)$lastLedger->balance_after : 0;
-            $newBalance = $currentBalance - $diff;
-
-            if ($newBalance < 0) {
-                return response()->json([
-                    'error' => "Insufficient stock for update. Available: {$currentBalance}"
-                ], 422);
-            }
-
-            $dispatch->update($request->only(['date', 'customer_id', 'product_id', 'job_number', 'dc_number', 'quantity_dispatched', 'remarks']));
-
-            if ($diff != 0) {
+            if ($oldProductId !== $newProductId) {
+                // 1. Revert old product stock
+                $lastLedgerOld = FGStockLedger::where('product_id', $oldProductId)
+                    ->latest('id')->lockForUpdate()->first();
+                $oldProdBalance = $lastLedgerOld ? (float)$lastLedgerOld->balance_after : 0;
+                
                 FGStockLedger::create([
                     'transaction_type' => 'adjustment',
                     'reference_id' => $dispatch->id,
-                    'product_id' => $request->product_id,
-                    'customer_id' => $request->customer_id,
-                    'job_number' => $request->job_number,
-                    'quantity_in' => $diff < 0 ? abs($diff) : 0,
-                    'quantity_out' => $diff > 0 ? $diff : 0,
-                    'balance_after' => $newBalance,
+                    'product_id' => $oldProductId,
+                    'customer_id' => $dispatch->customer_id,
+                    'job_number' => $dispatch->job_number,
+                    'quantity_in' => $oldQty,
+                    'quantity_out' => 0,
+                    'balance_after' => $oldProdBalance + $oldQty,
                     'transaction_date' => $request->date,
                 ]);
+
+                // 2. Deduct from new product stock
+                $lastLedgerNew = FGStockLedger::where('product_id', $newProductId)
+                    ->latest('id')->lockForUpdate()->first();
+                $newProdBalance = $lastLedgerNew ? (float)$lastLedgerNew->balance_after : 0;
+                
+                if ($newQty > $newProdBalance) {
+                    return response()->json([
+                        'error' => "Insufficient stock in new product. Available: {$newProdBalance}"
+                    ], 422);
+                }
+
+                FGStockLedger::create([
+                    'transaction_type' => 'dispatch',
+                    'reference_id' => $dispatch->id,
+                    'product_id' => $newProductId,
+                    'customer_id' => $request->customer_id,
+                    'job_number' => $request->job_number,
+                    'quantity_in' => 0,
+                    'quantity_out' => $newQty,
+                    'balance_after' => $newProdBalance - $newQty,
+                    'transaction_date' => $request->date,
+                ]);
+            } else {
+                // Same product, handle quantity change
+                $diff = $newQty - $oldQty;
+                if ($diff != 0) {
+                    $lastLedger = FGStockLedger::where('product_id', $newProductId)
+                        ->latest('id')->lockForUpdate()->first();
+                    $currentBalance = $lastLedger ? (float)$lastLedger->balance_after : 0;
+                    $newBalance = $currentBalance - $diff;
+
+                    if ($newBalance < 0) {
+                        return response()->json([
+                            'error' => "Insufficient stock for update. Available: {$currentBalance}"
+                        ], 422);
+                    }
+
+                    FGStockLedger::create([
+                        'transaction_type' => 'adjustment',
+                        'reference_id' => $dispatch->id,
+                        'product_id' => $newProductId,
+                        'customer_id' => $request->customer_id,
+                        'job_number' => $request->job_number,
+                        'quantity_in' => $diff < 0 ? abs($diff) : 0,
+                        'quantity_out' => $diff > 0 ? $diff : 0,
+                        'balance_after' => $newBalance,
+                        'transaction_date' => $request->date,
+                    ]);
+                }
             }
+
+            $dispatch->update($request->only(['date', 'customer_id', 'product_id', 'job_number', 'dc_number', 'quantity_dispatched', 'remarks']));
 
             return response()->json($dispatch->load(['customer', 'product', 'creator']));
         });

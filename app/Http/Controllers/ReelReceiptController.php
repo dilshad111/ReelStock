@@ -3,59 +3,29 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Models\Setting;
-use App\Models\Reel;
 use App\Models\ReelReceipt;
-use App\Services\ReelNumberService;
-use App\Services\LotNumberService;
+use App\Http\Requests\Inventory\StoreReelReceiptRequest;
+use App\Domains\Inventory\DTOs\ReelReceiptDTO;
+use App\Domains\Inventory\Actions\CreateReelReceiptAction;
+use App\Domains\Inventory\Actions\FetchReelReceiptsAction;
+use App\Domains\Inventory\Actions\UpdateReelReceiptAction;
+use App\Domains\Inventory\Actions\DeleteReelReceiptAction;
+use App\Domains\Inventory\Actions\BulkCreateReelReceiptAction;
+use App\Http\Resources\Inventory\ReelReceiptResource;
 
 class ReelReceiptController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, FetchReelReceiptsAction $action)
     {
         try {
-            $query = ReelReceipt::with(['reel.paperQuality', 'reel.supplier']);
-
-            if ($request->filled('reel_no')) {
-                $query->whereHas('reel', function ($q) use ($request) {
-                    $q->where('reel_no', 'like', '%' . $request->reel_no . '%');
-                });
-            }
-
-            if ($request->filled('supplier_id')) {
-                $query->whereHas('reel', function ($q) use ($request) {
-                    $q->where('supplier_id', $request->supplier_id);
-                });
-            }
-
-            if ($request->filled('supplier')) {
-                $query->whereHas('reel.supplier', function ($q) use ($request) {
-                    $q->where('name', 'like', '%' . $request->supplier . '%');
-                });
-            }
-
-            if ($request->filled('quality_id')) {
-                $query->whereHas('reel', function ($q) use ($request) {
-                    $q->where('paper_quality_id', $request->quality_id);
-                });
-            }
-
-            if ($request->filled('date_from') && $request->filled('date_to')) {
-                $query->whereBetween('receiving_date', [$request->date_from, $request->date_to]);
-            }
-
-            $query->orderBy('id', 'desc');
-
-            if ($request->has('limit')) {
-                $query->limit($request->limit);
-            }
-
+            $filters = $request->all();
+            $limit = $request->get('limit', 50);
+            
+            $receipts = $action->execute($filters, $limit);
             $prefix = Setting::where('key', 'reel_no_prefix')->value('value') ?? 'RL';
 
-            $receipts = $query->paginate(50);
-
-            // Add the paper_quality_display property to each reel
+            // Add the paper_quality_display property to each reel for backward compatibility with frontend
             $receipts->getCollection()->each(function ($receipt) {
                 if ($receipt->reel) {
                     $reel = $receipt->reel;
@@ -70,190 +40,91 @@ class ReelReceiptController extends Controller
 
             return response()->json($response);
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return $this->error($e->getMessage(), 500);
         }
     }
 
-    public function store(Request $request)
+    public function store(StoreReelReceiptRequest $request, CreateReelReceiptAction $action)
     {
-        try {
-            $request->validate([
-                'paper_quality_id' => 'required|exists:paper_qualities,id',
-                'supplier_id' => 'required|exists:suppliers,id',
-                'reel_size' => 'required|numeric|min:0',
-                'reel_weight' => 'required|numeric|min:0',
-                'receiving_date' => 'required|date',
-                'received_by' => 'nullable|string',
-                'gsm' => 'nullable|numeric|min:0',
-                'bursting_strength' => 'nullable|numeric|min:0',
-                'rate_per_kg' => 'nullable|numeric|min:0',
-                'qc_status' => 'required|in:approved,rejected,on_hold',
-                'remarks' => 'nullable|string',
-                'po_number' => 'nullable|string',
-                'grn_number' => 'nullable|string',
-            ]);
-
-            $receipt = DB::transaction(function () use ($request) {
-                // Generate reel number with row-level lock (prevents race conditions)
-                $reelNo = ReelNumberService::generateNextNumber();
-
-                // Generate lot number
-                $lotNumber = LotNumberService::generateNextNumber();
-
-                $reel = Reel::create([
-                    'reel_no' => $reelNo,
-                    'paper_quality_id' => $request->paper_quality_id,
-                    'supplier_id' => $request->supplier_id,
-                    'reel_size' => $request->reel_size,
-                    'original_weight' => $request->reel_weight,
-                    'balance_weight' => $request->reel_weight,
-                    'status' => 'in_stock',
-                ]);
-
-                return ReelReceipt::create([
-                    'reel_id' => $reel->id,
-                    'lot_number' => $lotNumber,
-                    'po_number' => $request->po_number,
-                    'grn_number' => $request->grn_number,
-                    'receiving_date' => $request->receiving_date,
-                    'received_by' => $request->received_by,
-                    'gsm' => $request->gsm,
-                    'bursting_strength' => $request->bursting_strength,
-                    'rate_per_kg' => $request->rate_per_kg,
-                    'qc_status' => $request->qc_status,
-                    'remarks' => $request->remarks,
-                ]);
-            });
-
-            return response()->json($receipt->load('reel.paperQuality', 'reel.supplier'), 201);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
+        $dto = ReelReceiptDTO::fromRequest($request);
+        $receipt = $action->execute($dto);
+        
+        return $this->success(
+            new ReelReceiptResource($receipt->load('reel.paperQuality', 'reel.supplier')),
+            'Reel receipt created successfully.',
+            201
+        );
     }
 
-    public function bulkStore(Request $request)
+    public function bulkStore(Request $request, BulkCreateReelReceiptAction $action)
     {
         $request->validate([
             'common' => 'required|array',
             'common.paper_quality_id' => 'required|exists:paper_qualities,id',
             'common.supplier_id' => 'required|exists:suppliers,id',
             'common.receiving_date' => 'required|date',
-            'common.received_by' => 'nullable|string',
-            'common.gsm' => 'nullable|numeric|min:0',
-            'common.bursting_strength' => 'nullable|numeric|min:0',
-            'common.rate_per_kg' => 'nullable|numeric|min:0',
             'common.qc_status' => 'required|in:approved,rejected,on_hold',
-            'common.remarks' => 'nullable|string',
-            'common.po_number' => 'nullable|string',
-            'common.grn_number' => 'nullable|string',
             'reels' => 'required|array|min:1',
             'reels.*.reel_size' => 'required|numeric|min:0',
             'reels.*.reel_weight' => 'required|numeric|min:0',
         ]);
 
-        $receipts = DB::transaction(function () use ($request) {
-            // Reserve all reel numbers at once with row-level lock
-            $reelNumbers = ReelNumberService::generateNextNumbers(count($request->reels));
+        try {
+            $receipts = $action->execute($request->input('common'), $request->input('reels'));
             
-            // Generate a single shared lot number for the entire bulk
-            $lotNumber = LotNumberService::generateNextNumber();
-            
-            $createdReceipts = [];
-
-            foreach ($request->reels as $index => $reelData) {
-                $reel = Reel::create([
-                    'reel_no' => $reelNumbers[$index],
-                    'paper_quality_id' => $request->common['paper_quality_id'],
-                    'supplier_id' => $request->common['supplier_id'],
-                    'reel_size' => $reelData['reel_size'],
-                    'original_weight' => $reelData['reel_weight'],
-                    'balance_weight' => $reelData['reel_weight'],
-                    'status' => 'in_stock',
-                ]);
-
-                $createdReceipts[] = ReelReceipt::create([
-                    'reel_id' => $reel->id,
-                    'lot_number' => $lotNumber,
-                    'po_number' => $request->common['po_number'] ?? null,
-                    'grn_number' => $request->common['grn_number'] ?? null,
-                    'receiving_date' => $request->common['receiving_date'],
-                    'received_by' => $request->common['received_by'],
-                    'gsm' => $request->common['gsm'],
-                    'bursting_strength' => $request->common['bursting_strength'],
-                    'rate_per_kg' => $request->common['rate_per_kg'],
-                    'qc_status' => $request->common['qc_status'],
-                    'remarks' => $request->common['remarks'],
-                ]);
-            }
-
-            return $createdReceipts;
-        });
-
-        return response()->json(
-            ReelReceipt::with('reel.paperQuality', 'reel.supplier')
+            $loadedReceipts = ReelReceipt::with('reel.paperQuality', 'reel.supplier')
                 ->whereIn('id', array_column($receipts, 'id'))
-                ->get(),
-            201
-        );
+                ->get();
+
+            return $this->success(
+                ReelReceiptResource::collection($loadedReceipts),
+                'Bulk reel receipts created successfully.',
+                201
+            );
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage(), 500);
+        }
     }
 
     public function show($id)
     {
         $receipt = ReelReceipt::with('reel.paperQuality', 'reel.supplier')->findOrFail($id);
-        return response()->json($receipt);
+        return $this->success(new ReelReceiptResource($receipt));
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, UpdateReelReceiptAction $action)
     {
-        return DB::transaction(function () use ($request, $id) {
+        try {
             $receipt = ReelReceipt::with('reel')->findOrFail($id);
-            $reel = $receipt->reel;
-
-            // Update receipt fields
+            
             $receiptFields = ['receiving_date', 'received_by', 'gsm', 'bursting_strength', 'rate_per_kg', 'qc_status', 'remarks'];
             $receiptData = $request->only($receiptFields);
-            $receipt->update($receiptData);
-
-            // Update reel fields if provided
+            
             $reelFields = ['paper_quality_id', 'supplier_id', 'reel_size'];
             $reelData = $request->only($reelFields);
-            if (!empty($reelData)) {
-                $reel->update($reelData);
-            }
+            
+            $originalWeight = $request->has('reel_weight') ? (float) $request->reel_weight : null;
 
-            // Update reel weight if provided
-            if ($request->has('reel_weight')) {
-                $reel->original_weight = (float) $request->reel_weight;
-                $reel->save();
-            }
+            $updatedReceipt = $action->execute($receipt, $receiptData, $reelData, $originalWeight);
 
-            // Always sync balance and status after any potential change
-            $reel->syncBalance();
-
-            return response()->json($receipt->load('reel.paperQuality', 'reel.supplier'));
-        });
+            return $this->success(
+                new ReelReceiptResource($updatedReceipt),
+                'Reel receipt updated successfully.'
+            );
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage(), 500);
+        }
     }
 
-    public function destroy($id)
+    public function destroy($id, DeleteReelReceiptAction $action)
     {
-        $receipt = ReelReceipt::with('reel')->findOrFail($id);
-
-        return DB::transaction(function () use ($receipt) {
-            $reel = $receipt->reel;
-
-            if ($reel && ($reel->issues()->exists() || $reel->returns()->exists())) {
-                return response()->json([
-                    'error' => 'Cannot delete this receipt because the associated reel has issue or return records.'
-                ], 400);
-            }
-
-            $receipt->delete();
-
-            if ($reel && !$reel->receipts()->exists()) {
-                $reel->delete();
-            }
-
-            return response()->json(['message' => 'Receipt deleted successfully.']);
-        });
+        try {
+            $receipt = ReelReceipt::with('reel')->findOrFail($id);
+            $action->execute($receipt);
+            
+            return $this->success(null, 'Receipt deleted successfully.');
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage(), 400);
+        }
     }
 }
