@@ -278,15 +278,17 @@ export default {
         const jc = this.activeJobCards.find(j => j.id === this.form.job_card_id);
         if (jc) {
           this.form.customer_id = jc.customer_id;
-          this.onCustomerChange();
+          this.onCustomerChange(false);
           this.form.product_id = jc.fg_product_id;
           this.form.job_number = jc.job_card_no;
           this.onProductChange();
         }
       }
     },
-    onCustomerChange() {
-      this.form.product_id = '';
+    onCustomerChange(resetProduct = true) {
+      if (resetProduct !== false) {
+        this.form.product_id = '';
+      }
       if (this.form.customer_id) {
         axios.get(`/api/products/by-customer/${this.form.customer_id}`).then(r => { this.filteredProducts = r.data; });
       } else { this.filteredProducts = []; }
@@ -346,7 +348,7 @@ export default {
     },
     editReceipt(r) {
       this.form = { id: r.id, date: r.date?.split('T')[0], customer_id: r.customer_id, product_id: r.product_id, job_card_id: r.job_card_id || '', job_number: r.job_number, production_date: r.production_date?.split('T')[0], quantity_produced: r.quantity_produced, carton_price: r.carton_price, wastage: r.wastage, remarks: r.remarks };
-      this.onCustomerChange();
+      this.onCustomerChange(false);
       this.editing = true; this.showForm = true;
     },
     deleteReceipt(r) {

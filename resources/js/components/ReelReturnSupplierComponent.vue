@@ -456,7 +456,7 @@ export default {
       axios
         .get(`/api/fetch-reel-return/${encodeURIComponent(normalized)}`)
         .then((response) => {
-          this.setReelContext(response.data);
+          this.setReelContext(response.data.data);
           if (this.reel && this.reel.balance_weight !== undefined) {
             this.formData.remaining_weight = Number(this.reel.balance_weight);
           }

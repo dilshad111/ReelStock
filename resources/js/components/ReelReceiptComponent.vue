@@ -45,14 +45,6 @@
                   <label>Reel received by</label>
                   <input v-model="bulkData.common.received_by" type="text" class="form-control" required>
                 </div>
-                <div class="mb-3">
-                  <label>P.O. Number</label>
-                  <input v-model="bulkData.common.po_number" type="text" class="form-control" placeholder="Purchase Order #">
-                </div>
-                <div class="mb-3">
-                  <label>GRN Number</label>
-                  <input v-model="bulkData.common.grn_number" type="text" class="form-control" placeholder="GRN #">
-                </div>
               </div>
               <div class="col-md-6">
                 <h6>Quality Details (Shared)</h6>

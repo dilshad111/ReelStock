@@ -12,7 +12,7 @@
         <h5>Issue Reel</h5>
         <form @submit.prevent="saveIssue()">
           <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-8">
               <div class="mb-3">
                 <label>Reel No.</label>
                 <input v-model="formData.reel_no" type="text" class="form-control" required @blur="fetchReel" :disabled="isEditing">
@@ -51,7 +51,7 @@
                 </div>
               </div>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
               <div class="mb-3">
                 <label>Issue Date</label>
                 <input v-model="formData.issue_date" type="date" class="form-control" required>
@@ -293,7 +293,7 @@ export default {
       if (normalizedReelNo) {
         this.formData.reel_no = normalizedReelNo;
         axios.get(`/api/fetch-reel/${encodeURIComponent(normalizedReelNo)}`).then(response => {
-          this.reel = response.data;
+          this.reel = response.data.data;
           const balance = parseFloat(this.reel.balance_weight) || 0;
           this.formData.quantity_issued = balance;
           this.formData.return_to_stock_weight = 0;

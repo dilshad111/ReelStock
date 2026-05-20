@@ -8,7 +8,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "Production and Rm module added"
+git commit -m "Reel Issue Error resolved"
 
 echo.
 echo Pushing to origin main...
