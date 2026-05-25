@@ -330,7 +330,7 @@ export default {
         return this.isLoading;
     },
     filteredReturns() {
-      let result = this.returns;
+      let result = this.returns.filter(item => item.returned_to === 'supplier');
       if (this.returnSearch) {
         const term = this.returnSearch.trim().toLowerCase();
         result = result.filter((item) => item?.reel?.reel_no?.toLowerCase().includes(term));
@@ -355,7 +355,8 @@ export default {
       return this.returnEntries.reduce((total, entry) => total + (Number(entry.remaining_weight) || 0), 0);
     },
     uniqueChallanNumbers() {
-      const challans = [...new Set(this.returns.map(item => item.challan_no).filter(Boolean))];
+      const supplierReturns = this.returns.filter(item => item.returned_to === 'supplier');
+      const challans = [...new Set(supplierReturns.map(item => item.challan_no).filter(Boolean))];
       return challans.sort();
     },
   },
@@ -379,7 +380,8 @@ export default {
       saveReturnStore: 'saveReturn',
       updateReturnStore: 'updateReturn',
       deleteReturnStore: 'deleteReturn',
-      setupRealtimeListener: 'setupRealtimeListener'
+      setupRealtimeListener: 'setupRealtimeListener',
+      setFilters: 'setFilters'
     }),
     ensureAuthHeader() {
       const token = localStorage.getItem('token');
@@ -423,7 +425,7 @@ export default {
       }
     },
     fetchReturns() {
-        this.fetchReturnsStore();
+        this.setFilters({ returned_to: 'supplier' });
     },
     fetchSuppliers() {
       axios
@@ -456,15 +458,37 @@ export default {
       axios
         .get(`/api/fetch-reel-return/${encodeURIComponent(normalized)}`)
         .then((response) => {
-          this.setReelContext(response.data.data);
+          const reelData = response.data.data;
+          
+          if (reelData.status === 'returned_to_supplier') {
+            alert('This reel has already been returned to the supplier.');
+            this.reel = null;
+            this.latestReceipt = null;
+            return;
+          }
+          if (parseFloat(reelData.balance_weight) <= 0) {
+            alert('This reel is already fully used.');
+            this.reel = null;
+            this.latestReceipt = null;
+            return;
+          }
+          if (!reelData.already_in_stock) {
+            alert('This reel is currently issued to production and not returned to stock.');
+            this.reel = null;
+            this.latestReceipt = null;
+            return;
+          }
+
+          this.setReelContext(reelData);
           if (this.reel && this.reel.balance_weight !== undefined) {
             this.formData.remaining_weight = Number(this.reel.balance_weight);
           }
         })
-        .catch(() => {
+        .catch((error) => {
           this.reel = null;
           this.latestReceipt = null;
-          alert('Reel not found or invalid.');
+          const message = error.response?.data?.error || error.response?.data?.message || 'Reel not found or invalid.';
+          alert(message);
         });
     },
     setReelContext(reelData) {
@@ -537,6 +561,10 @@ export default {
     addEntryToBatch() {
       const payload = this.buildPayload();
       if (!this.validatePayload(payload)) {
+        return;
+      }
+      if (this.returnEntries.some(entry => entry.reel_no === payload.reel_no)) {
+        alert('This reel is already in the pending return list.');
         return;
       }
       if (!this.currentBatchChallanNo) {

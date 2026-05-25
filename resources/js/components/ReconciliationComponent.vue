@@ -322,3 +322,118 @@ export default {
     overflow-y: auto;
 }
 </style>
+
+<!-- Non-scoped dark mode overrides for Stock Reconciliation -->
+<style>
+/* ── Reconciliation: Alert Info Box (the invisible text) ── */
+[data-theme="dark"] .reconciliation-container .alert-info {
+    background-color: rgba(99, 102, 241, 0.12) !important;
+    border-color: rgba(99, 102, 241, 0.25) !important;
+    color: #cbd5e1 !important;
+}
+[data-theme="dark"] .reconciliation-container .alert-info strong {
+    color: #e2e8f0 !important;
+}
+[data-theme="dark"] .reconciliation-container .alert-info ul li {
+    color: #94a3b8 !important;
+}
+[data-theme="dark"] .reconciliation-container .alert-info i {
+    color: #818cf8 !important;
+}
+
+/* ── Reconciliation: Main Card & Header ── */
+[data-theme="dark"] .reconciliation-container > .card {
+    background-color: rgba(30, 41, 59, 0.95) !important;
+    border: 1px solid #334155 !important;
+}
+[data-theme="dark"] .reconciliation-container > .card > .card-header.bg-primary {
+    background: linear-gradient(135deg, #6366f1, #a78bfa) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+[data-theme="dark"] .reconciliation-container > .card > .card-body {
+    background-color: transparent !important;
+}
+
+/* ── Reconciliation: Inner Cards (Check Discrepancies / Run Reconciliation) ── */
+[data-theme="dark"] .reconciliation-container .card .card-body .card {
+    background-color: rgba(30, 41, 59, 0.7) !important;
+    border-color: #475569 !important;
+}
+[data-theme="dark"] .reconciliation-container .card .card-body .card.border-warning {
+    border-color: rgba(245, 158, 11, 0.4) !important;
+}
+[data-theme="dark"] .reconciliation-container .card .card-body .card.border-success {
+    border-color: rgba(16, 185, 129, 0.4) !important;
+}
+[data-theme="dark"] .reconciliation-container .card-title {
+    color: #f1f5f9 !important;
+}
+[data-theme="dark"] .reconciliation-container .card-body .text-muted {
+    color: #94a3b8 !important;
+}
+
+/* ── Reconciliation: Discrepancies Card ── */
+[data-theme="dark"] .reconciliation-container .bg-warning {
+    background-color: rgba(245, 158, 11, 0.85) !important;
+}
+[data-theme="dark"] .reconciliation-container .bg-warning.text-dark,
+[data-theme="dark"] .reconciliation-container .bg-warning h5 {
+    color: #1e293b !important;
+}
+
+/* ── Reconciliation: Results Card ── */
+[data-theme="dark"] .reconciliation-container .bg-success {
+    background-color: rgba(16, 185, 129, 0.85) !important;
+}
+
+/* ── Reconciliation: Summary Stat Boxes ── */
+[data-theme="dark"] .reconciliation-container .p-3.border.rounded {
+    background-color: rgba(30, 41, 59, 0.6) !important;
+    border-color: #475569 !important;
+}
+[data-theme="dark"] .reconciliation-container .p-3.border.rounded small.text-muted {
+    color: #94a3b8 !important;
+}
+
+/* ── Reconciliation: Tables ── */
+[data-theme="dark"] .reconciliation-container .table {
+    --bs-table-bg: transparent !important;
+    --bs-table-color: #e2e8f0 !important;
+    --bs-table-striped-bg: rgba(51, 65, 85, 0.3) !important;
+    --bs-table-striped-color: #e2e8f0 !important;
+    --bs-table-hover-bg: rgba(99, 102, 241, 0.08) !important;
+    --bs-table-hover-color: #e2e8f0 !important;
+    --bs-table-border-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+[data-theme="dark"] .reconciliation-container .table thead th {
+    background-color: #1e293b !important;
+    color: #94a3b8 !important;
+    border-bottom: 2px solid #334155 !important;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 12px;
+}
+[data-theme="dark"] .reconciliation-container .table td {
+    border-color: rgba(51, 65, 85, 0.5) !important;
+    color: #cbd5e1 !important;
+}
+[data-theme="dark"] .reconciliation-container .table td strong {
+    color: #f1f5f9 !important;
+}
+
+/* ── Reconciliation: History Card ── */
+[data-theme="dark"] .reconciliation-container .card .card-header:not(.bg-primary):not(.bg-warning):not(.bg-success) {
+    background-color: rgba(30, 41, 59, 0.8) !important;
+    border-bottom: 1px solid #334155 !important;
+    color: #e2e8f0 !important;
+}
+[data-theme="dark"] .reconciliation-container .card .card-header h5 {
+    color: #f1f5f9 !important;
+}
+
+/* ── Reconciliation: Empty State ── */
+[data-theme="dark"] .reconciliation-container .text-center.text-muted {
+    color: #64748b !important;
+}
+</style>

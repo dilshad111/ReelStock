@@ -17,7 +17,7 @@
 
             <div v-if="!viewHistory">
                 <el-form :model="mainForm" label-position="top" :rules="mainRules" ref="mainFormRef">
-                    <div class="row bg-light p-3 rounded mb-4 border">
+                    <div class="row main-form-row p-3 rounded mb-4 border">
                         <div class="col-md-4">
                             <el-form-item label="Transporter Name" prop="transporter_id">
                                 <el-select v-model="mainForm.transporter_id" placeholder="Select Transporter" class="w-100" @change="onTransporterChange" filterable>
@@ -27,7 +27,7 @@
                         </div>
                         <div class="col-md-3">
                             <el-form-item label="Billing Date" prop="bill_date">
-                                <el-date-picker v-model="mainForm.bill_date" type="date" placeholder="Date" class="w-100" format="DD/MM/YYYY" value-format="YYYY-MM-DD" />
+                                <input v-model="mainForm.bill_date" type="date" class="form-control" required />
                             </el-form-item>
                         </div>
                         <div class="col-md-5">
@@ -44,9 +44,9 @@
                                 {{ scope.$index + 1 }}
                             </template>
                         </el-table-column>
-                        <el-table-column label="Date" width="130">
+                        <el-table-column label="Date" width="160">
                             <template #default="scope">
-                                <el-date-picker v-model="scope.row.entry_date" type="date" placeholder="Date" size="small" class="w-100" format="DD/MM/YYYY" value-format="YYYY-MM-DD" />
+                                <input v-model="scope.row.entry_date" type="date" class="form-control form-control-sm w-100" required />
                             </template>
                         </el-table-column>
                         <el-table-column label="Customer" min-width="180">
@@ -70,12 +70,12 @@
                                 </el-select>
                             </template>
                         </el-table-column>
-                        <el-table-column label="DC #" width="100">
+                        <el-table-column label="DC #" width="110">
                             <template #default="scope">
                                 <el-input v-model="scope.row.dc_number" placeholder="DC #" size="small" />
                             </template>
                         </el-table-column>
-                        <el-table-column label="Slip #" width="100">
+                        <el-table-column label="Slip #" width="110">
                             <template #default="scope">
                                 <el-input v-model="scope.row.slip_no" placeholder="Slip #" size="small" />
                             </template>
@@ -91,7 +91,7 @@
                                 </div>
                             </template>
                         </el-table-column>
-                        <el-table-column label="Amount (Rs.)" width="120">
+                        <el-table-column label="Amount (Rs.)" width="130">
                             <template #default="scope">
                                 <el-input-number v-model="scope.row.amount" :min="0" :controls="false" size="small" class="w-100 amount-input" />
                             </template>
@@ -1008,6 +1008,86 @@ const printHistory = () => {
 </script>
 
 <style scoped>
+/* Compact styling for inputs in entry table */
+.entry-table :deep(.el-input__wrapper) {
+    height: 28px !important;
+    padding: 0 8px !important;
+}
+.entry-table :deep(.el-input__inner) {
+    font-size: 13px !important;
+    height: 28px !important;
+    line-height: 28px !important;
+}
+
+/* Vertically center all elements in the table rows */
+.entry-table :deep(.el-table__cell) {
+    vertical-align: middle !important;
+}
+
+/* Light mode styles for native datepicker inputs to match Element Plus */
+input[type="date"] {
+    background-color: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    border-radius: 4px !important;
+    padding: 0 8px !important;
+    font-size: 13px !important;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none !important;
+}
+input[type="date"]:focus {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+}
+
+/* Height and spacing for native date picker in table row */
+.entry-table input[type="date"] {
+    height: 28px !important;
+    line-height: 28px !important;
+}
+
+/* Form Header Row Styling */
+.main-form-row {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0 !important;
+}
+
+/* Header row elements unified height of 36px */
+.main-form-row :deep(.el-input__wrapper) {
+    height: 36px !important;
+}
+.main-form-row input[type="date"] {
+    height: 36px !important;
+    padding: 0 12px !important;
+    font-size: 14px !important;
+    line-height: 36px !important;
+}
+
+/* Dark Mode specific overrides for native date element (which has scoped attributes) */
+[data-theme="dark"] input[type="date"] {
+    color-scheme: dark !important;
+    background-color: #1e293b !important;
+    border: 1px solid #475569 !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] input[type="date"]:focus {
+    border-color: #818cf8 !important;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.25) !important;
+}
+
+[data-theme="dark"] .amount-text {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .amount-input :deep(input) {
+    color: #34d399 !important; /* Brighter emerald green for stunning dark contrast */
+}
+
+[data-theme="dark"] .grand-total-text {
+    color: #818cf8 !important; /* Indigo glow in dark mode */
+}
+
 .cartage-billing {
     padding: 20px;
     font-family: 'Montserrat', sans-serif;
@@ -1303,5 +1383,59 @@ const printHistory = () => {
         size: A4 portrait;
         margin: 0;
     }
+}
+</style>
+
+<style>
+/* Non-scoped styles for theme-specific overrides on Element Plus inputs and components in Cartage Billing */
+[data-theme="dark"] .cartage-billing .main-form-row {
+    background-color: rgba(15, 23, 42, 0.4) !important;
+    border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .cartage-billing .entry-table .el-table__header th {
+    background-color: #1e293b !important;
+    color: #cbd5e1 !important;
+    border-bottom: 2px solid #334155 !important;
+}
+
+[data-theme="dark"] .cartage-billing .entry-table .el-table__row td {
+    color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .cartage-billing .entry-table .el-table__row:hover td {
+    background-color: rgba(99, 102, 241, 0.08) !important;
+}
+
+[data-theme="dark"] .cartage-billing .entry-table .sub-row {
+    background-color: rgba(30, 41, 59, 0.3) !important;
+}
+
+[data-theme="dark"] .cartage-billing .el-input__wrapper {
+    background-color: #1e293b !important;
+    border: 1px solid #475569 !important;
+    box-shadow: none !important;
+}
+
+[data-theme="dark"] .cartage-billing .el-input__wrapper.is-focus {
+    border-color: #818cf8 !important;
+    box-shadow: 0 0 10px rgba(129, 140, 248, 0.25) !important;
+}
+
+[data-theme="dark"] .cartage-billing .el-input__inner {
+    color: #e2e8f0 !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+[data-theme="dark"] .cartage-billing .el-select .el-input__inner {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+[data-theme="dark"] .cartage-billing .el-form-item__label {
+    color: #cbd5e1 !important;
 }
 </style>

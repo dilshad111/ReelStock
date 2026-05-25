@@ -41,7 +41,7 @@
           style="width: 100%" 
           v-loading="loading"
           class="modern-table"
-          :header-cell-style="{backgroundColor: '#f8fafc', color: '#475569', fontWeight: '800', fontSize: '13px', textTransform: 'uppercase'}"
+          :header-cell-style="headerCellStyle"
         >
           <el-table-column label="System Module" min-width="250">
             <template #default="scope">
@@ -235,8 +235,25 @@ export default {
       saving: false
     };
   },
+  computed: {
+    isDarkMode() {
+      return document.documentElement.getAttribute('data-theme') === 'dark';
+    },
+    headerCellStyle() {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      return isDark
+        ? { backgroundColor: '#1e293b', color: '#94a3b8', fontWeight: '800', fontSize: '13px', textTransform: 'uppercase', borderBottom: '1px solid #334155' }
+        : { backgroundColor: '#f8fafc', color: '#475569', fontWeight: '800', fontSize: '13px', textTransform: 'uppercase' };
+    }
+  },
   mounted() {
     this.loadUsers();
+    // Watch for theme changes to reactively update the header style
+    this._themeObserver = new MutationObserver(() => { this.$forceUpdate(); });
+    this._themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  },
+  beforeUnmount() {
+    if (this._themeObserver) this._themeObserver.disconnect();
   },
   methods: {
     loadUsers() {
@@ -421,10 +438,6 @@ export default {
     transition: background-color 0.2s;
 }
 
-.modern-table :deep(.el-table__row:hover) {
-    background-color: #f8fafc !important;
-}
-
 .custom-checkbox :deep(.el-checkbox__inner) {
     width: 20px;
     height: 20px;
@@ -481,5 +494,146 @@ export default {
     display: flex;
     align-items: center;
     font-size: 14px;
+}
+</style>
+
+<!-- Non-scoped dark mode overrides for User Rights Management -->
+<style>
+/* ── User Rights: Dark Mode Container ── */
+[data-theme="dark"] .user-rights-management {
+    background-color: #0f172a !important;
+}
+
+/* ── User Rights: Card Body ── */
+[data-theme="dark"] .user-rights-management .professional-card {
+    background-color: rgba(30, 41, 59, 0.95) !important;
+    border: 1px solid #334155 !important;
+}
+[data-theme="dark"] .user-rights-management .el-card__body {
+    background-color: transparent !important;
+}
+
+/* ── User Rights: Gradient Card Header ── */
+[data-theme="dark"] .user-rights-management .professional-card .el-card__header {
+    background: linear-gradient(135deg, #6366f1, #a78bfa) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+[data-theme="dark"] .user-rights-management .el-card__header .text-slate-800,
+[data-theme="dark"] .user-rights-management .el-card__header .fw-800 {
+    color: #ffffff !important;
+}
+[data-theme="dark"] .user-rights-management .el-card__header .text-muted {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+[data-theme="dark"] .user-rights-management .el-card__header .text-primary {
+    color: #ffffff !important;
+}
+
+/* ── User Rights: User Banner ── */
+[data-theme="dark"] .user-rights-management .user-banner {
+    background-color: rgba(51, 65, 85, 0.5) !important;
+    border-color: #475569 !important;
+}
+[data-theme="dark"] .user-rights-management .user-banner h5 {
+    color: #f1f5f9 !important;
+}
+[data-theme="dark"] .user-rights-management .user-banner .text-muted {
+    color: #94a3b8 !important;
+}
+[data-theme="dark"] .user-rights-management .user-banner .text-primary {
+    color: #818cf8 !important;
+}
+
+/* ── User Rights: Table Core ── */
+[data-theme="dark"] .user-rights-management .el-table {
+    background-color: transparent !important;
+    color: #e2e8f0 !important;
+    --el-table-border-color: #334155 !important;
+}
+[data-theme="dark"] .user-rights-management .el-table__inner-wrapper {
+    background-color: transparent !important;
+}
+[data-theme="dark"] .user-rights-management .el-table tr {
+    background-color: transparent !important;
+}
+[data-theme="dark"] .user-rights-management .el-table th.el-table__cell {
+    background-color: #1e293b !important;
+    color: #94a3b8 !important;
+    border-bottom: 1px solid #334155 !important;
+}
+[data-theme="dark"] .user-rights-management .el-table td.el-table__cell {
+    border-bottom: 1px solid rgba(51, 65, 85, 0.5) !important;
+}
+
+/* ── User Rights: Table Hover ── */
+[data-theme="dark"] .user-rights-management .el-table__body tr:hover > td.el-table__cell {
+    background-color: rgba(99, 102, 241, 0.08) !important;
+}
+
+/* ── User Rights: Category Header Rows ── */
+[data-theme="dark"] .user-rights-management .category-header {
+    background: rgba(99, 102, 241, 0.15) !important;
+    color: #818cf8 !important;
+}
+[data-theme="dark"] .user-rights-management .el-table__row:has(.category-header) > td {
+    background-color: rgba(30, 41, 59, 0.8) !important;
+}
+
+/* ── User Rights: Module Names & Icons ── */
+[data-theme="dark"] .user-rights-management .module-name-cell .text-slate-700,
+[data-theme="dark"] .user-rights-management .module-name-cell span {
+    color: #cbd5e1 !important;
+}
+[data-theme="dark"] .user-rights-management .module-name-cell .text-muted {
+    color: #64748b !important;
+}
+
+/* ── User Rights: Checkboxes ── */
+[data-theme="dark"] .user-rights-management .el-checkbox__inner {
+    background-color: #1e293b !important;
+    border-color: #475569 !important;
+}
+[data-theme="dark"] .user-rights-management .el-checkbox__input.is-checked .el-checkbox__inner {
+    background-color: #6366f1 !important;
+    border-color: #6366f1 !important;
+}
+[data-theme="dark"] .user-rights-management .danger-check .el-checkbox__input.is-checked .el-checkbox__inner {
+    background-color: #ef4444 !important;
+    border-color: #ef4444 !important;
+}
+
+/* ── User Rights: Small Label Text ── */
+[data-theme="dark"] .user-rights-management .small-label {
+    color: #64748b !important;
+}
+
+/* ── User Rights: N/A Tags ── */
+[data-theme="dark"] .user-rights-management .el-tag--info {
+    background-color: rgba(71, 85, 105, 0.3) !important;
+    border-color: #475569 !important;
+    color: #64748b !important;
+}
+
+/* ── User Rights: Empty State ── */
+[data-theme="dark"] .user-rights-management .empty-state h5 {
+    color: #64748b !important;
+}
+[data-theme="dark"] .user-rights-management .empty-state .text-muted {
+    color: #475569 !important;
+}
+
+/* ── User Rights: Loading Overlay ── */
+[data-theme="dark"] .user-rights-management .el-loading-mask {
+    background-color: rgba(15, 23, 42, 0.8) !important;
+}
+[data-theme="dark"] .user-rights-management .el-loading-text {
+    color: #94a3b8 !important;
+}
+
+/* ── User Rights: Table Border Lines ── */
+[data-theme="dark"] .user-rights-management .el-table__inner-wrapper::before,
+[data-theme="dark"] .user-rights-management .el-table__inner-wrapper::after,
+[data-theme="dark"] .user-rights-management .el-table::before {
+    background-color: #334155 !important;
 }
 </style>

@@ -159,6 +159,17 @@ class ReelReturnController extends Controller
 
         $reel->setAttribute('has_issue_history', $hasIssueHistory);
         $reel->setAttribute('already_in_stock', $alreadyInStock);
+
+        if ($reel->status === 'returned_to_supplier') {
+            return $this->error('This reel has already been returned to the supplier.', 400);
+        }
+        if ($reel->balance_weight <= 0) {
+            return $this->error('This reel is already fully used (0 kg balance).', 400);
+        }
+        if (!$alreadyInStock) {
+            return $this->error('This reel is currently issued to production and not returned to stock.', 400);
+        }
+
         return $this->success($reel);
     }
 }

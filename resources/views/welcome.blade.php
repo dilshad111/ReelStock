@@ -127,9 +127,9 @@
             --card-bg: #ffffff;
             --border-color: #dee2e6;
         }
-
         /* Dark Theme */
         [data-theme="dark"] {
+            color-scheme: dark !important;
             --primary-color: #818cf8;
             --secondary-color: #94a3b8;
             --success-color: #34d399;
@@ -144,6 +144,24 @@
             --card-bg: #1e293b;
             --border-color: #334155;
             --menu-text-color: #e2e8f0;
+            /* Element Plus Dark Theme Overrides */
+            --el-border-color: #334155 !important;
+            --el-border-color-light: #334155 !important;
+            --el-border-color-lighter: #1e293b !important;
+            --el-border-color-extra-light: #1e293b !important;
+            --el-table-border-color: #334155 !important;
+            --el-table-border: 1px solid #334155 !important;
+            --el-fill-color-blank: #1e293b !important;
+            --el-bg-color-overlay: #1e293b !important;
+            --el-text-color-primary: #e2e8f0 !important;
+            --el-text-color-regular: #cbd5e1 !important;
+            --el-text-color-secondary: #94a3b8 !important;
+            --el-text-color-placeholder: #475569 !important;
+
+            /* Additional Legibility overrides for UI contrast */
+            --el-bg-color: #1e293b !important;
+            --el-bg-color-page: #0f172a !important;
+            --el-fill-color-light: #334155 !important;
         }
 
         [data-theme="dark"] body {
@@ -189,21 +207,38 @@
         }
 
         /* Dark - Form Inputs */
-        [data-theme="dark"] .el-input__inner,
+        [data-theme="dark"] .el-input__wrapper,
         [data-theme="dark"] .el-textarea__inner,
         [data-theme="dark"] .form-control,
-        [data-theme="dark"] .form-select {
+        [data-theme="dark"] .form-select,
+        [data-theme="dark"] .el-select__wrapper,
+        [data-theme="dark"] .el-select-v2__wrapper {
             background-color: #1e293b !important;
-            border-color: #475569 !important;
+            border: 1px solid #475569 !important;
+            box-shadow: none !important;
             color: #e2e8f0 !important;
         }
-        [data-theme="dark"] .el-input__inner:focus,
+        [data-theme="dark"] .el-input__inner {
+            background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            color: #e2e8f0 !important;
+        }
+        [data-theme="dark"] .el-input__wrapper.is-focus,
         [data-theme="dark"] .el-textarea__inner:focus,
         [data-theme="dark"] .form-control:focus,
-        [data-theme="dark"] .form-select:focus {
+        [data-theme="dark"] .form-select:focus,
+        [data-theme="dark"] .el-select__wrapper.is-focus,
+        [data-theme="dark"] .el-select-v2__wrapper.is-focus {
             background-color: #1e293b !important;
             border-color: #818cf8 !important;
             box-shadow: 0 0 10px rgba(129, 140, 248, 0.3) !important;
+            color: #f1f5f9 !important;
+        }
+        [data-theme="dark"] .el-input__inner:focus {
+            background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
             color: #f1f5f9 !important;
         }
         [data-theme="dark"] .form-control::placeholder {
@@ -215,16 +250,6 @@
         }
         [data-theme="dark"] .form-floating > label {
             color: #94a3b8 !important;
-        }
-
-        /* Dark - Element Plus Input Wrappers */
-        [data-theme="dark"] .el-input__wrapper,
-        [data-theme="dark"] .el-textarea__inner {
-            background-color: #1e293b !important;
-            box-shadow: 0 0 0 1px #475569 inset !important;
-        }
-        [data-theme="dark"] .el-input__wrapper.is-focus {
-            box-shadow: 0 0 0 1px #818cf8 inset !important;
         }
 
         /* Dark - Tables */
@@ -239,9 +264,23 @@
             background-color: #1e293b !important;
             color: #e2e8f0 !important;
         }
-        [data-theme="dark"] .table-secondary {
+        [data-theme="dark"] .table-secondary,
+        [data-theme="dark"] .table-secondary td,
+        [data-theme="dark"] .table-secondary th {
             --bs-table-bg: #334155 !important;
-            color: #e2e8f0 !important;
+            --bs-table-color: #f1f5f9 !important;
+            background-color: #334155 !important;
+            box-shadow: inset 0 0 0 9999px #334155 !important;
+            color: #f1f5f9 !important;
+        }
+        [data-theme="dark"] .table-info,
+        [data-theme="dark"] .table-info td,
+        [data-theme="dark"] .table-info th {
+            --bs-table-bg: rgba(99, 102, 241, 0.15) !important;
+            --bs-table-color: #a5b4fc !important;
+            background-color: rgba(99, 102, 241, 0.15) !important;
+            box-shadow: inset 0 0 0 9999px rgba(99, 102, 241, 0.15) !important;
+            color: #a5b4fc !important;
         }
         [data-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > * {
             --bs-table-bg-type: rgba(255, 255, 255, 0.03) !important;
@@ -259,8 +298,13 @@
         [data-theme="dark"] .table-bordered {
             border-color: #334155 !important;
         }
-        [data-theme="dark"] .table-light {
+        [data-theme="dark"] .table-light,
+        [data-theme="dark"] .table-light td,
+        [data-theme="dark"] .table-light th {
             --bs-table-bg: #1e293b !important;
+            --bs-table-color: #e2e8f0 !important;
+            background-color: #1e293b !important;
+            box-shadow: inset 0 0 0 9999px #1e293b !important;
             color: #e2e8f0 !important;
         }
         [data-theme="dark"] .el-table th.el-table__cell {
@@ -333,6 +377,18 @@
         }
         [data-theme="dark"] .text-primary {
             color: #818cf8 !important;
+        }
+        [data-theme="dark"] .text-success {
+            color: #34d399 !important;
+        }
+        [data-theme="dark"] .text-danger {
+            color: #f87171 !important;
+        }
+        [data-theme="dark"] .text-warning {
+            color: #fbbf24 !important;
+        }
+        [data-theme="dark"] .text-info {
+            color: #22d3ee !important;
         }
         [data-theme="dark"] .fw-bold,
         [data-theme="dark"] .fw-semibold {
@@ -454,7 +510,17 @@
         [data-theme="dark"] .dashboard-container,
         [data-theme="dark"] .transport-dashboard,
         [data-theme="dark"] .fg-dashboard,
-        [data-theme="dark"] .rm-dashboard {
+        [data-theme="dark"] .rm-dashboard,
+        [data-theme="dark"] .customer-management,
+        [data-theme="dark"] .transporter-management,
+        [data-theme="dark"] .vehicle-management,
+        [data-theme="dark"] .vehicle-type-management,
+        [data-theme="dark"] .cartage-rate-management,
+        [data-theme="dark"] .cartage-increment-management,
+        [data-theme="dark"] .cartage-increment-history,
+        [data-theme="dark"] .cartage-management,
+        [data-theme="dark"] .cartage-billing-container,
+        [data-theme="dark"] .cartage-report-container {
             background-color: #0f172a !important;
         }
 
@@ -720,6 +786,95 @@
             background-color: #1e293b !important;
             color: #e2e8f0 !important;
             border-color: #475569 !important;
+        }
+
+        /* Unified Sleek styling overrides for all Management grids in Dark Mode */
+        [data-theme="dark"] .customer-management .text-slate-800,
+        [data-theme="dark"] .transporter-management .text-slate-800,
+        [data-theme="dark"] .vehicle-management .text-slate-800,
+        [data-theme="dark"] .vehicle-type-management .text-slate-800,
+        [data-theme="dark"] .cartage-rate-management .text-slate-800,
+        [data-theme="dark"] .customer-management .text-slate-700,
+        [data-theme="dark"] .transporter-management .text-slate-700,
+        [data-theme="dark"] .vehicle-management .text-slate-700,
+        [data-theme="dark"] .vehicle-type-management .text-slate-700,
+        [data-theme="dark"] .cartage-rate-management .text-slate-700 {
+            color: #e2e8f0 !important;
+        }
+
+        [data-theme="dark"] .customer-management .page-subtitle,
+        [data-theme="dark"] .customer-management .text-muted,
+        [data-theme="dark"] .transporter-management .text-muted,
+        [data-theme="dark"] .vehicle-management .text-muted,
+        [data-theme="dark"] .vehicle-type-management .text-muted,
+        [data-theme="dark"] .cartage-rate-management .text-muted {
+            color: #94a3b8 !important;
+        }
+
+        [data-theme="dark"] .customer-management .modern-table .el-table__row:hover td,
+        [data-theme="dark"] .transporter-management .modern-table .el-table__row:hover td,
+        [data-theme="dark"] .vehicle-management .modern-table .el-table__row:hover td,
+        [data-theme="dark"] .vehicle-type-management .modern-table .el-table__row:hover td,
+        [data-theme="dark"] .cartage-rate-management .modern-table .el-table__row:hover td,
+        [data-theme="dark"] .customer-management .el-table__row:hover td,
+        [data-theme="dark"] .transporter-management .el-table__row:hover td,
+        [data-theme="dark"] .vehicle-management .el-table__row:hover td,
+        [data-theme="dark"] .vehicle-type-management .el-table__row:hover td,
+        [data-theme="dark"] .cartage-rate-management .el-table__row:hover td {
+            background-color: rgba(99, 102, 241, 0.08) !important;
+        }
+
+        [data-theme="dark"] .professional-dialog .el-dialog {
+            background: rgba(30, 41, 59, 0.98) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5) !important;
+        }
+        [data-theme="dark"] .professional-dialog .el-dialog__header {
+            border-bottom: 1px solid #334155 !important;
+            background: transparent !important;
+        }
+        [data-theme="dark"] .professional-dialog .el-dialog__title {
+            color: #f1f5f9 !important;
+            font-weight: 800 !important;
+        }
+        [data-theme="dark"] .professional-dialog .el-form-item__label {
+            color: #cbd5e1 !important;
+        }
+
+        [data-theme="dark"] .logo-uploader {
+            background: rgba(30, 41, 59, 0.5) !important;
+            border: 1px dashed rgba(255, 255, 255, 0.15) !important;
+        }
+        [data-theme="dark"] .logo-uploader:hover {
+            border-color: #818cf8 !important;
+        }
+        [data-theme="dark"] .logo-uploader-icon {
+            color: #64748b !important;
+        }
+
+        [data-theme="dark"] .dialog-cancel-btn,
+        [data-theme="dark"] .professional-dialog .el-button:not(.el-button--primary) {
+            background-color: #334155 !important;
+            border-color: #475569 !important;
+            color: #e2e8f0 !important;
+        }
+        [data-theme="dark"] .dialog-cancel-btn:hover,
+        [data-theme="dark"] .professional-dialog .el-button:not(.el-button--primary):hover {
+            background-color: #475569 !important;
+            color: #f1f5f9 !important;
+        }
+
+        /* Ensure subtle modern table cell borders in dark mode globally */
+        [data-theme="dark"] .el-table__inner-wrapper::after,
+        [data-theme="dark"] .el-table::before {
+            background-color: #334155 !important;
+        }
+        [data-theme="dark"] .el-table__header-wrapper {
+            border-bottom-color: #334155 !important;
+        }
+        [data-theme="dark"] .el-divider__text {
+            background-color: #1e293b !important;
+            color: #cbd5e1 !important;
         }
         /* Blue Theme */
         [data-theme="blue"] {
@@ -1311,43 +1466,59 @@
         }
 
         /* 2. Modern Inputs & Textboxes */
-        .el-input__inner, .el-textarea__inner, .form-control {
+        .el-input__wrapper, .el-textarea__inner, .form-control, .form-select, .el-select__wrapper, .el-select-v2__wrapper {
             border-radius: 8px !important;
             border: 1px solid rgba(0, 0, 0, 0.08) !important;
             background-color: rgba(255, 255, 255, 0.8) !important;
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            padding: 8px 14px !important;
+            box-shadow: none !important;
             color: #1e293b !important;
+        }
+        
+        /* Ensure inner input is clean and has no double border or duplicate background */
+        .el-input__inner {
+            border: none !important;
+            background-color: transparent !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            color: inherit !important;
+            font-weight: 500 !important;
+            height: 100% !important;
+        }
+        
+        .el-textarea__inner, .form-control {
+            padding: 8px 14px !important;
             font-weight: 500 !important;
         }
         
         /* Focus state with glowing borders */
-        .el-input__inner:focus, .el-textarea__inner:focus, .form-control:focus,
-        .el-input.is-focus .el-input__wrapper, .el-select .el-input.is-focus .el-input__wrapper {
+        .el-input__wrapper.is-focus, .el-textarea__inner:focus, .form-control:focus, .form-select:focus,
+        .el-input.is-focus .el-input__wrapper, .el-select .el-input.is-focus .el-input__wrapper,
+        .el-select__wrapper.is-focus, .el-select-v2__wrapper.is-focus {
             border-color: #3b82f6 !important;
             box-shadow: 0 0 10px rgba(59, 130, 246, 0.4) !important;
             background-color: #ffffff !important;
         }
 
         /* Color code forms by section wrappers (Finished Goods Indigo-to-Violet Theme Format) */
-        .rm-item-management .el-input__inner:focus, 
-        .rm-receipt-management .el-input__inner:focus, 
-        .rm-consumption-management .el-input__inner:focus,
-        .rm-report-management .el-input__inner:focus,
-        .uom-management-container .el-input__inner:focus,
-        .job-card-management .el-input__inner:focus, 
-        .production-dashboard-management .el-input__inner:focus {
+        .rm-item-management .el-input__wrapper.is-focus, 
+        .rm-receipt-management .el-input__wrapper.is-focus, 
+        .rm-consumption-management .el-input__wrapper.is-focus,
+        .rm-report-management .el-input__wrapper.is-focus,
+        .uom-management-container .el-input__wrapper.is-focus,
+        .job-card-management .el-input__wrapper.is-focus, 
+        .production-dashboard-management .el-input__wrapper.is-focus {
             border-color: #818cf8 !important;
             box-shadow: 0 0 10px rgba(129, 140, 248, 0.4) !important;
         }
 
-        .cartage-management .el-input__inner:focus, 
-        .finance-management .el-input__inner:focus {
+        .cartage-management .el-input__wrapper.is-focus, 
+        .finance-management .el-input__wrapper.is-focus {
             border-color: #10b981 !important;
             box-shadow: 0 0 10px rgba(16, 185, 129, 0.4) !important;
         }
 
-        .stock-alert-management .el-input__inner:focus {
+        .stock-alert-management .el-input__wrapper.is-focus {
             border-color: #f59e0b !important;
             box-shadow: 0 0 10px rgba(245, 158, 11, 0.4) !important;
         }
@@ -1423,7 +1594,15 @@
         .rm-report-management .el-card__header,
         .uom-management-container .professional-card .el-card__header,
         .job-card-management .el-card__header, 
-        .production-dashboard-management .el-card__header {
+        .production-dashboard-management .el-card__header,
+        .customer-management .professional-card .el-card__header,
+        .transporter-management .professional-card .el-card__header,
+        .vehicle-management .professional-card .el-card__header,
+        .vehicle-type-management .professional-card .el-card__header,
+        .cartage-rate-management .professional-card .el-card__header,
+        .cartage-increment-management .professional-card .el-card__header,
+        .cartage-increment-history .professional-card .el-card__header,
+        .user-rights-management .professional-card .el-card__header {
             background: linear-gradient(135deg, #6366f1, #a78bfa) !important;
             color: #ffffff !important;
         }
@@ -1537,6 +1716,40 @@
                 opacity: 1;
                 transform: scale(1) translateY(0);
             }
+        }
+
+        /* DatePicker dark mode panels */
+        [data-theme="dark"] .el-picker-panel,
+        [data-theme="dark"] .el-date-picker {
+            background-color: #1e293b !important;
+            border: 1px solid #334155 !important;
+            color: #e2e8f0 !important;
+        }
+        [data-theme="dark"] .el-date-table th {
+            border-bottom: 1px solid #334155 !important;
+            color: #94a3b8 !important;
+        }
+        [data-theme="dark"] .el-date-table td.next-month,
+        [data-theme="dark"] .el-date-table td.prev-month {
+            color: #475569 !important;
+        }
+        [data-theme="dark"] .el-date-table td.normal {
+            color: #cbd5e1 !important;
+        }
+        [data-theme="dark"] .el-date-table td.today .el-date-table-cell__text {
+            color: #818cf8 !important;
+            font-weight: bold;
+        }
+        [data-theme="dark"] .el-date-table td.current:not(.disabled) .el-date-table-cell__text {
+            background-color: #818cf8 !important;
+            color: #fff !important;
+        }
+        [data-theme="dark"] .el-picker-panel__footer {
+            background-color: #1e293b !important;
+            border-top: 1px solid #334155 !important;
+        }
+        [data-theme="dark"] .el-date-picker__header-label {
+            color: #e2e8f0 !important;
         }
     </style>
     @vite(['resources/js/app.js'])

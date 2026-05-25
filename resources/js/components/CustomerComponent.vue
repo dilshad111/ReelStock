@@ -5,7 +5,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center py-2">
                     <div class="header-title">
                         <span class="fs-4 fw-800 text-slate-800"><i class="bi bi-people-fill me-2 text-primary"></i>Customer Management</span>
-                        <p class="text-muted mb-0 small">Manage your client base and shipping locations</p>
+                        <p class="text-muted mb-0 small page-subtitle">Manage your client base and shipping locations</p>
                     </div>
                     <el-button type="primary" size="large" @click="openCustomerDialog()" class="add-btn shadow-sm">
                         <i class="bi bi-plus-lg me-2"></i> Add Customer
@@ -18,19 +18,18 @@
                 style="width: 100%" 
                 v-loading="loading" 
                 class="modern-table"
-                :header-cell-style="{backgroundColor: '#f8fafc', color: '#475569', fontWeight: '800', fontSize: '13px', textTransform: 'uppercase'}"
             >
                 <el-table-column prop="name" label="Customer Name" sortable min-width="180">
                     <template #default="scope">
-                        <div class="fw-bold text-slate-700">{{ scope.row.name }}</div>
+                        <div class="fw-bold text-slate-700 customer-name-cell">{{ scope.row.name }}</div>
                     </template>
                 </el-table-column>
                 <el-table-column prop="email" label="Contact Details" min-width="180">
                     <template #default="scope">
-                        <div class="d-flex flex-column">
-                            <span v-if="scope.row.email" class="small"><i class="bi bi-envelope me-1 opacity-50"></i>{{ scope.row.email }}</span>
-                            <span v-if="scope.row.phone" class="small"><i class="bi bi-telephone me-1 opacity-50"></i>{{ scope.row.phone }}</span>
-                            <span v-if="!scope.row.email && !scope.row.phone" class="text-muted small">No contact info</span>
+                        <div class="d-flex flex-column contact-details">
+                            <span v-if="scope.row.email" class="small contact-item"><i class="bi bi-envelope me-1 opacity-70"></i>{{ scope.row.email }}</span>
+                            <span v-if="scope.row.phone" class="small contact-item"><i class="bi bi-telephone me-1 opacity-70"></i>{{ scope.row.phone }}</span>
+                            <span v-if="!scope.row.email && !scope.row.phone" class="text-muted small contact-muted">No contact info</span>
                         </div>
                     </template>
                 </el-table-column>
@@ -40,20 +39,20 @@
                             <el-tag v-for="addr in scope.row.shipping_addresses" :key="addr.id" size="small" class="custom-tag" effect="plain" round>
                                 {{ addr.address_name }}
                             </el-tag>
-                            <span v-if="!scope.row.shipping_addresses.length" class="text-muted x-small italic">No addresses defined</span>
+                            <span v-if="!scope.row.shipping_addresses.length" class="text-muted x-small italic location-muted">No addresses defined</span>
                         </div>
                     </template>
                 </el-table-column>
                 <el-table-column label="Actions" width="120" align="center">
                     <template #default="scope">
-                        <el-button-group>
-                            <el-button size="small" @click="openCustomerDialog(scope.row)" type="primary" plain title="Edit">
+                        <div class="action-btn-group">
+                            <el-button size="small" @click="openCustomerDialog(scope.row)" type="primary" class="action-btn edit-btn" title="Edit">
                                 <i class="bi bi-pencil-square"></i>
                             </el-button>
-                            <el-button size="small" type="danger" @click="deleteCustomer(scope.row)" plain title="Delete">
+                            <el-button size="small" type="danger" @click="deleteCustomer(scope.row)" class="action-btn delete-btn" title="Delete">
                                 <i class="bi bi-trash"></i>
                             </el-button>
-                        </el-button-group>
+                        </div>
                     </template>
                 </el-table-column>
             </el-table>
@@ -86,29 +85,29 @@
                 </el-form-item>
 
                 <el-divider content-position="left">
-                    <span class="fw-bold"><i class="bi bi-geo-alt-fill me-1 text-primary"></i> Shipping Addresses</span>
+                    <span class="fw-bold divider-text"><i class="bi bi-geo-alt-fill me-1 text-primary"></i> Shipping Addresses</span>
                 </el-divider>
 
                 <div v-for="(addr, index) in customerForm.shipping_addresses" :key="index" class="address-row animate__animated animate__fadeIn">
                     <div class="d-flex gap-2 align-items-center">
                         <el-input v-model="addr.address_name" placeholder="Name" size="small" style="flex: 0 0 150px" />
                         <el-input v-model="addr.full_address" placeholder="Complete physical address" size="small" style="flex: 1" />
-                        <el-button type="danger" circle size="small" @click="removeAddressField(index)" v-if="customerForm.shipping_addresses.length > 1">
+                        <el-button type="danger" circle size="small" @click="removeAddressField(index)" v-if="customerForm.shipping_addresses.length > 1" class="remove-addr-btn">
                             <i class="bi bi-trash"></i>
                         </el-button>
                     </div>
                 </div>
 
                 <div class="text-center mt-2">
-                    <el-button type="primary" plain circle @click="addAddressField">
+                    <el-button type="primary" plain circle @click="addAddressField" class="add-addr-btn">
                         <i class="bi bi-plus-lg"></i>
                     </el-button>
-                    <div class="small text-muted mt-1">Add Shipping Address</div>
+                    <div class="small text-muted mt-1 add-addr-label">Add Shipping Address</div>
                 </div>
             </el-form>
             <template #footer>
                 <div class="dialog-footer">
-                    <el-button @click="customerDialogVisible = false">Cancel</el-button>
+                    <el-button @click="customerDialogVisible = false" class="dialog-cancel-btn">Cancel</el-button>
                     <el-button type="primary" @click="saveCustomer" :loading="submitting" class="save-btn">Save Changes</el-button>
                 </div>
             </template>
@@ -235,41 +234,105 @@ onMounted(fetchCustomers);
     background-color: #f1f5f9;
     min-height: calc(100vh - 120px);
     font-family: 'Montserrat', sans-serif;
+    transition: background-color 0.3s ease;
 }
+
 .professional-card {
     border: none;
     border-radius: 16px;
     overflow: hidden;
 }
-.header-title h5 {
-    margin-bottom: 2px;
-}
+
 .fw-800 { font-weight: 800; }
 .text-slate-800 { color: #1e293b; }
 .text-slate-700 { color: #334155; }
+.page-subtitle { color: #64748b !important; }
+
+/* Custom Sleek ghost action buttons to bypass harsh global gradients */
+.action-btn-group {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.modern-table :deep(.action-btn) {
+    background: transparent !important;
+    border: 1px solid currentColor !important;
+    box-shadow: none !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 6px !important;
+}
+
+.modern-table :deep(.action-btn.edit-btn) {
+    color: #4f46e5 !important;
+    border-color: rgba(79, 70, 229, 0.25) !important;
+}
+
+.modern-table :deep(.action-btn.edit-btn:hover) {
+    background-color: #4f46e5 !important;
+    border-color: #4f46e5 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3) !important;
+}
+
+.modern-table :deep(.action-btn.delete-btn) {
+    color: #ef4444 !important;
+    border-color: rgba(239, 68, 68, 0.25) !important;
+}
+
+.modern-table :deep(.action-btn.delete-btn:hover) {
+    background-color: #ef4444 !important;
+    border-color: #ef4444 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Explicit Table Overrides */
+.modern-table :deep(th.el-table__cell) {
+    background-color: #f8fafc !important;
+    color: #475569 !important;
+    font-weight: 800 !important;
+    font-size: 13px !important;
+    text-transform: uppercase !important;
+    border-bottom: 2px solid #e2e8f0 !important;
+    letter-spacing: 0.5px;
+}
 
 .modern-table :deep(.el-table__row) {
-    transition: background-color 0.2s;
+    transition: background-color 0.2s ease;
 }
-.modern-table :deep(.el-table__row:hover) {
+
+.modern-table :deep(.el-table__row:hover td) {
     background-color: #f8fafc !important;
 }
+
 .modern-table :deep(td) {
-    padding: 12px 0;
+    padding: 12px 0 !important;
 }
 
-.custom-tag {
-    border-color: #e2e8f0;
-    color: #475569;
-    background-color: #ffffff;
-    font-weight: 600;
-    margin: 2px;
-}
-
+/* High contrast plain tags */
 .location-badges {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
+}
+
+.modern-table :deep(.custom-tag) {
+    border-color: #e2e8f0 !important;
+    color: #475569 !important;
+    background-color: #ffffff !important;
+    font-weight: 600 !important;
+    margin: 2px !important;
+}
+
+.contact-details {
+    color: #334155;
 }
 
 .address-row {
@@ -280,6 +343,7 @@ onMounted(fetchCustomers);
     margin-bottom: 12px;
     transition: all 0.3s;
 }
+
 .address-row:hover {
     border-color: #3b82f6;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -288,26 +352,159 @@ onMounted(fetchCustomers);
 .professional-dialog :deep(.el-dialog) {
     border-radius: 16px;
 }
+
 .professional-dialog :deep(.el-dialog__header) {
     padding: 24px;
     margin-right: 0;
     border-bottom: 1px solid #f1f5f9;
 }
+
 .professional-dialog :deep(.el-dialog__title) {
     font-weight: 800;
     color: #1e293b;
     font-size: 20px;
 }
+
 .professional-dialog :deep(.el-form-item__label) {
     font-weight: 700;
     color: #475569;
     margin-bottom: 8px;
 }
+
 .save-btn {
     border-radius: 8px;
     font-weight: 700;
     padding: 12px 32px;
 }
+
 .italic { font-style: italic; }
 .x-small { font-size: 11px; }
+
+/* ==========================================
+   DARK MODE OVERRIDES (PREMIUM STYLING)
+   ========================================== */
+[data-theme="dark"] .customer-management {
+    background-color: #0f172a !important;
+}
+
+[data-theme="dark"] .text-slate-800 {
+    color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .text-slate-700 {
+    color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .page-subtitle {
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .contact-details {
+    color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .contact-muted {
+    color: #64748b !important;
+}
+
+[data-theme="dark"] .location-muted {
+    color: #64748b !important;
+}
+
+/* Explicit custom tags in Dark Mode for perfect readability */
+[data-theme="dark"] .modern-table :deep(.custom-tag) {
+    background-color: rgba(99, 102, 241, 0.12) !important;
+    border-color: rgba(129, 140, 248, 0.3) !important;
+    color: #a5b4fc !important;
+}
+
+/* Glowing Sleek action buttons in Dark Mode */
+[data-theme="dark"] .modern-table :deep(.action-btn.edit-btn) {
+    color: #a5b4fc !important;
+    border-color: rgba(165, 180, 252, 0.25) !important;
+}
+
+[data-theme="dark"] .modern-table :deep(.action-btn.edit-btn:hover) {
+    background-color: #818cf8 !important;
+    border-color: #818cf8 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(129, 140, 248, 0.4) !important;
+}
+
+[data-theme="dark"] .modern-table :deep(.action-btn.delete-btn) {
+    color: #f87171 !important;
+    border-color: rgba(248, 113, 113, 0.25) !important;
+}
+
+[data-theme="dark"] .modern-table :deep(.action-btn.delete-btn:hover) {
+    background-color: #ef4444 !important;
+    border-color: #ef4444 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4) !important;
+}
+
+/* Table Header explicit overriding in Dark Mode */
+[data-theme="dark"] .modern-table :deep(th.el-table__cell) {
+    background-color: #1e293b !important;
+    color: #cbd5e1 !important;
+    border-bottom: 2px solid #334155 !important;
+}
+
+[data-theme="dark"] .modern-table :deep(.el-table__row:hover td) {
+    background-color: rgba(99, 102, 241, 0.08) !important;
+}
+
+[data-theme="dark"] .address-row {
+    background: rgba(30, 41, 59, 0.5) !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .address-row:hover {
+    border-color: #818cf8 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+[data-theme="dark"] .professional-dialog :deep(.el-dialog__header) {
+    border-bottom: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .professional-dialog :deep(.el-dialog__title) {
+    color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .professional-dialog :deep(.el-form-item__label) {
+    color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .divider-text {
+    color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .add-addr-label {
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .add-addr-btn {
+    background-color: rgba(99, 102, 241, 0.15) !important;
+    color: #a5b4fc !important;
+    border: 1px solid rgba(129, 140, 248, 0.3) !important;
+}
+
+[data-theme="dark"] .add-addr-btn:hover {
+    background-color: #818cf8 !important;
+    color: #ffffff !important;
+    border-color: #818cf8 !important;
+}
+
+[data-theme="dark"] .dialog-cancel-btn {
+    background-color: #334155 !important;
+    border-color: #475569 !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .dialog-cancel-btn:hover {
+    background-color: #475569 !important;
+    color: #f1f5f9 !important;
+}
 </style>
+
