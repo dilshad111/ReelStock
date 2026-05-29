@@ -7,7 +7,9 @@ class JobCardDTO
     public function __construct(
         public readonly string $job_card_no,
         public readonly int $customer_id,
-        public readonly int $fg_product_id,
+        public readonly ?int $fg_product_id,
+        public readonly ?string $item_code,
+        public readonly ?string $item_name,
         public readonly float $planned_qty,
         public readonly string $planned_date,
         public readonly ?string $delivery_date = null,
@@ -47,7 +49,9 @@ class JobCardDTO
         return new self(
             job_card_no: $request->job_card_no ?? '',
             customer_id: (int)$request->customer_id,
-            fg_product_id: (int)$request->fg_product_id,
+            fg_product_id: $request->fg_product_id ? (int)$request->fg_product_id : null,
+            item_code: $request->item_code,
+            item_name: $request->item_name,
             planned_qty: (float)$request->planned_qty,
             planned_date: $request->planned_date,
             delivery_date: $request->delivery_date,

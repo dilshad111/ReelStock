@@ -151,7 +151,7 @@
             </div>
           </div>
           <div class="col-md-2">
-            <button @click="resetFilters" class="btn btn-sm btn-outline-secondary w-100">Clear Filters</button>
+            <button @click="resetFilters" class="btn btn-sm btn-clear-filters w-100">Clear Filters</button>
           </div>
         </div>
 

@@ -8,7 +8,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "Reel Issue Error resolved"
+git commit -m "QC Inspection Print"
 
 echo.
 echo Pushing to origin main...

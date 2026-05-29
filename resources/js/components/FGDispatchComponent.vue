@@ -202,7 +202,7 @@
             </select>
           </div>
           <div class="col-md-1">
-            <button @click="clearFilters" class="btn btn-outline-danger border-0 w-100" title="Clear Filters"><i class="bi bi-eraser-fill"></i></button>
+            <button @click="clearFilters" class="btn btn-clear-filters border-0 w-100" title="Clear Filters"><i class="bi bi-eraser-fill"></i></button>
           </div>
         </div>
       </div>

@@ -63,7 +63,7 @@
         <input v-model="searchQuery" @input="debouncedFetch" type="text" class="form-control form-control-sm" placeholder="Code or Name...">
       </div>
       <div class="col-md-2">
-        <button @click="filterCustomerId = ''; searchQuery = ''; fetchProducts()" class="btn btn-sm btn-outline-secondary w-100">Clear</button>
+        <button @click="filterCustomerId = ''; searchQuery = ''; fetchProducts()" class="btn btn-sm btn-clear-filters w-100">Clear</button>
       </div>
     </div>
 

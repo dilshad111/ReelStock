@@ -108,7 +108,7 @@
             <input v-model="filters.date_to" type="date" class="form-control form-control-sm" @change="fetchIssues(1)">
           </div>
           <div class="col-md-3 col-sm-6 text-end">
-            <button @click="clearFilters" class="btn btn-sm btn-outline-secondary w-100">Clear Filters</button>
+            <button @click="clearFilters" class="btn btn-sm btn-clear-filters w-100">Clear Filters</button>
           </div>
         </div>
         <div class="d-flex justify-content-between align-items-center mb-2">

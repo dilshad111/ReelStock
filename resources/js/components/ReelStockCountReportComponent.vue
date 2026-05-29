@@ -47,7 +47,7 @@
           </div>
           <div class="col-md-2 d-flex gap-1">
             <button @click="fetchReport" class="btn btn-primary btn-sm px-3">Apply Filter</button>
-            <button @click="clearFilters" class="btn btn-outline-secondary btn-sm">Clear</button>
+            <button @click="clearFilters" class="btn btn-clear-filters btn-sm">Clear</button>
           </div>
         </div>
       </div>

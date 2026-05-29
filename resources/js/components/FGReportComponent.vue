@@ -34,7 +34,7 @@
           </div>
           <div class="col-md-2"><label class="small text-muted">From</label><input v-model="stockFilters.date_from" type="date" class="form-control form-control-sm" @change="fetchStockReport"></div>
           <div class="col-md-2"><label class="small text-muted">To</label><input v-model="stockFilters.date_to" type="date" class="form-control form-control-sm" @change="fetchStockReport"></div>
-          <div class="col-md-1"><button @click="stockFilters = { customer_id: '', date_from: '', date_to: '', item_search: '' }; fetchStockReport()" class="btn btn-sm btn-outline-secondary w-100">Clear</button></div>
+          <div class="col-md-1"><button @click="stockFilters = { customer_id: '', date_from: '', date_to: '', item_search: '' }; fetchStockReport()" class="btn btn-sm btn-clear-filters w-100">Clear</button></div>
         </div>
 
         <div v-for="group in stockData" :key="group.customer" class="card mb-3 shadow-sm">
@@ -73,7 +73,7 @@
           <div class="col-md-2"><label class="small text-muted">Job #</label><input v-model="jobFilters.job_number" @input="debouncedJobFetch" type="text" class="form-control form-control-sm" placeholder="Search..."></div>
           <div class="col-md-2"><label class="small text-muted">From</label><input v-model="jobFilters.date_from" type="date" class="form-control form-control-sm" @change="fetchJobReport"></div>
           <div class="col-md-2"><label class="small text-muted">To</label><input v-model="jobFilters.date_to" type="date" class="form-control form-control-sm" @change="fetchJobReport"></div>
-          <div class="col-md-2"><button @click="jobFilters = { customer_id: '', job_number: '', date_from: '', date_to: '' }; fetchJobReport()" class="btn btn-sm btn-outline-secondary w-100">Clear</button></div>
+          <div class="col-md-2"><button @click="jobFilters = { customer_id: '', job_number: '', date_from: '', date_to: '' }; fetchJobReport()" class="btn btn-sm btn-clear-filters w-100">Clear</button></div>
         </div>
 
         <table class="table table-striped table-sm text-nowrap small table-sticky-header">
@@ -103,7 +103,7 @@
             <select v-model="auditFilters.transaction_type" @change="fetchAuditReport" class="form-control form-control-sm"><option value="">All</option><option value="opening">Opening</option><option value="receipt">Receipt</option><option value="dispatch">Dispatch</option><option value="adjustment">Adjustment</option></select></div>
           <div class="col-md-2"><label class="small text-muted">From</label><input v-model="auditFilters.date_from" type="date" class="form-control form-control-sm" @change="fetchAuditReport"></div>
           <div class="col-md-2"><label class="small text-muted">To</label><input v-model="auditFilters.date_to" type="date" class="form-control form-control-sm" @change="fetchAuditReport"></div>
-          <div class="col-md-1"><button @click="auditFilters = { customer_id: '', transaction_type: '', date_from: '', date_to: '', item_search: '' }; fetchAuditReport()" class="btn btn-sm btn-outline-secondary w-100">Clear</button></div>
+          <div class="col-md-1"><button @click="auditFilters = { customer_id: '', transaction_type: '', date_from: '', date_to: '', item_search: '' }; fetchAuditReport()" class="btn btn-sm btn-clear-filters w-100">Clear</button></div>
         </div>
 
         <table class="table table-striped table-sm text-nowrap small table-sticky-header">

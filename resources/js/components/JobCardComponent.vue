@@ -4,17 +4,25 @@
         <div class="d-flex justify-content-between align-items-center mb-4 p-3 glass-header rounded shadow-sm">
             <div>
                 <h2 class="h4 mb-1 fw-bold text-dark">
-                    <i class="bi bi-file-earmark-ruled-fill text-indigo me-2"></i>Manufacturing Specifications &amp; Job Cards
+                    <i class="bi bi-file-earmark-ruled-fill text-indigo me-2"></i>{{ isCreating ? 'New Production Job' : 'Manufacturing Specifications & Job Cards' }}
                 </h2>
-                <p class="small text-muted mb-0">Packaging specifications, ply layer compositions, and real-time corrugation calculation engine.</p>
+                <p class="small text-muted mb-0">{{ isCreating ? 'Complete corrugated carton manufacturing job card.' : 'Packaging specifications, ply layer compositions, and real-time corrugation calculation engine.' }}</p>
             </div>
-            <el-button type="primary" class="btn-indigo shadow-sm" @click="openCreateDialog">
-                <i class="bi bi-plus-circle me-1"></i> Create Spec Job Card
-            </el-button>
+            <div class="job-header-actions">
+                <template v-if="isCreating">
+                    <el-button @click="discardCreateForm">Discard</el-button>
+                    <el-button type="primary" class="btn-indigo" @click="submitCreateForm" :loading="submitting">
+                        <i class="bi bi-check2-circle me-1"></i>Create Job Card
+                    </el-button>
+                </template>
+                <el-button v-else type="primary" class="btn-indigo shadow-sm" @click="openCreateForm">
+                    <i class="bi bi-plus-circle me-1"></i>Create New Job Card
+                </el-button>
+            </div>
         </div>
 
         <!-- Main Glassmorphic Listing Panel -->
-        <div class="glass-card shadow-sm p-4 mb-4">
+        <div v-if="!isCreating" class="glass-card shadow-sm p-4 mb-4">
             <!-- Filter Bar -->
             <div class="row g-3 mb-4 filter-container p-3 rounded border bg-light-soft">
                 <div class="col-md-4">
@@ -37,7 +45,7 @@
                     </el-select>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
-                    <el-button @click="resetFilters" class="w-100"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset</el-button>
+                    <el-button @click="resetFilters" class="w-100 btn-clear-filters"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset</el-button>
                 </div>
             </div>
 
@@ -99,334 +107,472 @@
             </div>
         </div>
 
-        <!-- Create spec Job Card Dialog -->
-        <el-dialog v-model="createDialogVisible" title="Create Packaging Spec Job Card" width="90%" top="30px" destroy-on-close class="glass-dialog">
-            <el-form :model="form" :rules="rules" ref="formRef" label-position="top" class="high-density-form">
-                <el-row :gutter="20">
-                    <!-- Column 1: Basic Info & Dimensions -->
-                    <el-col :lg="10" :md="24">
-                        <div class="form-section p-3 mb-3 border rounded shadow-xs bg-white">
-                            <h4 class="h6 fw-bold border-bottom pb-2 mb-3 text-indigo"><i class="bi bi-info-circle-fill me-1"></i>Basic Specifications</h4>
-                            
-                            <el-row :gutter="10">
-                                <el-col :span="12">
-                                    <el-form-item label="Job Card #" prop="job_card_no">
-                                        <el-input v-model="form.job_card_no" placeholder="Auto-generated" />
-                                    </el-form-item>
-                                </el-col>
-                                <el-col :span="12">
-                                    <el-form-item label="Carton/FEFCO Code" prop="carton_type">
-                                        <el-input v-model="form.carton_type" placeholder="e.g. FEFCO 0201" />
-                                    </el-form-item>
-                                </el-col>
-                            </el-row>
+        <div v-else class="job-create-workspace">
+            <el-form :model="createForm" :rules="createRules" ref="createFormRef" label-position="top" class="job-card-form">
+                <div class="job-form-grid">
+                    <section class="job-form-card span-wide basic-info-card">
+                        <div class="section-heading">
+                            <div>
+                                <h3>Basic Information</h3>
+                                <p>Identity &amp; Dimensions</p>
+                            </div>
+                            <span class="section-index">01</span>
+                        </div>
 
-                            <el-form-item label="Customer" prop="customer_id">
-                                <el-select v-model="form.customer_id" placeholder="Select Customer" class="w-100" filterable @change="onCustomerChange">
-                                    <el-option v-for="c in customers" :key="c.id" :label="c.name" :value="c.id" />
-                                </el-select>
-                            </el-form-item>
-
-                            <el-form-item label="Finished Good Product" prop="fg_product_id">
-                                <el-select v-model="form.fg_product_id" placeholder="Select Product" class="w-100" filterable>
-                                    <el-option v-for="p in filteredProducts" :key="p.id" :label="p.item_name" :value="p.id" />
-                                </el-select>
-                            </el-form-item>
-
-                            <el-row :gutter="10">
-                                <el-col :span="8">
-                                    <el-form-item label="Planned Qty" prop="planned_qty">
-                                        <el-input-number v-model="form.planned_qty" :min="1" class="w-100" :controls="false" />
+                        <div class="basic-info-layout">
+                            <div class="basic-info-fields">
+                                <div class="form-grid two-col">
+                                    <el-form-item label="Customer" prop="customer_id">
+                                        <el-select v-model="createForm.customer_id" placeholder="Select customer" class="w-100" filterable>
+                                            <el-option v-for="customer in customers" :key="customer.id" :label="customer.name" :value="customer.id" />
+                                        </el-select>
                                     </el-form-item>
-                                </el-col>
-                                <el-col :span="8">
-                                    <el-form-item label="Start Date" prop="planned_date">
-                                        <el-date-picker v-model="form.planned_date" type="date" class="w-100" format="DD/MM/YYYY" value-format="YYYY-MM-DD" />
+                                    <el-form-item label="Item Code">
+                                        <el-input v-model="createForm.item_code" placeholder="System Code" />
                                     </el-form-item>
-                                </el-col>
-                                <el-col :span="8">
-                                    <el-form-item label="Delivery Date">
-                                        <el-date-picker v-model="form.delivery_date" type="date" class="w-100" format="DD/MM/YYYY" value-format="YYYY-MM-DD" />
-                                    </el-form-item>
-                                </el-col>
-                            </el-row>
+                                </div>
 
-                            <!-- Size metrics -->
-                            <div class="row g-2 mb-2 p-2 bg-light-soft rounded border">
-                                <div class="col-4">
-                                    <label class="small text-muted fw-bold">Length</label>
-                                    <el-input-number v-model="form.length_mm" :min="0" :precision="1" class="w-100" :controls="false" @input="recalculateSpecs" />
+                                <el-form-item label="Item Name" prop="item_name">
+                                    <el-input v-model="createForm.item_name" placeholder="Name of the carton..." />
+                                </el-form-item>
+
+                                <div class="form-grid two-col align-start">
+                                    <el-form-item label="Carton Type" prop="carton_type_id">
+                                        <el-select v-model="createForm.carton_type_id" placeholder="Select carton type" class="w-100" filterable @change="onCartonTypeChange">
+                                            <el-option v-for="type in cartonTypes" :key="type.id" :label="cartonTypeLabel(type)" :value="type.id" />
+                                        </el-select>
+                                    </el-form-item>
+                                    <div class="carton-preview-panel">
+                                        <span>Carton Preview</span>
+                                        <img v-if="selectedCartonType?.preview_image && !cartonPreviewFailed" :src="selectedCartonType.preview_image" :alt="cartonTypeLabel(selectedCartonType)" @error="cartonPreviewFailed = true">
+                                        <div v-else class="carton-preview-fallback">
+                                            {{ selectedCartonType ? selectedCartonType.standard_code : 'Select Type' }}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-4">
-                                    <label class="small text-muted fw-bold">Width</label>
-                                    <el-input-number v-model="form.width_mm" :min="0" :precision="1" class="w-100" :controls="false" @input="recalculateSpecs" />
+
+                                <div class="form-grid two-col">
+                                    <el-form-item label="Carton Quality">
+                                        <el-radio-group v-model="createForm.carton_quality" class="segmented-control" @change="fetchAllTargetSpeeds">
+                                            <el-radio-button label="normal">Standard</el-radio-button>
+                                            <el-radio-button label="high_quality">Premium</el-radio-button>
+                                        </el-radio-group>
+                                    </el-form-item>
                                 </div>
-                                <div class="col-4">
-                                    <label class="small text-muted fw-bold">Height</label>
-                                    <el-input-number v-model="form.height_mm" :min="0" :precision="1" class="w-100" :controls="false" @input="recalculateSpecs" />
+
+                                <div class="dimension-panel">
+                                    <div class="form-grid four-col">
+                                        <el-form-item label="UOM">
+                                            <el-select v-model="createForm.uom" class="w-100" @change="recalculateSpecs">
+                                                <el-option label="Millimeters" value="mm" />
+                                                <el-option label="Inches" value="inch" />
+                                                <el-option label="Centimeters" value="cm" />
+                                            </el-select>
+                                        </el-form-item>
+                                        <el-form-item label="Length">
+                                            <el-input-number v-model="createForm.length" :min="0" :precision="2" class="w-100" :controls="false" @input="recalculateSpecs" />
+                                        </el-form-item>
+                                        <el-form-item label="Width">
+                                            <el-input-number v-model="createForm.width" :min="0" :precision="2" class="w-100" :controls="false" @input="recalculateSpecs" />
+                                        </el-form-item>
+                                        <el-form-item label="Height">
+                                            <el-input-number v-model="createForm.height" :min="0" :precision="2" class="w-100" :controls="false" @input="recalculateSpecs" />
+                                        </el-form-item>
+                                    </div>
                                 </div>
-                                <div class="col-6 mt-2">
-                                    <label class="small text-muted fw-bold">UOM</label>
-                                    <el-select v-model="form.uom" class="w-100" @change="recalculateSpecs">
-                                        <el-option label="Millimeters (mm)" value="mm" />
-                                        <el-option label="Inches (inch)" value="inch" />
-                                        <el-option label="Centimeters (cm)" value="cm" />
-                                    </el-select>
-                                </div>
-                                <div class="col-6 mt-2">
-                                    <label class="small text-muted fw-bold">Layout Ups (Outs)</label>
-                                    <el-input-number v-model="form.ups" :min="1" class="w-100" :controls="false" @input="recalculateSpecs" />
+
+                                <div class="metrics-strip">
+                                    <div>
+                                        <span>Deckle / Roll Width</span>
+                                        <strong>{{ formatNum(createForm.deckle_size, 2) }}"</strong>
+                                    </div>
+                                    <div>
+                                        <span>Sheet Length</span>
+                                        <strong>{{ formatNum(createForm.sheet_length, 2) }}"</strong>
+                                    </div>
+                                    <div>
+                                        <span>Estimated Net Unit Weight</span>
+                                        <strong>{{ formatNum(createForm.est_unit_weight, 4) }} kg</strong>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </el-col>
 
-                    <!-- Column 2: Corrugation & Dynamic Layers -->
-                    <el-col :lg="14" :md="24">
-                        <div class="form-section p-3 mb-3 border rounded shadow-xs bg-white">
-                            <h4 class="h6 fw-bold border-bottom pb-2 mb-3 text-indigo d-flex justify-content-between align-items-center">
-                                <span><i class="bi bi-layers-half me-1"></i>Structural Configuration &amp; Ply Layers</span>
-                                <el-select v-model="form.pieces_count" size="small" style="width: 130px;" @change="onPiecesCountChange">
-                                    <el-option label="Single Piece" :value="1" />
-                                    <el-option label="2-Piece Box" :value="2" />
-                                    <el-option label="3-Piece Box" :value="3" />
-                                </el-select>
-                            </h4>
-
-                            <!-- Single Piece ply layout selection -->
-                            <div v-if="form.pieces_count === 1">
-                                <div class="d-flex gap-2 mb-3">
-                                    <el-radio-group v-model="selectedPlyStructure" size="small" @change="onPlyCountChange">
-                                        <el-radio-button label="3">3-Ply Structure</el-radio-button>
-                                        <el-radio-button label="5">5-Ply Structure</el-radio-button>
-                                        <el-radio-button label="7">7-Ply Structure</el-radio-button>
-                                    </el-radio-group>
+                            <div class="dieline-panel">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <div>
+                                        <span class="mini-label">Die-line Structure</span>
+                                        <strong>{{ selectedCartonType ? cartonTypeLabel(selectedCartonType) : 'Carton layout preview' }}</strong>
+                                    </div>
+                                    <el-button size="small" type="primary" plain @click="downloadDieLine">
+                                        <i class="bi bi-download me-1"></i>JPEG
+                                    </el-button>
                                 </div>
+                                <div v-if="hasDimensions" class="dieline-canvas" v-html="formDieLineSvg"></div>
+                                <div v-else class="dieline-empty">Enter length, width, and height to preview die-line.</div>
+                            </div>
+                        </div>
+                    </section>
 
-                                <table class="table table-sm table-bordered vertical-align-middle">
+                    <section class="job-form-card span-wide">
+                        <div class="section-heading">
+                            <div>
+                                <h3>Carton Configuration</h3>
+                                <p>Structure &amp; Routing</p>
+                            </div>
+                            <span class="section-index">02</span>
+                        </div>
+
+                        <div class="form-grid four-col">
+                            <el-form-item label="Pieces Count" prop="pieces_count">
+                                <el-select v-model="createForm.pieces_count" class="w-100" @change="onPiecesCountChange">
+                                    <el-option label="Monolithic (1-Piece)" :value="1" />
+                                    <el-option label="Dual Component (2-Pc)" :value="2" />
+                                    <el-option label="Multi-Piece (3+ Pc)" :value="3" />
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item v-if="createForm.pieces_count === 1" label="Deckle Specification (in)">
+                                <el-input-number v-model="createForm.deckle_size" :min="0" :precision="2" class="w-100" :controls="false" />
+                            </el-form-item>
+                            <el-form-item v-if="createForm.pieces_count === 1" label="Cut Length / Sheet Length (in)">
+                                <el-input-number v-model="createForm.sheet_length" :min="0" :precision="2" class="w-100" :controls="false" />
+                            </el-form-item>
+                            <el-form-item v-if="createForm.pieces_count === 1" label="Units Per Sheet (UPS)">
+                                <el-input-number v-model="createForm.ups" :min="1" class="w-100" :controls="false" @input="recalculateSpecs" />
+                            </el-form-item>
+                        </div>
+
+                        <div v-if="createForm.pieces_count === 1">
+                            <div class="form-grid three-col">
+                                <el-form-item label="Corrugation Machine" prop="corrugation_machine_id">
+                                    <el-select v-model="createForm.corrugation_machine_id" placeholder="Select corrugation plant" class="w-100" filterable @change="fetchCorrugationSpeed">
+                                        <el-option v-for="machine in corrugationMachines" :key="machine.id" :label="machineLabel(machine)" :value="machine.id" />
+                                    </el-select>
+                                    <div v-if="createForm.corrugation_speed" class="target-speed">Target: {{ createForm.corrugation_speed }} m/min</div>
+                                </el-form-item>
+                                <el-form-item label="Ply Type" prop="ply_type">
+                                    <el-select v-model="createForm.ply_type" class="w-100" @change="onPlyTypeChange">
+                                        <el-option label="3-Ply" :value="3" />
+                                        <el-option label="5-Ply" :value="5" />
+                                        <el-option label="7-Ply" :value="7" />
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item label="Initial Sizing">
+                                    <el-select v-model="createForm.slitting_creasing" class="w-100">
+                                        <el-option label="Inline Plant Slit" value="Plant Online" />
+                                        <el-option label="Secondary Manual" value="Manual" />
+                                        <el-option label="Precision Die-Cut" value="Die Cutting" />
+                                    </el-select>
+                                </el-form-item>
+                            </div>
+                            <div class="table-wrap">
+                                <table class="construction-table">
                                     <thead>
-                                        <tr class="table-light text-secondary small">
-                                            <th>Ply Layer</th>
-                                            <th>Paper grade / substrate name</th>
-                                            <th style="width: 100px;">GSM</th>
-                                            <th style="width: 110px;">Flute Wave</th>
+                                        <tr>
+                                            <th>Layer</th>
+                                            <th>Paper Construction</th>
+                                            <th>GSM</th>
+                                            <th>Flute Type</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr v-for="(l, i) in form.layers" :key="i">
-                                            <td class="fw-bold small">{{ l.layer_type }}</td>
+                                        <tr v-for="(layer, index) in createForm.layers" :key="`${layer.layer_type}-${index}`">
+                                            <td><strong>{{ layer.layer_type }}</strong></td>
                                             <td>
-                                                <el-input v-model="l.paper_name" placeholder="Kraft / Testliner..." size="small" />
+                                                <el-select v-model="layer.paper_id" placeholder="Select paper" class="w-100" filterable @change="paperId => onPaperChange(layer, paperId)">
+                                                    <el-option v-for="paper in papers" :key="paper.id" :label="paperLabel(paper)" :value="paper.id" />
+                                                </el-select>
                                             </td>
+                                            <td><el-input-number v-model="layer.gsm" :min="0" class="w-100" :controls="false" @input="recalculateSpecs" /></td>
                                             <td>
-                                                <el-input-number v-model="l.gsm" :min="0" class="w-100" size="small" :controls="false" @input="recalculateSpecs" />
-                                            </td>
-                                            <td>
-                                                <el-select v-model="l.flute_profile" size="small" class="w-100" @change="recalculateSpecs">
+                                                <el-select v-model="layer.flute_profile" class="w-100" :disabled="!isFluteLayer(layer)" @change="recalculateSpecs">
+                                                    <el-option label="B-Flute" value="B" />
+                                                    <el-option label="C-Flute" value="C" />
+                                                    <el-option label="E-Flute" value="E" />
                                                     <el-option label="Flat Liner" value="Flat" />
-                                                    <el-option label="B Flute (1.35)" value="B" />
-                                                    <el-option label="C Flute (1.45)" value="C" />
-                                                    <el-option label="E Flute (1.25)" value="E" />
                                                 </el-select>
                                             </td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
-
-                            <!-- Multi Component configuration tab views -->
-                            <div v-else>
-                                <el-tabs v-model="activePieceTab" class="piece-tabs">
-                                    <el-tab-pane v-for="(p, pIndex) in form.pieces" :key="pIndex" :label="p.piece_name" :name="'piece_' + pIndex">
-                                        <div class="row g-2 mb-3 bg-light-soft p-2 rounded border">
-                                            <div class="col-md-3">
-                                                <label class="small text-muted fw-bold">Piece Name</label>
-                                                <el-input v-model="p.piece_name" size="small" />
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label class="small text-muted fw-bold">Length (mm)</label>
-                                                <el-input-number v-model="p.length_mm" :min="0" size="small" class="w-100" :controls="false" @input="recalculateSpecs" />
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label class="small text-muted fw-bold">Width (mm)</label>
-                                                <el-input-number v-model="p.width_mm" :min="0" size="small" class="w-100" :controls="false" @input="recalculateSpecs" />
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label class="small text-muted fw-bold">Height (mm)</label>
-                                                <el-input-number v-model="p.height_mm" :min="0" size="small" class="w-100" :controls="false" @input="recalculateSpecs" />
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="small text-muted fw-bold">Layout Ups</label>
-                                                <el-input-number v-model="p.ups" :min="1" size="small" class="w-100" :controls="false" @input="recalculateSpecs" />
-                                            </div>
-                                        </div>
-
-                                        <table class="table table-sm table-bordered vertical-align-middle">
-                                            <thead>
-                                                <tr class="table-light text-secondary small">
-                                                    <th>Ply</th>
-                                                    <th>Paper grade</th>
-                                                    <th style="width: 90px;">GSM</th>
-                                                    <th style="width: 105px;">Flute</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr v-for="(l, lIndex) in p.layers" :key="lIndex">
-                                                    <td class="fw-bold small">{{ l.layer_type }}</td>
-                                                    <td><el-input v-model="l.paper_name" size="small" /></td>
-                                                    <td><el-input-number v-model="l.gsm" :min="0" size="small" :controls="false" class="w-100" @input="recalculateSpecs" /></td>
-                                                    <td>
-                                                        <el-select v-model="l.flute_profile" size="small" class="w-100" @change="recalculateSpecs">
-                                                            <el-option label="Flat Liner" value="Flat" />
-                                                            <el-option label="B Flute (1.35)" value="B" />
-                                                            <el-option label="C Flute (1.45)" value="C" />
-                                                            <el-option label="E Flute (1.25)" value="E" />
-                                                        </el-select>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </el-tab-pane>
-                                </el-tabs>
-                            </div>
-
-                            <!-- Real-time calculation output displays -->
-                            <div class="row g-2 mt-2 p-3 bg-dark text-white rounded font-mono shadow-xs">
-                                <div class="col-md-4 text-center border-end border-secondary">
-                                    <div class="small text-gray-400">CALCULATED DECKLE</div>
-                                    <div class="fs-5 fw-bold text-success">{{ formatNum(form.deckle_size, 2) }}"</div>
-                                </div>
-                                <div class="col-md-4 text-center border-end border-secondary">
-                                    <div class="small text-gray-400">SHEET LENGTH</div>
-                                    <div class="fs-5 fw-bold text-success">{{ formatNum(form.sheet_length, 2) }}"</div>
-                                </div>
-                                <div class="col-md-4 text-center">
-                                    <div class="small text-gray-400">EST. UNIT WEIGHT</div>
-                                    <div class="fs-5 fw-bold text-warning">{{ formatNum(form.est_unit_weight, 4) }} kg</div>
-                                </div>
-                            </div>
                         </div>
-                    </el-col>
-                </el-row>
 
-                <el-row :gutter="20">
-                    <!-- Column 3: Inks & Printing operations -->
-                    <el-col :md="12">
-                        <div class="form-section p-3 mb-3 border rounded bg-white">
-                            <h4 class="h6 fw-bold border-bottom pb-2 mb-3 text-indigo"><i class="bi bi-palette-fill me-1"></i>Aesthetic &amp; Printing Operations</h4>
-                            
-                            <el-row :gutter="10">
-                                <el-col :span="12">
-                                    <el-form-item label="Printing Process">
-                                        <el-select v-model="form.printing_process" class="w-100">
-                                            <el-option label="Flexographic Printing" value="FLEXOGRAPHIC" />
-                                            <el-option label="Offset Lithography" value="OFFSET" />
-                                            <el-option label="Digital Print" value="DIGITAL" />
+                        <el-tabs v-else v-model="activePieceTab" class="component-tabs" type="border-card">
+                            <el-tab-pane v-for="(piece, pieceIndex) in createForm.pieces" :key="piece.local_id" :label="piece.piece_name || `Component ${pieceIndex + 1}`" :name="`piece_${pieceIndex}`">
+                                <div class="form-grid four-col">
+                                    <el-form-item label="Component Designation">
+                                        <el-input v-model="piece.piece_name" />
+                                    </el-form-item>
+                                    <el-form-item label="Length">
+                                        <el-input-number v-model="piece.length" :min="0" :precision="2" class="w-100" :controls="false" @input="recalculatePieceSpecs(piece)" />
+                                    </el-form-item>
+                                    <el-form-item label="Width">
+                                        <el-input-number v-model="piece.width" :min="0" :precision="2" class="w-100" :controls="false" @input="recalculatePieceSpecs(piece)" />
+                                    </el-form-item>
+                                    <el-form-item label="Height">
+                                        <el-input-number v-model="piece.height" :min="0" :precision="2" class="w-100" :controls="false" @input="recalculatePieceSpecs(piece)" />
+                                    </el-form-item>
+                                    <el-form-item label="Deckle Size">
+                                        <el-input-number v-model="piece.deckle_size" :min="0" :precision="2" class="w-100" :controls="false" />
+                                    </el-form-item>
+                                    <el-form-item label="Sheet Length">
+                                        <el-input-number v-model="piece.sheet_length" :min="0" :precision="2" class="w-100" :controls="false" />
+                                    </el-form-item>
+                                    <el-form-item label="UPS">
+                                        <el-input-number v-model="piece.ups" :min="1" class="w-100" :controls="false" @input="recalculatePieceSpecs(piece)" />
+                                    </el-form-item>
+                                    <el-form-item label="Ply Type">
+                                        <el-select v-model="piece.ply_type" class="w-100" @change="onPiecePlyTypeChange(piece)">
+                                            <el-option label="3-Ply" :value="3" />
+                                            <el-option label="5-Ply" :value="5" />
+                                            <el-option label="7-Ply" :value="7" />
                                         </el-select>
                                     </el-form-item>
-                                </el-col>
-                                <el-col :span="12">
-                                    <el-form-item label="Pasting/Closure closure">
-                                        <el-select v-model="form.pasting_closure" class="w-100">
-                                            <el-option label="Flap Gluing" value="GLUING" />
-                                            <el-option label="Wire Stitching" value="STITCHING" />
-                                            <el-option label="Glue + Stitch Joint" value="GLUE_STITCH" />
+                                    <el-form-item label="Corrugation Machine">
+                                        <el-select v-model="piece.corrugation_machine_id" class="w-100" filterable @change="fetchPieceSpeed(piece, 'corrugation')">
+                                            <el-option v-for="machine in corrugationMachines" :key="machine.id" :label="machineLabel(machine)" :value="machine.id" />
+                                        </el-select>
+                                        <div v-if="piece.corrugation_speed" class="target-speed">Target: {{ piece.corrugation_speed }} m/min</div>
+                                    </el-form-item>
+                                    <el-form-item label="Print Colors">
+                                        <el-select v-model="piece.print_colors" class="w-100" @change="onPieceColorsChange(piece)">
+                                            <el-option label="Un-Printed" :value="0" />
+                                            <el-option v-for="n in 6" :key="n" :label="`${n} Color Printing`" :value="n" />
                                         </el-select>
                                     </el-form-item>
-                                </el-col>
-                            </el-row>
-
-                            <el-row :gutter="10">
-                                <el-col :span="12">
-                                    <el-form-item label="Target Machine Name">
-                                        <el-input v-model="form.machine_name" placeholder="e.g. Flexo-Slotter-01" />
+                                    <el-form-item label="Printing Machine">
+                                        <el-select v-model="piece.printing_machine_id" class="w-100" filterable @change="fetchPieceSpeed(piece, 'printing')">
+                                            <el-option v-for="machine in printingMachines" :key="machine.id" :label="machineLabel(machine)" :value="machine.id" />
+                                        </el-select>
+                                        <div v-if="piece.printing_speed" class="target-speed">Target: {{ piece.printing_speed }} sh/min</div>
                                     </el-form-item>
-                                </el-col>
-                                <el-col :span="12">
-                                    <el-form-item label="Target Speed (PCS/Hour)">
-                                        <el-input-number v-model="form.target_speed" :min="0" class="w-100" :controls="false" />
+                                    <el-form-item label="Finishing">
+                                        <el-select v-model="piece.finishing_protocol" class="w-100">
+                                            <el-option label="Rotary Slotter" value="Rotary Slotter" />
+                                            <el-option label="Flatbed Die-Cut" value="Die Cutting" />
+                                        </el-select>
                                     </el-form-item>
-                                </el-col>
-                            </el-row>
+                                </div>
 
-                            <el-form-item label="Number of Print Colors">
-                                <el-input-number v-model="form.printing_colors_count" :min="0" :max="6" class="w-100" @change="onColorsCountChange" />
+                                <div v-if="piece.print_colors > 0" class="ink-grid">
+                                    <el-select v-for="inkIndex in piece.print_colors" :key="inkIndex" v-model="piece.printing_data.inks[inkIndex - 1]" :placeholder="`Ink ${inkIndex}`" filterable>
+                                        <el-option v-for="ink in printingColors" :key="ink.id" :label="inkLabel(ink)" :value="ink.ink_code">
+                                            <span class="ink-option"><span class="ink-swatch" :style="{ backgroundColor: ink.ink_code }"></span>{{ inkLabel(ink) }}</span>
+                                        </el-option>
+                                    </el-select>
+                                </div>
+
+                                <div v-if="piece.finishing_protocol === 'Die Cutting'" class="form-grid two-col">
+                                    <el-form-item label="Die Cutting Machine">
+                                        <el-select v-model="piece.die_cutting_machine_id" class="w-100" filterable @change="fetchPieceSpeed(piece, 'die')">
+                                            <el-option v-for="machine in dieCuttingMachines" :key="machine.id" :label="machineLabel(machine)" :value="machine.id" />
+                                        </el-select>
+                                        <div v-if="piece.die_cutting_speed" class="target-speed">Target: {{ piece.die_cutting_speed }} sh/min</div>
+                                    </el-form-item>
+                                    <el-form-item label="Die Cutting Scope / Method">
+                                        <el-select v-model="piece.die_cutting_scope" class="w-100">
+                                            <el-option label="Complete Sheet (Whole)" value="sheet_wise" />
+                                            <el-option label="Single Piece Carton (Individual)" value="carton_wise" />
+                                        </el-select>
+                                    </el-form-item>
+                                </div>
+
+                                <div class="table-wrap">
+                                    <table class="construction-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Layer</th>
+                                                <th>Paper Construction</th>
+                                                <th>GSM</th>
+                                                <th>Flute Type</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="(layer, layerIndex) in piece.layers" :key="`${piece.local_id}-${layer.layer_type}-${layerIndex}`">
+                                                <td><strong>{{ layer.layer_type }}</strong></td>
+                                                <td>
+                                                    <el-select v-model="layer.paper_id" placeholder="Select paper" class="w-100" filterable @change="paperId => onPaperChange(layer, paperId, piece)">
+                                                        <el-option v-for="paper in papers" :key="paper.id" :label="paperLabel(paper)" :value="paper.id" />
+                                                    </el-select>
+                                                </td>
+                                                <td><el-input-number v-model="layer.gsm" :min="0" class="w-100" :controls="false" @input="recalculatePieceSpecs(piece)" /></td>
+                                                <td>
+                                                    <el-select v-model="layer.flute_profile" class="w-100" :disabled="!isFluteLayer(layer)" @change="recalculatePieceSpecs(piece)">
+                                                        <el-option label="B-Flute" value="B" />
+                                                        <el-option label="C-Flute" value="C" />
+                                                        <el-option label="E-Flute" value="E" />
+                                                        <el-option label="Flat Liner" value="Flat" />
+                                                    </el-select>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <el-form-item label="Special Instructions">
+                                    <el-input v-model="piece.instructions" type="textarea" :rows="2" placeholder="Component-specific production instruction..." />
+                                </el-form-item>
+                            </el-tab-pane>
+                        </el-tabs>
+                    </section>
+
+                    <section v-if="createForm.pieces_count === 1" class="job-form-card">
+                        <div class="section-heading">
+                            <div>
+                                <h3>Printing &amp; Finishing</h3>
+                                <p>Ink passes, joinery, profile, and final process</p>
+                            </div>
+                            <span class="section-index">03</span>
+                        </div>
+                        <div class="form-grid two-col">
+                            <el-form-item label="Printing Colors">
+                                <el-select v-model="createForm.print_colors" class="w-100" @change="onPrintColorsChange">
+                                    <el-option label="Un-Printed" :value="0" />
+                                    <el-option v-for="n in 6" :key="n" :label="`${n} Color Printing`" :value="n" />
+                                </el-select>
                             </el-form-item>
-
-                            <!-- Pantone visual inputs -->
-                            <div v-if="form.printing_colors_count > 0" class="mb-3 p-3 bg-light-soft rounded border">
-                                <label class="small text-muted fw-bold d-block mb-2">Pantone shade codes matched to color passes</label>
-                                <div class="row g-2">
-                                    <div class="col-md-6" v-for="index in form.printing_colors_count" :key="index">
-                                        <el-input v-model="form.pantone_colors[index-1]" :placeholder="'Color Pass ' + index + ' (e.g. Pantone Red 032)'" size="small" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </el-col>
-
-                    <!-- Column 4: Special Add-ons & instructions -->
-                    <el-col :md="12">
-                        <div class="form-section p-3 mb-3 border rounded bg-white">
-                            <h4 class="h6 fw-bold border-bottom pb-2 mb-3 text-indigo"><i class="bi bi-box-seam me-1"></i>Special Packaging Add-ons</h4>
-                            
-                            <div class="row g-3 mb-3">
-                                <div class="col-md-6">
-                                    <div class="p-2 border rounded d-flex justify-content-between align-items-center bg-light-soft">
-                                        <div>
-                                            <span class="small fw-bold d-block">Inner Honeycomb Cushioning</span>
-                                            <span class="text-muted xs-text">Insert high strength honeycomb blocks</span>
-                                        </div>
-                                        <el-switch v-model="form.special_details.honeycomb" />
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="p-2 border rounded d-flex justify-content-between align-items-center bg-light-soft">
-                                        <div>
-                                            <span class="small fw-bold d-block">Inner Sheet Separators</span>
-                                            <span class="text-muted xs-text">Include divider slots inside standard carton</span>
-                                        </div>
-                                        <el-switch v-model="form.special_details.separators" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Raw materials mapping -->
-                            <div class="section-title mt-3 mb-2 small fw-bold text-secondary text-uppercase border-bottom pb-1">Raw Material Allocation (BOM)</div>
-                            <el-table :data="form.items" border size="small" class="mb-3">
-                                <el-table-column label="Allocated Material Roll/Flute" min-width="250">
-                                    <template #default="scope">
-                                        <el-select v-model="scope.row.rm_item_id" placeholder="Select Material" class="w-100" filterable @change="onRMItemChange(scope.row)">
-                                            <el-option v-for="i in rmItems" :key="i.id" :label="i.name" :value="i.id" />
-                                        </el-select>
-                                    </template>
-                                </el-table-column>
-                                <el-table-column label="Required Qty" width="150">
-                                    <template #default="scope">
-                                        <el-input-number v-model="scope.row.required_qty" :min="0" class="w-100" :controls="false" />
-                                    </template>
-                                </el-table-column>
-                                <el-table-column prop="unit" label="Unit" width="80" />
-                                <el-table-column label="" width="50">
-                                    <template #default="scope">
-                                        <el-button type="danger" size="small" circle @click="removeItemRow(scope.$index)" plain><i class="bi bi-trash"></i></el-button>
-                                    </template>
-                                </el-table-column>
-                            </el-table>
-                            <el-button type="primary" size="small" @click="addItemRow" plain class="mb-3"><i class="bi bi-plus-lg me-1"></i> Allocate Material</el-button>
-
-                            <el-form-item label="Floor Production & Quality Instructions">
-                                <el-input v-model="form.notes" type="textarea" rows="3" placeholder="Enter custom cautions, tolerances, pasting speeds, slotting matrix details..." />
+                            <el-form-item label="Printing Machine">
+                                <el-select v-model="createForm.printing_machine_id" class="w-100" filterable @change="fetchPrintingSpeed">
+                                    <el-option v-for="machine in printingMachines" :key="machine.id" :label="machineLabel(machine)" :value="machine.id" />
+                                </el-select>
+                                <div v-if="createForm.printing_speed" class="target-speed">Target: {{ createForm.printing_speed }} sh/min</div>
                             </el-form-item>
                         </div>
-                    </el-col>
-                </el-row>
+
+                        <div v-if="createForm.print_colors > 0" class="ink-grid mb-3">
+                            <el-select v-for="inkIndex in createForm.print_colors" :key="inkIndex" v-model="createForm.printing_data.inks[inkIndex - 1]" :placeholder="`Ink ${inkIndex}`" filterable>
+                                <el-option v-for="ink in printingColors" :key="ink.id" :label="inkLabel(ink)" :value="ink.ink_code">
+                                    <span class="ink-option"><span class="ink-swatch" :style="{ backgroundColor: ink.ink_code }"></span>{{ inkLabel(ink) }}</span>
+                                </el-option>
+                            </el-select>
+                        </div>
+
+                        <div class="form-grid two-col">
+                            <el-form-item label="Joinery Technique" prop="pasting_type">
+                                <el-select v-model="createForm.pasting_type" class="w-100">
+                                    <el-option label="N/A" value="None" />
+                                    <el-option label="Adhesive Glue" value="Glue" />
+                                    <el-option label="Industrial Staple" value="Staple" />
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="Profile Complexity">
+                                <el-select v-model="createForm.slot_type" class="w-100" @change="fetchAllTargetSpeeds">
+                                    <el-option label="Universal/Simple" value="Simple" />
+                                    <el-option label="Custom/Complex" value="Complex" />
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="Finishing Protocol">
+                                <el-select v-model="createForm.process_type" class="w-100">
+                                    <el-option label="Rotary Slotter" value="Rotary Slotter" />
+                                    <el-option label="Flatbed Die-Cut" value="Die Cutting" />
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item v-if="createForm.process_type === 'Die Cutting'" label="Die Cutting Machine">
+                                <el-select v-model="createForm.die_cutting_machine_id" class="w-100" filterable @change="fetchDieCuttingSpeed">
+                                    <el-option v-for="machine in dieCuttingMachines" :key="machine.id" :label="machineLabel(machine)" :value="machine.id" />
+                                </el-select>
+                                <div v-if="createForm.die_cutting_speed" class="target-speed">Target: {{ createForm.die_cutting_speed }} sh/min</div>
+                            </el-form-item>
+                            <el-form-item v-if="createForm.process_type === 'Die Cutting'" label="Scope / Method">
+                                <el-select v-model="createForm.die_cutting_scope" class="w-100">
+                                    <el-option label="Complete Sheet (Whole)" value="sheet_wise" />
+                                    <el-option label="Single Piece Carton (Individual)" value="carton_wise" />
+                                </el-select>
+                            </el-form-item>
+                        </div>
+                    </section>
+
+                    <section class="job-form-card">
+                        <div class="section-heading">
+                            <div>
+                                <h3>Special Add-ons</h3>
+                                <p>Honeycomb &amp; Separators</p>
+                            </div>
+                            <span class="section-index">04</span>
+                        </div>
+
+                        <div class="addon-toggle">
+                            <div>
+                                <strong>Honeycomb Fitting</strong>
+                                <span>{{ createForm.special_details.honeycomb.enabled ? 'Include' : 'Disabled' }}</span>
+                            </div>
+                            <el-switch v-model="createForm.special_details.honeycomb.enabled" />
+                        </div>
+                        <div v-if="createForm.special_details.honeycomb.enabled" class="form-grid three-col compact-grid">
+                            <el-input-number v-model="createForm.special_details.honeycomb.length" :min="0" :controls="false" placeholder="Length" />
+                            <el-input-number v-model="createForm.special_details.honeycomb.width" :min="0" :controls="false" placeholder="Width" />
+                            <el-input-number v-model="createForm.special_details.honeycomb.height" :min="0" :controls="false" placeholder="Height" />
+                            <el-select v-model="createForm.special_details.honeycomb.unit" placeholder="Unit">
+                                <el-option label="mm" value="mm" />
+                                <el-option label="inch" value="inch" />
+                            </el-select>
+                            <el-input-number v-model="createForm.special_details.honeycomb.holes" :min="0" :controls="false" placeholder="Holes" />
+                            <el-select v-model="createForm.special_details.honeycomb.ply" placeholder="Ply">
+                                <el-option label="3" :value="3" />
+                                <el-option label="5" :value="5" />
+                                <el-option label="7" :value="7" />
+                            </el-select>
+                            <el-input v-model="createForm.special_details.honeycomb.material" placeholder="Material" />
+                            <el-select v-model="createForm.special_details.honeycomb.source" placeholder="Source">
+                                <el-option label="In-House Manufacture" value="inhouse" />
+                                <el-option label="Outsource Purchase" value="outsource" />
+                            </el-select>
+                            <el-input v-if="createForm.special_details.honeycomb.source === 'outsource'" v-model="createForm.special_details.honeycomb.supplier_name" placeholder="Supplier Name" />
+                        </div>
+
+                        <div class="addon-toggle mt-3">
+                            <div>
+                                <strong>Carton Separator</strong>
+                                <span>{{ createForm.special_details.separator.enabled ? 'Include' : 'Disabled' }}</span>
+                            </div>
+                            <el-switch v-model="createForm.special_details.separator.enabled" />
+                        </div>
+                        <div v-if="createForm.special_details.separator.enabled" class="form-grid three-col compact-grid">
+                            <el-input-number v-model="createForm.special_details.separator.length" :min="0" :controls="false" placeholder="Length" />
+                            <el-input-number v-model="createForm.special_details.separator.width" :min="0" :controls="false" placeholder="Width" />
+                            <el-select v-model="createForm.special_details.separator.unit" placeholder="Unit">
+                                <el-option label="mm" value="mm" />
+                                <el-option label="inch" value="inch" />
+                            </el-select>
+                            <el-select v-model="createForm.special_details.separator.ply" placeholder="Ply">
+                                <el-option label="3" :value="3" />
+                                <el-option label="5" :value="5" />
+                                <el-option label="7" :value="7" />
+                            </el-select>
+                            <el-select v-model="createForm.special_details.separator.source" placeholder="Source">
+                                <el-option label="In-House Manufacture" value="inhouse" />
+                                <el-option label="Outsource Purchase" value="outsource" />
+                            </el-select>
+                            <el-input v-if="createForm.special_details.separator.source === 'outsource'" v-model="createForm.special_details.separator.supplier_name" placeholder="Supplier Name" />
+                        </div>
+                    </section>
+
+                    <section class="job-form-card span-wide">
+                        <div class="section-heading">
+                            <div>
+                                <h3>Special Instructions</h3>
+                                <p>Floor Notes &amp; Remarks</p>
+                            </div>
+                            <span class="section-index">05</span>
+                        </div>
+                        <div class="form-grid four-col">
+                            <el-form-item label="Corrugation Special Instructions">
+                                <el-input v-model="createForm.corrugation_instruction" type="textarea" :rows="3" />
+                            </el-form-item>
+                            <el-form-item label="Printing Special Instructions">
+                                <el-input v-model="createForm.printing_instruction" type="textarea" :rows="3" />
+                            </el-form-item>
+                            <el-form-item label="Finishing Special Instructions">
+                                <el-input v-model="createForm.finishing_instruction" type="textarea" :rows="3" />
+                            </el-form-item>
+                            <el-form-item label="General Remarks">
+                                <el-input v-model="createForm.remarks" type="textarea" :rows="3" />
+                            </el-form-item>
+                        </div>
+                    </section>
+                </div>
             </el-form>
-            <template #footer>
-                <el-button @click="createDialogVisible = false">Close Specs</el-button>
-                <el-button type="primary" class="btn-indigo" @click="submitCreateForm" :loading="submitting">Generate Manufacturing Blueprint</el-button>
-            </template>
-        </el-dialog>
+        </div>
 
         <!-- Record daily production popup -->
         <el-dialog v-model="prodDialogVisible" title="Record Production Log" width="500px" destroy-on-close>
@@ -568,21 +714,29 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import axios from 'axios';
 import { ElMessage, ElMessageBox } from 'element-plus';
 
+const defaultCartonTypes = [
+    { id: 1, name: 'Regular Slotted Carton', standard_code: '0201', preview_image: '/images/fefco/0201.png' },
+    { id: 2, name: 'Slotted Carton', standard_code: '0200', preview_image: '/images/fefco/0200.png' },
+    { id: 3, name: 'Folder Type Carton', standard_code: '0427', preview_image: '/images/fefco/0427.png' },
+    { id: 4, name: 'Half Slotted Carton', standard_code: '0201-HSC', preview_image: '/images/fefco/0201-HSC.png' }
+];
+
 const jobCards = ref([]);
 const customers = ref([]);
-const products = ref([]);
-const rmItems = ref([]);
+const cartonTypes = ref([...defaultCartonTypes]);
+const papers = ref([]);
+const printingColors = ref([]);
+const productionMachines = ref([]);
 const loading = ref(false);
 const submitting = ref(false);
-const createDialogVisible = ref(false);
+const isCreating = ref(false);
+const cartonPreviewFailed = ref(false);
 const prodDialogVisible = ref(false);
 const detailsDialogVisible = ref(false);
 const selectedJob = ref(null);
 const selectedJobFull = ref(null);
-const formRef = ref(null);
+const createFormRef = ref(null);
 const prodFormRef = ref(null);
-
-const selectedPlyStructure = ref('3');
 const activePieceTab = ref('piece_0');
 
 const filters = reactive({
@@ -597,43 +751,140 @@ const pagination = reactive({
     total: 0
 });
 
-const form = reactive({
-    job_card_no: '',
+const todayString = () => new Date().toISOString().slice(0, 10);
+
+const makeSpecialDetails = () => ({
+    honeycomb: {
+        enabled: false,
+        length: null,
+        width: null,
+        height: null,
+        unit: 'mm',
+        holes: null,
+        ply: 3,
+        material: '',
+        source: 'inhouse',
+        supplier_name: ''
+    },
+    separator: {
+        enabled: false,
+        length: null,
+        width: null,
+        unit: 'mm',
+        ply: 3,
+        source: 'inhouse',
+        supplier_name: ''
+    }
+});
+
+const layerTemplates = {
+    3: [
+        ['Top Layer', 'Flat'],
+        ['Flute #1', 'B'],
+        ['Inner Layer', 'Flat']
+    ],
+    5: [
+        ['Top Layer', 'Flat'],
+        ['Flute #1', 'B'],
+        ['Middle Layer', 'Flat'],
+        ['Flute #2', 'C'],
+        ['Inner Layer', 'Flat']
+    ],
+    7: [
+        ['Top Layer', 'Flat'],
+        ['Flute #1', 'B'],
+        ['Middle Layer #1', 'Flat'],
+        ['Flute #2', 'C'],
+        ['Middle Layer #2', 'Flat'],
+        ['Flute #3', 'E'],
+        ['Inner Layer', 'Flat']
+    ]
+};
+
+const makeLayer = ([layerType, fluteProfile]) => ({
+    layer_type: layerType,
+    paper_id: null,
+    paper_name: '',
+    gsm: 0,
+    flute_profile: fluteProfile
+});
+
+const layersForPly = (plyType) => (layerTemplates[Number(plyType)] || layerTemplates[3]).map(makeLayer);
+
+const makePiece = (index, source = {}) => ({
+    local_id: `${Date.now()}_${index}_${Math.random().toString(36).slice(2, 7)}`,
+    piece_name: source.piece_name || `Component ${index + 1}`,
+    length: source.length ?? null,
+    width: source.width ?? null,
+    height: source.height ?? null,
+    deckle_size: source.deckle_size ?? 0,
+    sheet_length: source.sheet_length ?? 0,
+    ups: source.ups ?? 1,
+    corrugation_machine_id: null,
+    corrugation_speed: null,
+    ply_type: 3,
+    layers: layersForPly(3),
+    print_colors: 0,
+    printing_machine_id: null,
+    printing_speed: null,
+    printing_data: { inks: [] },
+    finishing_protocol: 'Rotary Slotter',
+    die_cutting_machine_id: null,
+    die_cutting_speed: null,
+    die_cutting_scope: 'sheet_wise',
+    instructions: ''
+});
+
+const makeCreateForm = () => ({
     customer_id: null,
-    fg_product_id: null,
+    item_code: '',
+    item_name: '',
+    carton_type_id: 1,
+    carton_quality: 'normal',
     planned_qty: 1,
-    planned_date: new Date().toISOString().substr(0, 10),
+    planned_date: todayString(),
     delivery_date: null,
-    specifications: '',
-    notes: '',
-    items: [],
-    
-    // Spec fields
-    length_mm: 0,
-    width_mm: 0,
-    height_mm: 0,
     uom: 'mm',
+    length: null,
+    width: null,
+    height: null,
     deckle_size: 0,
     sheet_length: 0,
-    ups: 1,
-    carton_type: 'FEFCO 0201',
-    machine_name: '',
-    target_speed: 0,
-    printing_process: 'FLEXOGRAPHIC',
-    pasting_closure: 'GLUING',
-    printing_colors_count: 0,
-    pantone_colors: [],
-    special_details: { honeycomb: false, separators: false },
-    pieces_count: 1,
     est_unit_weight: 0,
-    layers: [],
+    pieces_count: 1,
+    ups: 1,
+    corrugation_machine_id: null,
+    corrugation_speed: null,
+    ply_type: 3,
+    slitting_creasing: 'Plant Online',
+    layers: layersForPly(3),
+    print_colors: 0,
+    printing_machine_id: null,
+    printing_speed: null,
+    printing_data: { inks: [] },
+    pasting_type: 'None',
+    slot_type: 'Simple',
+    process_type: 'Rotary Slotter',
+    die_cutting_machine_id: null,
+    die_cutting_speed: null,
+    die_cutting_scope: 'sheet_wise',
+    job_type: 'New',
+    quality_priority: 'Normal',
+    ink_coverage: 20,
+    special_details: makeSpecialDetails(),
+    corrugation_instruction: '',
+    printing_instruction: '',
+    finishing_instruction: '',
+    remarks: '',
     pieces: []
 });
+
+const createForm = reactive(makeCreateForm());
 
 const prodForm = reactive({
     job_card_id: null,
     job_card_step_id: null,
-    date: new Date().toISOString().substr(0, 10),
+    date: todayString(),
     shift: 'Day',
     machine_no: '',
     quantity: 0,
@@ -642,11 +893,14 @@ const prodForm = reactive({
     remarks: ''
 });
 
-const rules = {
+const createRules = {
     customer_id: [{ required: true, message: 'Select customer', trigger: 'change' }],
-    fg_product_id: [{ required: true, message: 'Select product', trigger: 'change' }],
-    planned_qty: [{ required: true, message: 'Enter planned qty', trigger: 'blur' }],
-    planned_date: [{ required: true, message: 'Select start date', trigger: 'change' }]
+    carton_type_id: [{ required: true, message: 'Select carton type', trigger: 'change' }],
+    item_name: [{ required: true, message: 'Enter item name', trigger: 'blur' }],
+    pieces_count: [{ required: true, message: 'Select pieces count', trigger: 'change' }],
+    corrugation_machine_id: [{ required: true, message: 'Select corrugation machine', trigger: 'change' }],
+    ply_type: [{ required: true, message: 'Select ply type', trigger: 'change' }],
+    pasting_type: [{ required: true, message: 'Select joinery technique', trigger: 'change' }]
 };
 
 const prodRules = {
@@ -655,9 +909,115 @@ const prodRules = {
     quantity: [{ required: true, message: 'Enter quantity', trigger: 'blur' }]
 };
 
-const filteredProducts = computed(() => {
-    if (!form.customer_id) return [];
-    return products.value.filter(p => p.customer_id === form.customer_id);
+const selectedCartonType = computed(() => cartonTypes.value.find(type => Number(type.id) === Number(createForm.carton_type_id)) || null);
+const selectedCustomer = computed(() => customers.value.find(customer => Number(customer.id) === Number(createForm.customer_id)) || null);
+const hasDimensions = computed(() => Number(createForm.length) > 0 && Number(createForm.width) > 0 && Number(createForm.height) > 0);
+const corrugationMachines = computed(() => machineByDepartment(['corrugation', 'plant']));
+const printingMachines = computed(() => machineByDepartment(['printing', 'print', 'flexo']));
+const dieCuttingMachines = computed(() => machineByDepartment(['die', 'cut']));
+
+const formDieLineSvg = computed(() => {
+    const dims = dimensionsToMm(createForm.length, createForm.width, createForm.height, createForm.uom);
+    const length = Math.max(dims.length, 1);
+    const width = Math.max(dims.width, 1);
+    const height = Math.max(dims.height, 1);
+    const glue = 35;
+    const nearFlap = width * 0.5;
+    const farFlap = (width * 0.5) + height;
+    const totalWidth = glue + (2 * length) + (2 * width);
+    const totalHeight = height + nearFlap + farFlap;
+    const scale = Math.min(620 / totalWidth, 260 / totalHeight);
+    const pad = 44;
+    const headerSpace = 58;
+    const footerSpace = 42;
+    const y = pad + headerSpace + farFlap * scale;
+    const bodyHeight = height * scale;
+    const topFlapHeight = farFlap * scale;
+    const bottomFlapHeight = nearFlap * scale;
+    const widthPx = totalWidth * scale + (pad * 2);
+    const heightPx = totalHeight * scale + (pad * 2) + headerSpace + footerSpace;
+    const customerName = selectedCustomer.value?.name || 'Customer Name';
+    const itemCode = createForm.item_code || 'Item Code';
+    const itemName = createForm.item_name || 'Item Name';
+    const dimText = (value) => Number(value || 0).toFixed(2);
+
+    const panels = [
+        { width: glue, type: 'glue' },
+        { width: length, type: 'length' },
+        { width, type: 'width' },
+        { width: length, type: 'length' },
+        { width, type: 'width' }
+    ];
+
+    let cursor = pad;
+    const panelMarkup = panels.map((panel, index) => {
+        const panelWidth = panel.width * scale;
+        const topFlapMarkup = index > 0
+            ? `<rect x="${cursor}" y="${y - topFlapHeight}" width="${panelWidth}" height="${topFlapHeight}" class="jc-svg-flap" />`
+            : '';
+        const bottomFlapMarkup = index > 0
+            ? `<rect x="${cursor}" y="${y + bodyHeight}" width="${panelWidth}" height="${bottomFlapHeight}" class="jc-svg-flap" />`
+            : '';
+        const markup = `
+            <rect x="${cursor}" y="${y}" width="${panelWidth}" height="${bodyHeight}" class="jc-svg-panel ${panel.type}" />
+            ${topFlapMarkup}
+            ${bottomFlapMarkup}
+        `;
+        cursor += panelWidth;
+        return markup;
+    }).join('');
+
+    const lPanelX = pad + (glue * scale);
+    const wPanelX = lPanelX + (length * scale);
+    const heightArrowX = pad + widthPx - (pad * 1.25);
+
+    return `
+        <svg viewBox="0 0 ${widthPx} ${heightPx}" role="img" aria-label="Carton die-line preview">
+            <style>
+                .jc-svg-panel{fill:#fff;stroke:#111;stroke-width:1.2}
+                .jc-svg-panel.glue{fill:#fff}
+                .jc-svg-flap{fill:#fff;stroke:#111;stroke-width:1.1}
+                .jc-svg-fold{stroke:#111;stroke-width:1;stroke-dasharray:6 5}
+                .jc-svg-head{font:700 13px Arial,sans-serif;fill:#111}
+                .jc-svg-sub{font:600 11px Arial,sans-serif;fill:#111}
+                .jc-svg-foot{font:700 11px Arial,sans-serif;fill:#111}
+                .jc-svg-dim{font:700 10px Arial,sans-serif;fill:#111}
+                .jc-svg-arrow{stroke:#111;stroke-width:1.1;fill:none;marker-start:url(#arrow);marker-end:url(#arrow)}
+                .jc-svg-ext{stroke:#111;stroke-width:1}
+            </style>
+            <defs>
+                <marker id="arrow" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+                    <path d="M0,0 L7,3.5 L0,7 z" fill="#111"></path>
+                </marker>
+            </defs>
+            <text x="${widthPx / 2}" y="${pad}" text-anchor="middle" class="jc-svg-head">${customerName}</text>
+            <text x="${widthPx / 2}" y="${pad + 18}" text-anchor="middle" class="jc-svg-sub">${itemCode} | ${itemName}</text>
+            ${panelMarkup}
+            <line x1="${pad}" y1="${y}" x2="${pad + totalWidth * scale}" y2="${y}" class="jc-svg-fold" />
+            <line x1="${pad}" y1="${y + bodyHeight}" x2="${pad + totalWidth * scale}" y2="${y + bodyHeight}" class="jc-svg-fold" />
+            <line x1="${pad + glue * scale}" y1="${y}" x2="${pad + glue * scale}" y2="${y + bodyHeight}" class="jc-svg-fold" />
+            <line x1="${pad + (glue + length) * scale}" y1="${y}" x2="${pad + (glue + length) * scale}" y2="${y + bodyHeight}" class="jc-svg-fold" />
+            <line x1="${pad + (glue + length + width) * scale}" y1="${y}" x2="${pad + (glue + length + width) * scale}" y2="${y + bodyHeight}" class="jc-svg-fold" />
+            <line x1="${pad + (glue + length + width + length) * scale}" y1="${y}" x2="${pad + (glue + length + width + length) * scale}" y2="${y + bodyHeight}" class="jc-svg-fold" />
+
+            <line x1="${lPanelX}" y1="${y - 16}" x2="${lPanelX + (length * scale)}" y2="${y - 16}" class="jc-svg-arrow" />
+            <line x1="${lPanelX}" y1="${y - 10}" x2="${lPanelX}" y2="${y + 3}" class="jc-svg-ext" />
+            <line x1="${lPanelX + (length * scale)}" y1="${y - 10}" x2="${lPanelX + (length * scale)}" y2="${y + 3}" class="jc-svg-ext" />
+            <text x="${lPanelX + (length * scale / 2)}" y="${y - 21}" text-anchor="middle" class="jc-svg-dim">L = ${dimText(length)} mm</text>
+
+            <line x1="${wPanelX}" y1="${y + bodyHeight + 16}" x2="${wPanelX + (width * scale)}" y2="${y + bodyHeight + 16}" class="jc-svg-arrow" />
+            <line x1="${wPanelX}" y1="${y + bodyHeight + 10}" x2="${wPanelX}" y2="${y + bodyHeight - 3}" class="jc-svg-ext" />
+            <line x1="${wPanelX + (width * scale)}" y1="${y + bodyHeight + 10}" x2="${wPanelX + (width * scale)}" y2="${y + bodyHeight - 3}" class="jc-svg-ext" />
+            <text x="${wPanelX + (width * scale / 2)}" y="${y + bodyHeight + 30}" text-anchor="middle" class="jc-svg-dim">W = ${dimText(width)} mm</text>
+
+            <line x1="${heightArrowX}" y1="${y}" x2="${heightArrowX}" y2="${y + bodyHeight}" class="jc-svg-arrow" />
+            <line x1="${heightArrowX - 8}" y1="${y}" x2="${heightArrowX + 2}" y2="${y}" class="jc-svg-ext" />
+            <line x1="${heightArrowX - 8}" y1="${y + bodyHeight}" x2="${heightArrowX + 2}" y2="${y + bodyHeight}" class="jc-svg-ext" />
+            <text x="${heightArrowX + 14}" y="${y + (bodyHeight / 2)}" class="jc-svg-dim">H = ${dimText(height)} mm</text>
+
+            <text x="${widthPx / 2}" y="${heightPx - 12}" text-anchor="middle" class="jc-svg-foot">Quality Cartons (Pvt.) Ltd.</text>
+        </svg>
+    `;
 });
 
 const fetchJobCards = async () => {
@@ -674,16 +1034,43 @@ const fetchJobCards = async () => {
 };
 
 const fetchData = async () => {
-    try {
-        const [cRes, pRes, rmRes] = await Promise.all([
-            axios.get('/api/customers'),
-            axios.get('/api/products'),
-            axios.get('/api/rm-items')
-        ]);
-        customers.value = cRes.data;
-        products.value = pRes.data.data || pRes.data;
-        rmItems.value = rmRes.data;
-    } catch (error) {}
+    const [customerRes, cartonRes, paperRes, configRes] = await Promise.allSettled([
+        axios.get('/api/customers'),
+        axios.get('/api/carton-types'),
+        axios.get('/api/paper-qualities'),
+        axios.get('/api/production-config/lookups')
+    ]);
+
+    if (customerRes.status === 'fulfilled') {
+        customers.value = customerRes.value.data.data || customerRes.value.data;
+    }
+    if (cartonRes.status === 'fulfilled') {
+        const records = cartonRes.value.data.data || cartonRes.value.data;
+        cartonTypes.value = records.length ? records : [...defaultCartonTypes];
+    }
+    if (paperRes.status === 'fulfilled') {
+        papers.value = paperRes.value.data.data || paperRes.value.data;
+    }
+    if (configRes.status === 'fulfilled') {
+        printingColors.value = configRes.value.data.printing_colors || [];
+        productionMachines.value = configRes.value.data.machines || [];
+    }
+};
+
+const openCreateForm = () => {
+    resetCreateForm();
+    isCreating.value = true;
+};
+
+const discardCreateForm = () => {
+    isCreating.value = false;
+    resetCreateForm();
+};
+
+const resetCreateForm = () => {
+    Object.assign(createForm, makeCreateForm());
+    activePieceTab.value = 'piece_0';
+    cartonPreviewFailed.value = false;
 };
 
 const resetFilters = () => {
@@ -693,219 +1080,399 @@ const resetFilters = () => {
     fetchJobCards();
 };
 
-const openCreateDialog = () => {
-    Object.assign(form, {
-        job_card_no: '',
-        customer_id: null,
-        fg_product_id: null,
-        planned_qty: 1,
-        planned_date: new Date().toISOString().substr(0, 10),
-        delivery_date: null,
-        specifications: '',
-        notes: '',
-        items: [],
-        length_mm: 0,
-        width_mm: 0,
-        height_mm: 0,
-        uom: 'mm',
-        deckle_size: 0,
-        sheet_length: 0,
-        ups: 1,
-        carton_type: 'FEFCO 0201',
-        machine_name: '',
-        target_speed: 0,
-        printing_process: 'FLEXOGRAPHIC',
-        pasting_closure: 'GLUING',
-        printing_colors_count: 0,
-        pantone_colors: [],
-        special_details: { honeycomb: false, separators: false },
-        pieces_count: 1,
-        est_unit_weight: 0,
-        layers: [],
-        pieces: []
-    });
-    selectedPlyStructure.value = '3';
-    onPlyCountChange();
-    createDialogVisible.value = true;
+const cartonTypeLabel = (type) => type ? `${type.name} (${type.standard_code})` : '';
+
+const onCartonTypeChange = () => {
+    cartonPreviewFailed.value = false;
 };
 
-// Handle dynamic structural layers pre-population
-const onPlyCountChange = () => {
-    if (form.pieces_count !== 1) return;
-    const count = parseInt(selectedPlyStructure.value);
-    const layers = [];
-    if (count === 3) {
-        layers.push({ layer_type: 'Liner 1', paper_name: 'Kraft', gsm: 125, flute_profile: 'Flat' });
-        layers.push({ layer_type: 'Fluting 1', paper_name: 'Fluting Medium', gsm: 120, flute_profile: 'B' });
-        layers.push({ layer_type: 'Liner 2', paper_name: 'Testliner', gsm: 125, flute_profile: 'Flat' });
-    } else if (count === 5) {
-        layers.push({ layer_type: 'Liner 1', paper_name: 'Kraft', gsm: 125, flute_profile: 'Flat' });
-        layers.push({ layer_type: 'Fluting 1', paper_name: 'Fluting Medium', gsm: 120, flute_profile: 'B' });
-        layers.push({ layer_type: 'Liner 2', paper_name: 'Testliner', gsm: 125, flute_profile: 'Flat' });
-        layers.push({ layer_type: 'Fluting 2', paper_name: 'Fluting Medium', gsm: 120, flute_profile: 'C' });
-        layers.push({ layer_type: 'Liner 3', paper_name: 'Craft', gsm: 125, flute_profile: 'Flat' });
-    } else if (count === 7) {
-        layers.push({ layer_type: 'Liner 1', paper_name: 'Kraft', gsm: 125, flute_profile: 'Flat' });
-        layers.push({ layer_type: 'Fluting 1', paper_name: 'Fluting Medium', gsm: 120, flute_profile: 'B' });
-        layers.push({ layer_type: 'Liner 2', paper_name: 'Testliner', gsm: 125, flute_profile: 'Flat' });
-        layers.push({ layer_type: 'Fluting 2', paper_name: 'Fluting Medium', gsm: 120, flute_profile: 'C' });
-        layers.push({ layer_type: 'Liner 3', paper_name: 'Craft', gsm: 125, flute_profile: 'Flat' });
-        layers.push({ layer_type: 'Fluting 3', paper_name: 'Fluting Medium', gsm: 120, flute_profile: 'E' });
-        layers.push({ layer_type: 'Liner 4', paper_name: 'Testliner', gsm: 125, flute_profile: 'Flat' });
+const paperGsm = (paper) => Number(paper.gsm || paper.min_gsm || paper.max_gsm || 0);
+
+const paperLabel = (paper) => {
+    const name = paper.paper_name || paper.quality || paper.name || paper.item_code || 'Paper';
+    const gsm = paperGsm(paper);
+    return `${name}${gsm ? ` (${gsm.toLocaleString()} g/m2)` : ''}`;
+};
+
+const inkLabel = (ink) => `${ink.ink_name} (${ink.ink_code})`;
+
+const machineLabel = (machine) => `${machine.machine_name}${machine.department ? ` - ${machine.department.department_name}` : ''}`;
+
+const machineByDepartment = (keywords) => {
+    const matched = productionMachines.value.filter(machine => {
+        const department = String(machine.department?.department_name || '').toLowerCase();
+        const machineName = String(machine.machine_name || '').toLowerCase();
+        return keywords.some(keyword => department.includes(keyword) || machineName.includes(keyword));
+    });
+    return matched.length ? matched : productionMachines.value;
+};
+
+const selectedMachine = (machineId) => productionMachines.value.find(machine => Number(machine.id) === Number(machineId));
+
+const isFluteLayer = (layer) => String(layer.layer_type || '').toLowerCase().includes('flute');
+
+const onPaperChange = (layer, paperId, piece = null) => {
+    const paper = papers.value.find(item => Number(item.id) === Number(paperId));
+    if (!paper) return;
+    layer.paper_name = paper.paper_name || paper.quality || paper.name || paper.item_code || '';
+    layer.gsm = paperGsm(paper);
+    piece ? recalculatePieceSpecs(piece) : recalculateSpecs();
+};
+
+const dimensionsToMm = (length, width, height, uom) => {
+    const factor = uom === 'inch' ? 25.4 : (uom === 'cm' ? 10 : 1);
+    return {
+        length: Number(length || 0) * factor,
+        width: Number(width || 0) * factor,
+        height: Number(height || 0) * factor
+    };
+};
+
+const calculateSpecs = (length, width, height, layers, uom, ups = 1) => {
+    const dims = dimensionsToMm(length, width, height, uom);
+    const deckle = (dims.width + dims.height + 25) / 25.4;
+    const sheetLength = ((dims.length * 2) + (dims.width * 2) + 75) / 25.4;
+    const fluteFactors = { Flat: 1, B: 1.35, C: 1.45, E: 1.25 };
+    const gsmTotal = (layers || []).reduce((sum, layer) => sum + (Number(layer.gsm || 0) * (fluteFactors[layer.flute_profile] || 1)), 0);
+    const areaM2 = deckle * sheetLength * 0.00064516;
+    const netWeight = ((areaM2 * gsmTotal) / 1000) * 0.94;
+
+    return {
+        deckle,
+        sheet_length: sheetLength,
+        weight: netWeight / Math.max(Number(ups || 1), 1),
+        dims
+    };
+};
+
+const recalculateSpecs = () => {
+    const result = calculateSpecs(createForm.length, createForm.width, createForm.height, createForm.layers, createForm.uom, createForm.ups);
+    createForm.deckle_size = result.deckle;
+    createForm.sheet_length = result.sheet_length;
+
+    if (createForm.pieces_count === 1) {
+        createForm.est_unit_weight = result.weight;
+    } else {
+        let totalWeight = 0;
+        createForm.pieces.forEach(piece => {
+            recalculatePieceSpecs(piece);
+            totalWeight += Number(piece.est_unit_weight || 0);
+        });
+        createForm.est_unit_weight = totalWeight;
     }
-    form.layers = layers;
+
+    fetchAllTargetSpeeds();
+};
+
+const recalculatePieceSpecs = (piece) => {
+    const result = calculateSpecs(piece.length, piece.width, piece.height, piece.layers, createForm.uom, piece.ups);
+    piece.deckle_size = result.deckle;
+    piece.sheet_length = result.sheet_length;
+    piece.est_unit_weight = result.weight;
+};
+
+const onPlyTypeChange = () => {
+    createForm.layers = layersForPly(createForm.ply_type);
     recalculateSpecs();
+    fetchCorrugationSpeed();
+};
+
+const onPiecePlyTypeChange = (piece) => {
+    piece.layers = layersForPly(piece.ply_type);
+    recalculatePieceSpecs(piece);
 };
 
 const onPiecesCountChange = () => {
-    if (form.pieces_count === 1) {
-        form.pieces = [];
-        onPlyCountChange();
-    } else {
-        form.layers = [];
-        const pieces = [];
-        for (let i = 0; i < form.pieces_count; i++) {
-            const pieceLayers = [
-                { layer_type: 'Liner 1', paper_name: 'Kraft', gsm: 125, flute_profile: 'Flat' },
-                { layer_type: 'Fluting 1', paper_name: 'Fluting', gsm: 120, flute_profile: 'B' },
-                { layer_type: 'Liner 2', paper_name: 'Testliner', gsm: 125, flute_profile: 'Flat' }
-            ];
-            pieces.push({
-                piece_name: `Piece Component ${String.fromCharCode(65 + i)}`,
-                length_mm: form.length_mm,
-                width_mm: form.width_mm,
-                height_mm: form.height_mm,
-                deckle_size: 0,
-                sheet_length: 0,
-                ups: 1,
-                machine_name: '',
-                target_speed: 0,
-                est_unit_weight: 0,
-                instructions: '',
-                layers: pieceLayers
-            });
-        }
-        form.pieces = pieces;
+    if (createForm.pieces_count === 1) {
+        createForm.pieces = [];
         activePieceTab.value = 'piece_0';
-        recalculateSpecs();
+        onPlyTypeChange();
+        return;
+    }
+
+    const desiredCount = Math.min(Math.max(Number(createForm.pieces_count || 2), 2), 5);
+    const pieces = [];
+    for (let index = 0; index < desiredCount; index++) {
+        pieces.push(createForm.pieces[index] || makePiece(index, {
+            length: createForm.length,
+            width: createForm.width,
+            height: createForm.height
+        }));
+        recalculatePieceSpecs(pieces[index]);
+    }
+    createForm.pieces = pieces;
+    activePieceTab.value = 'piece_0';
+    recalculateSpecs();
+};
+
+const syncInkArray = (holder, count) => {
+    const inks = holder.printing_data?.inks || [];
+    holder.printing_data = { ...(holder.printing_data || {}), inks: inks.slice(0, count) };
+    while (holder.printing_data.inks.length < count) {
+        holder.printing_data.inks.push('');
     }
 };
 
-// Dynamic color matching dropdowns
-const onColorsCountChange = () => {
-    const current = form.pantone_colors.length;
-    if (form.printing_colors_count > current) {
-        for (let i = current; i < form.printing_colors_count; i++) {
-            form.pantone_colors.push('');
-        }
+const onPrintColorsChange = () => {
+    syncInkArray(createForm, createForm.print_colors);
+    fetchPrintingSpeed();
+};
+
+const onPieceColorsChange = (piece) => {
+    syncInkArray(piece, piece.print_colors);
+    fetchPieceSpeed(piece, 'printing');
+};
+
+const speedPayload = (baseSpeed = 0, overrides = {}) => ({
+    base_speed: Number(baseSpeed || 0),
+    minimum_speed: Number(overrides.minimum_speed || 0),
+    job: {
+        print_colors: overrides.print_colors ?? createForm.print_colors,
+        ink_coverage: createForm.ink_coverage,
+        slot_type: overrides.slot_type ?? createForm.slot_type,
+        job_type: createForm.job_type,
+        quantity: createForm.planned_qty,
+        quality_priority: createForm.quality_priority
+    }
+});
+
+const calculateOptimizedSpeed = async (machineId, overrides = {}) => {
+    const machine = selectedMachine(machineId);
+    if (!machine) return null;
+    const baseSpeed = Number(machine.base_speed || machine.target_speed || 0);
+    if (!baseSpeed) return null;
+
+    try {
+        const { data } = await axios.post('/api/production-config/optimization-rules/apply', speedPayload(baseSpeed, {
+            minimum_speed: machine.minimum_speed,
+            ...overrides
+        }));
+        return data.final_speed;
+    } catch (error) {
+        return baseSpeed;
+    }
+};
+
+const fetchCorrugationSpeed = async () => {
+    createForm.corrugation_speed = await calculateOptimizedSpeed(createForm.corrugation_machine_id);
+};
+
+const fetchPrintingSpeed = async () => {
+    createForm.printing_speed = await calculateOptimizedSpeed(createForm.printing_machine_id);
+};
+
+const fetchDieCuttingSpeed = async () => {
+    createForm.die_cutting_speed = await calculateOptimizedSpeed(createForm.die_cutting_machine_id);
+};
+
+const fetchPieceSpeed = async (piece, type) => {
+    if (type === 'corrugation') {
+        piece.corrugation_speed = await calculateOptimizedSpeed(piece.corrugation_machine_id, { print_colors: piece.print_colors });
+    } else if (type === 'printing') {
+        piece.printing_speed = await calculateOptimizedSpeed(piece.printing_machine_id, { print_colors: piece.print_colors });
     } else {
-        form.pantone_colors = form.pantone_colors.slice(0, form.printing_colors_count);
+        piece.die_cutting_speed = await calculateOptimizedSpeed(piece.die_cutting_machine_id, { print_colors: piece.print_colors });
     }
 };
 
-// Calculations Engine
-const recalculateSpecs = () => {
-    const fluteFactors = { 'Flat': 1.0, 'B': 1.35, 'C': 1.45, 'E': 1.25 };
+const fetchAllTargetSpeeds = () => {
+    fetchCorrugationSpeed();
+    fetchPrintingSpeed();
+    fetchDieCuttingSpeed();
+};
 
-    const calculateWeight = (l_mm, w_mm, h_mm, layersArray) => {
-        // Metric conversions
-        let length_mm = l_mm || 0;
-        let width_mm = w_mm || 0;
-        let height_mm = h_mm || 0;
+const layerPayload = (layer) => ({
+    layer_type: layer.layer_type,
+    paper_name: layer.paper_name || 'Unspecified',
+    gsm: Number(layer.gsm || 0),
+    flute_profile: isFluteLayer(layer) ? layer.flute_profile : 'Flat'
+});
 
-        if (form.uom === 'inch') {
-            length_mm = length_mm * 25.4;
-            width_mm = width_mm * 25.4;
-            height_mm = height_mm * 25.4;
-        } else if (form.uom === 'cm') {
-            length_mm = length_mm * 10;
-            width_mm = width_mm * 10;
-            height_mm = height_mm * 10;
-        }
-
-        // 1. Calculated Deckle in inches
-        const deckle_in = (width_mm + height_mm + 25) / 25.4;
-
-        // 2. Calculated Sheet Length in inches
-        const sheet_length_in = ((length_mm * 2) + (width_mm * 2) + 75) / 25.4;
-
-        // 3. Sum of GSM * factors
-        let sumGsm = 0;
-        layersArray.forEach(l => {
-            const factor = fluteFactors[l.flute_profile] || 1.0;
-            sumGsm += (l.gsm || 0) * factor;
-        });
-
-        // 4. Area M2
-        const area_m2 = deckle_in * sheet_length_in * 0.00064516;
-
-        // 5. Weight in KG (includes 6% trim waste deduction)
-        const net_weight = ((area_m2 * sumGsm) / 1000) * 0.94;
-
-        return {
-            deckle: deckle_in,
-            sheet_length: sheet_length_in,
-            weight: net_weight
-        };
+const piecePayload = (piece, index) => {
+    const corrugationMachine = selectedMachine(piece.corrugation_machine_id);
+    return {
+        piece_name: piece.piece_name || `Component ${index + 1}`,
+        length_mm: dimensionsToMm(piece.length, piece.width, piece.height, createForm.uom).length,
+        width_mm: dimensionsToMm(piece.length, piece.width, piece.height, createForm.uom).width,
+        height_mm: dimensionsToMm(piece.length, piece.width, piece.height, createForm.uom).height,
+        deckle_size: piece.deckle_size,
+        sheet_length: piece.sheet_length,
+        ply_type: piece.ply_type,
+        ups: piece.ups,
+        machine_name: corrugationMachine?.machine_name || '',
+        target_speed: piece.corrugation_speed || 0,
+        est_unit_weight: piece.est_unit_weight || 0,
+        instructions: piece.instructions,
+        print_colors: piece.print_colors,
+        printing_data: piece.printing_data,
+        printing_machine_id: piece.printing_machine_id,
+        printing_speed: piece.printing_speed,
+        finishing_protocol: piece.finishing_protocol,
+        die_cutting_machine_id: piece.die_cutting_machine_id,
+        die_cutting_speed: piece.die_cutting_speed,
+        die_cutting_scope: piece.die_cutting_scope,
+        layers: piece.layers.map(layerPayload)
     };
+};
 
-    if (form.pieces_count === 1) {
-        const result = calculateWeight(form.length_mm, form.width_mm, form.height_mm, form.layers);
-        form.deckle_size = result.deckle;
-        form.sheet_length = result.sheet_length;
-        form.est_unit_weight = result.weight / (form.ups || 1);
-    } else {
-        let totalWeight = 0;
-        form.pieces.forEach(p => {
-            const result = calculateWeight(p.length_mm, p.width_mm, p.height_mm, p.layers);
-            p.deckle_size = result.deckle;
-            p.sheet_length = result.sheet_length;
-            p.est_unit_weight = result.weight / (p.ups || 1);
-            totalWeight += p.est_unit_weight;
-        });
-        form.est_unit_weight = totalWeight;
-        
-        // Also update main deckle/sheet length for summary displays to show tab 0 specs
-        if (form.pieces[0]) {
-            form.deckle_size = form.pieces[0].deckle_size;
-            form.sheet_length = form.pieces[0].sheet_length;
+const validateCreateForm = async () => {
+    if (!createFormRef.value) return false;
+    const valid = await createFormRef.value.validate().catch(() => false);
+    if (!valid) return false;
+
+    if (createForm.pieces_count > 1) {
+        const missingPiece = createForm.pieces.find(piece => !piece.piece_name || !piece.corrugation_machine_id || !piece.ply_type);
+        if (missingPiece) {
+            ElMessage.error('Complete component designation, corrugation machine, and ply type for every component.');
+            return false;
         }
     }
+
+    if (createForm.process_type === 'Die Cutting' && createForm.pieces_count === 1 && !createForm.die_cutting_machine_id) {
+        ElMessage.error('Select a die cutting machine.');
+        return false;
+    }
+
+    return true;
 };
 
-const addItemRow = () => {
-    form.items.push({ rm_item_id: null, required_qty: 0, unit: '' });
-};
+const buildJobCardPayload = () => {
+    const dims = dimensionsToMm(createForm.length, createForm.width, createForm.height, createForm.uom);
+    const cartonType = selectedCartonType.value;
+    const corrugationMachine = selectedMachine(createForm.corrugation_machine_id);
+    const pieces = createForm.pieces.map(piecePayload);
+    const printColors = createForm.pieces_count === 1
+        ? createForm.print_colors
+        : Math.max(0, ...createForm.pieces.map(piece => Number(piece.print_colors || 0)));
+    const inks = createForm.pieces_count === 1
+        ? createForm.printing_data.inks.filter(Boolean)
+        : [...new Set(createForm.pieces.flatMap(piece => piece.printing_data.inks || []).filter(Boolean))];
 
-const removeItemRow = (index) => {
-    form.items.splice(index, 1);
-};
-
-const onRMItemChange = (row) => {
-    const item = rmItems.value.find(i => i.id === row.rm_item_id);
-    if (item) row.unit = item.unit_type;
-};
-
-const onCustomerChange = () => {
-    form.fg_product_id = null;
+    return {
+        customer_id: createForm.customer_id,
+        fg_product_id: null,
+        item_code: createForm.item_code,
+        item_name: createForm.item_name,
+        planned_qty: createForm.planned_qty,
+        planned_date: createForm.planned_date,
+        delivery_date: createForm.delivery_date,
+        specifications: cartonType ? cartonTypeLabel(cartonType) : '',
+        notes: createForm.remarks,
+        length_mm: dims.length,
+        width_mm: dims.width,
+        height_mm: dims.height,
+        uom: createForm.uom,
+        deckle_size: createForm.deckle_size,
+        sheet_length: createForm.sheet_length,
+        ups: createForm.ups,
+        carton_type: cartonType ? cartonTypeLabel(cartonType) : 'Carton',
+        machine_name: corrugationMachine?.machine_name || '',
+        target_speed: createForm.corrugation_speed || 0,
+        printing_process: printColors > 0 ? 'FLEXOGRAPHIC' : 'UNPRINTED',
+        pasting_closure: createForm.pasting_type,
+        printing_colors_count: printColors,
+        pantone_colors: inks,
+        special_details: {
+            carton_type_id: createForm.carton_type_id,
+            carton_type_code: cartonType?.standard_code,
+            carton_quality: createForm.carton_quality,
+            corrugation_machine_id: createForm.corrugation_machine_id,
+            corrugation_speed: createForm.corrugation_speed,
+            printing_machine_id: createForm.printing_machine_id,
+            printing_speed: createForm.printing_speed,
+            die_cutting_machine_id: createForm.die_cutting_machine_id,
+            die_cutting_speed: createForm.die_cutting_speed,
+            die_cutting_scope: createForm.die_cutting_scope,
+            slitting_creasing: createForm.slitting_creasing,
+            print_colors: printColors,
+            printing_data: createForm.printing_data,
+            pasting_type: createForm.pasting_type,
+            slot_type: createForm.slot_type,
+            process_type: createForm.process_type,
+            job_type: createForm.job_type,
+            ink_coverage: createForm.ink_coverage,
+            quality_priority: createForm.quality_priority,
+            honeycomb: createForm.special_details.honeycomb.enabled,
+            honeycomb_detail: createForm.special_details.honeycomb,
+            separators: createForm.special_details.separator.enabled,
+            separator_detail: createForm.special_details.separator,
+            corrugation_instruction: createForm.corrugation_instruction,
+            printing_instruction: createForm.printing_instruction,
+            finishing_instruction: createForm.finishing_instruction,
+            pieces_detail: pieces
+        },
+        pieces_count: createForm.pieces_count,
+        est_unit_weight: createForm.est_unit_weight,
+        layers: createForm.pieces_count === 1 ? createForm.layers.map(layerPayload) : [],
+        pieces
+    };
 };
 
 const submitCreateForm = async () => {
-    if (!formRef.value) return;
-    await formRef.value.validate(async (valid) => {
-        if (!valid) return;
-        submitting.value = true;
-        try {
-            await axios.post('/api/job-cards', form);
-            ElMessage.success('Job Card manufacturing specs created successfully');
-            createDialogVisible.value = false;
-            fetchJobCards();
-        } catch (error) {
-            ElMessage.error(error.response?.data?.error || 'Failed to create job card');
-        } finally {
-            submitting.value = false;
-        }
+    if (submitting.value) return;
+    const valid = await validateCreateForm();
+    if (!valid) return;
+
+    submitting.value = true;
+    try {
+        const payload = buildJobCardPayload();
+        await axios.post('/api/job-cards', payload);
+        ElMessage.success('Job card created successfully');
+        isCreating.value = false;
+        resetCreateForm();
+        fetchJobCards();
+    } catch (error) {
+        ElMessage.error(error.response?.data?.error || 'Failed to create job card');
+    } finally {
+        submitting.value = false;
+    }
+};
+
+const safeFilePart = (value, fallback) => String(value || fallback)
+    .trim()
+    .replace(/[<>:"/\\|?*]+/g, '')
+    .replace(/\s+/g, ' ')
+    .slice(0, 80) || fallback;
+
+const downloadDieLine = async () => {
+    if (!hasDimensions.value) {
+        ElMessage.warning('Enter length, width, and height before generating the die-line.');
+        return;
+    }
+
+    const svg = formDieLineSvg.value;
+    const viewBox = svg.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/);
+    const width = viewBox ? Math.ceil(Number(viewBox[1])) : 900;
+    const height = viewBox ? Math.ceil(Number(viewBox[2])) : 360;
+    const image = new Image();
+    const encodedSvg = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+
+    await new Promise((resolve, reject) => {
+        image.onload = resolve;
+        image.onerror = reject;
+        image.src = encodedSvg;
+    }).catch(() => {
+        ElMessage.error('Unable to generate JPEG die-line.');
     });
+
+    if (!image.complete) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width * 2;
+    canvas.height = height * 2;
+    const context = canvas.getContext('2d');
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    const customerName = safeFilePart(selectedCustomer.value?.name, 'Customer');
+    const itemName = safeFilePart(createForm.item_name, 'Item Name');
+    const link = document.createElement('a');
+    link.href = canvas.toDataURL('image/jpeg', 0.92);
+    link.download = `${customerName}_${itemName}.jpeg`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
 };
 
 const openProductionDialog = (job) => {
@@ -913,7 +1480,7 @@ const openProductionDialog = (job) => {
     Object.assign(prodForm, {
         job_card_id: job.id,
         job_card_step_id: null,
-        date: new Date().toISOString().substr(0, 10),
+        date: todayString(),
         shift: 'Day',
         machine_no: '',
         quantity: 0,
@@ -961,7 +1528,7 @@ const changeStatus = async (job) => {
             inputErrorMessage: 'Status must be Open, In-Progress, Completed, or Cancelled',
             inputValue: job.status
         });
-        
+
         await axios.put(`/api/job-cards/${job.id}/status`, { status });
         ElMessage.success('Status updated successfully');
         fetchJobCards();
@@ -1013,8 +1580,357 @@ onMounted(() => {
     background-color: #4338ca !important;
     border-color: #4338ca !important;
 }
-.form-section {
-    border-color: #e2e8f0 !important;
+.job-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.job-create-workspace {
+    --jc-create-card: #ffffff;
+    --jc-create-card-soft: #f1f5f9;
+    --jc-create-border: #d8e0eb;
+    --jc-create-text: #172033;
+    --jc-create-muted: #64748b;
+}
+.job-card-form {
+    color: var(--jc-create-text);
+}
+.job-form-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    gap: 18px;
+}
+.job-form-card {
+    background: var(--jc-create-card);
+    border: 1px solid var(--jc-create-border);
+    border-radius: 8px;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+    min-width: 0;
+    padding: 18px;
+}
+.span-wide {
+    grid-column: 1 / -1;
+}
+.basic-info-layout {
+    align-items: stretch;
+    display: grid;
+    gap: 18px;
+    grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.75fr);
+}
+.basic-info-fields {
+    min-width: 0;
+}
+.basic-info-card .dieline-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+.basic-info-card .dieline-canvas,
+.basic-info-card .dieline-empty {
+    flex: 1;
+    min-height: 300px;
+}
+.section-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid var(--jc-create-border);
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+}
+.section-heading h3 {
+    color: var(--jc-create-text);
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.25;
+    margin: 0;
+}
+.section-heading p,
+.mini-label {
+    color: var(--jc-create-muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+    margin: 3px 0 0;
+}
+.section-index {
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    border-radius: 8px;
+    color: #4f46e5;
+    font-size: 0.74rem;
+    font-weight: 900;
+    padding: 5px 8px;
+}
+.form-grid {
+    display: grid;
+    gap: 12px;
+}
+.two-col {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.three-col {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.four-col {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.align-start {
+    align-items: start;
+}
+.compact-grid,
+.dimension-panel,
+.dieline-panel,
+.carton-preview-panel,
+.ink-grid,
+.addon-toggle {
+    background: var(--jc-create-card-soft);
+    border: 1px solid var(--jc-create-border);
+    border-radius: 8px;
+}
+.compact-grid {
+    border-style: dashed;
+    margin-top: 10px;
+    padding: 12px;
+}
+.dimension-panel,
+.dieline-panel,
+.carton-preview-panel,
+.addon-toggle {
+    padding: 12px;
+}
+.carton-preview-panel {
+    min-height: 94px;
+}
+.carton-preview-panel span {
+    color: var(--jc-create-muted);
+    display: block;
+    font-size: 0.76rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+}
+.carton-preview-panel img {
+    display: block;
+    max-height: 58px;
+    max-width: 100%;
+    object-fit: contain;
+}
+.carton-preview-fallback {
+    align-items: center;
+    background: #ffffff;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    color: #334155;
+    display: flex;
+    font-weight: 900;
+    justify-content: center;
+    min-height: 58px;
+}
+.segmented-control {
+    width: 100%;
+}
+.segmented-control :deep(.el-radio-button) {
+    width: 50%;
+}
+.segmented-control :deep(.el-radio-button__inner) {
+    width: 100%;
+}
+.metrics-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin: 14px 0;
+}
+.metrics-strip div {
+    background: #172033;
+    border: 1px solid #243044;
+    border-radius: 8px;
+    color: #f8fafc;
+    padding: 12px;
+}
+.metrics-strip span {
+    color: #a7b4c8;
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+.metrics-strip strong {
+    color: #8bdbad;
+    display: block;
+    font-size: 1rem;
+    margin-top: 4px;
+}
+.dieline-panel strong {
+    color: var(--jc-create-text);
+    display: block;
+    font-size: 0.9rem;
+}
+.dieline-canvas,
+.dieline-empty {
+    align-items: center;
+    background: #ffffff;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    min-height: 176px;
+    overflow: auto;
+    padding: 10px;
+}
+.dieline-canvas :deep(svg) {
+    display: block;
+    min-width: 320px;
+    width: 100%;
+}
+.dieline-empty {
+    color: var(--jc-create-muted);
+    font-weight: 700;
+}
+.table-wrap {
+    border: 1px solid var(--jc-create-border);
+    border-radius: 8px;
+    overflow-x: auto;
+}
+.construction-table {
+    border-collapse: collapse;
+    min-width: 760px;
+    width: 100%;
+}
+.construction-table th {
+    background: #e8eef6;
+    color: #334155;
+    font-size: 0.76rem;
+    letter-spacing: 0;
+    padding: 10px;
+    text-transform: uppercase;
+}
+.construction-table td {
+    background: #ffffff;
+    border-top: 1px solid var(--jc-create-border);
+    color: var(--jc-create-text);
+    padding: 8px;
+    vertical-align: middle;
+}
+.target-speed {
+    color: #047857;
+    font-size: 0.76rem;
+    font-weight: 900;
+    margin-top: 5px;
+}
+.component-tabs {
+    border-radius: 8px;
+    overflow: hidden;
+}
+.ink-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding: 12px;
+}
+.ink-option {
+    align-items: center;
+    display: inline-flex;
+    gap: 8px;
+}
+.ink-swatch {
+    border: 1px solid #94a3b8;
+    border-radius: 999px;
+    display: inline-block;
+    height: 12px;
+    width: 12px;
+}
+.addon-toggle {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+}
+.addon-toggle strong {
+    color: var(--jc-create-text);
+    display: block;
+}
+.addon-toggle span {
+    color: var(--jc-create-muted);
+    font-size: 0.76rem;
+    font-weight: 800;
+}
+.job-card-form :deep(.el-form-item) {
+    margin-bottom: 14px;
+}
+.job-card-form :deep(.el-form-item__label) {
+    color: var(--jc-create-muted);
+    font-size: 0.78rem;
+    font-weight: 800;
+    line-height: 1.25;
+    margin-bottom: 6px;
+    padding-bottom: 0;
+}
+.job-card-form :deep(.el-input),
+.job-card-form :deep(.el-select),
+.job-card-form :deep(.el-date-editor.el-input),
+.job-card-form :deep(.el-input-number) {
+    min-height: 42px;
+    width: 100%;
+}
+.job-card-form :deep(.el-input__wrapper),
+.job-card-form :deep(.el-select__wrapper),
+.job-card-form :deep(.el-date-editor .el-input__wrapper),
+.job-card-form :deep(.el-input-number .el-input__wrapper) {
+    border-radius: 8px;
+    min-height: 42px;
+    padding: 0 12px;
+}
+.job-card-form :deep(.el-input__inner),
+.job-card-form :deep(.el-select__selected-item),
+.job-card-form :deep(.el-select__placeholder) {
+    font-size: 0.9rem;
+    font-weight: 650;
+    min-height: 40px;
+    line-height: 40px;
+}
+.job-card-form :deep(.el-input-number .el-input__inner) {
+    text-align: left;
+}
+.job-card-form :deep(.el-radio-button__inner) {
+    align-items: center;
+    display: inline-flex;
+    height: 42px;
+    justify-content: center;
+    padding: 0 14px;
+}
+.job-card-form :deep(.el-textarea__inner) {
+    border-radius: 8px;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    min-height: 96px;
+    padding: 10px 12px;
+}
+.compact-grid :deep(.el-input),
+.compact-grid :deep(.el-select),
+.compact-grid :deep(.el-input-number),
+.ink-grid :deep(.el-select) {
+    min-height: 42px;
+    width: 100%;
+}
+.construction-table :deep(.el-form-item) {
+    margin-bottom: 0;
+}
+.construction-table :deep(.el-input),
+.construction-table :deep(.el-select),
+.construction-table :deep(.el-input-number) {
+    min-height: 38px;
+}
+.construction-table :deep(.el-input__wrapper),
+.construction-table :deep(.el-select__wrapper),
+.construction-table :deep(.el-input-number .el-input__wrapper) {
+    border-radius: 7px;
+    min-height: 38px;
+}
+.construction-table :deep(.el-input__inner),
+.construction-table :deep(.el-select__selected-item),
+.construction-table :deep(.el-select__placeholder) {
+    min-height: 36px;
+    line-height: 36px;
 }
 .font-mono {
     font-family: 'Courier New', Courier, monospace;
@@ -1027,11 +1943,402 @@ onMounted(() => {
     color: #334155 !important;
     font-weight: 700 !important;
 }
-.piece-tabs :deep(.el-tabs__item.is-active) {
-    color: #4f46e5 !important;
-    font-weight: bold;
+
+:global([data-theme="dark"]) .job-card-management {
+    color: #f8fafc;
 }
-.piece-tabs :deep(.el-tabs__active-bar) {
-    background-color: #4f46e5 !important;
+
+:global([data-theme="dark"]) .job-card-management .glass-header {
+    background: #111827;
+    border: 1px solid #334155;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28) !important;
+}
+
+:global([data-theme="dark"]) .job-card-management .glass-header h2,
+:global([data-theme="dark"]) .job-card-management .glass-header .text-dark {
+    color: #f8fafc !important;
+}
+
+:global([data-theme="dark"]) .job-card-management .glass-header .text-muted {
+    color: #94a3b8 !important;
+}
+
+:global([data-theme="dark"]) .job-card-management .glass-card {
+    background: #111827;
+    border: 1px solid #334155;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.24) !important;
+}
+
+:global([data-theme="dark"]) .job-card-management .filter-container {
+    background: #1c283b !important;
+    border-color: #41516a !important;
+}
+
+:global([data-theme="dark"]) .job-card-management .filter-container label {
+    color: #cbd5e1 !important;
+}
+
+:global([data-theme="dark"]) .job-card-management :deep(.el-input__wrapper),
+:global([data-theme="dark"]) .job-card-management :deep(.el-select__wrapper) {
+    background-color: #111827 !important;
+    border: 1px solid #41516a !important;
+    box-shadow: none !important;
+    color: #f8fafc !important;
+}
+
+:global([data-theme="dark"]) .job-card-management :deep(.el-input__wrapper.is-focus),
+:global([data-theme="dark"]) .job-card-management :deep(.el-select__wrapper.is-focused) {
+    border-color: #6ea8ff !important;
+    box-shadow: 0 0 0 0.18rem rgba(110, 168, 255, 0.16) !important;
+}
+
+:global([data-theme="dark"]) .job-card-management :deep(.el-input__inner),
+:global([data-theme="dark"]) .job-card-management :deep(.el-select__placeholder),
+:global([data-theme="dark"]) .job-card-management :deep(.el-select__selected-item) {
+    color: #f8fafc !important;
+}
+
+:global([data-theme="dark"]) .job-card-management :deep(.el-input__inner::placeholder),
+:global([data-theme="dark"]) .job-card-management :deep(.el-select__placeholder) {
+    color: #7f91ad !important;
+}
+
+:global([data-theme="dark"]) .job-card-management .modern-table :deep(.el-table__header) th,
+:global([data-theme="dark"]) .job-card-management .modern-table :deep(th.el-table__cell) {
+    background-color: #1e293b !important;
+    color: #cbd5e1 !important;
+    border-color: #334155 !important;
+}
+
+:global([data-theme="dark"]) .job-card-management .modern-table :deep(.el-table__body),
+:global([data-theme="dark"]) .job-card-management .modern-table :deep(.el-table__body-wrapper),
+:global([data-theme="dark"]) .job-card-management .modern-table :deep(.el-table__empty-block),
+:global([data-theme="dark"]) .job-card-management .modern-table :deep(tr),
+:global([data-theme="dark"]) .job-card-management .modern-table :deep(td.el-table__cell) {
+    background-color: #1c283b !important;
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+}
+
+:global([data-theme="dark"]) .job-card-management .modern-table :deep(.el-table__row:hover td.el-table__cell) {
+    background-color: #263449 !important;
+}
+
+:global([data-theme="dark"]) .job-card-management .modern-table :deep(.el-table__empty-text) {
+    color: #e2e8f0 !important;
+}
+
+:global([data-theme="dark"]) .job-card-management .bg-white,
+:global([data-theme="dark"]) .job-card-management .bg-light-soft {
+    background-color: #1c283b !important;
+    border-color: #41516a !important;
+    color: #e2e8f0 !important;
+}
+
+@media (max-width: 1100px) {
+    .job-form-grid,
+    .basic-info-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (min-width: 1101px) and (max-width: 1360px) {
+    .four-col {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .job-card-management {
+        padding: 12px !important;
+    }
+    .glass-header {
+        align-items: flex-start !important;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .job-header-actions {
+        align-items: stretch;
+        flex-direction: column;
+        width: 100%;
+    }
+    .job-form-grid,
+    .two-col,
+    .three-col,
+    .four-col,
+    .metrics-strip,
+    .ink-grid {
+        grid-template-columns: 1fr;
+    }
+    .job-form-card {
+        padding: 14px;
+    }
+    .section-heading {
+        align-items: flex-start;
+    }
+}
+</style>
+
+<style>
+[data-theme="dark"] .job-card-management,
+body.dark-mode .job-card-management {
+    --jc-bg: #0f172a;
+    --jc-surface: #111827;
+    --jc-surface-2: #1e293b;
+    --jc-surface-3: #243044;
+    --jc-border: #334155;
+    --jc-text: #f8fafc;
+    --jc-muted: #9fb0c8;
+    --jc-accent: #60a5fa;
+    color: var(--jc-text) !important;
+}
+
+[data-theme="dark"] .job-card-management .glass-header,
+body.dark-mode .job-card-management .glass-header {
+    background: linear-gradient(135deg, #111827 0%, #172033 100%) !important;
+    border: 1px solid var(--jc-border) !important;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28) !important;
+}
+
+[data-theme="dark"] .job-card-management .glass-card,
+body.dark-mode .job-card-management .glass-card {
+    background: #111827 !important;
+    border: 1px solid var(--jc-border) !important;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.24) !important;
+}
+
+[data-theme="dark"] .job-card-management .filter-container,
+body.dark-mode .job-card-management .filter-container {
+    background: #172033 !important;
+    border-color: var(--jc-border) !important;
+}
+
+[data-theme="dark"] .job-card-management h1,
+[data-theme="dark"] .job-card-management h2,
+[data-theme="dark"] .job-card-management h3,
+[data-theme="dark"] .job-card-management h4,
+[data-theme="dark"] .job-card-management h5,
+[data-theme="dark"] .job-card-management h6,
+[data-theme="dark"] .job-card-management .fw-bold,
+[data-theme="dark"] .job-card-management .text-dark,
+body.dark-mode .job-card-management h1,
+body.dark-mode .job-card-management h2,
+body.dark-mode .job-card-management h3,
+body.dark-mode .job-card-management h4,
+body.dark-mode .job-card-management h5,
+body.dark-mode .job-card-management h6,
+body.dark-mode .job-card-management .fw-bold,
+body.dark-mode .job-card-management .text-dark {
+    color: var(--jc-text) !important;
+}
+
+[data-theme="dark"] .job-card-management .text-muted,
+[data-theme="dark"] .job-card-management label,
+[data-theme="dark"] .job-card-management .small,
+body.dark-mode .job-card-management .text-muted,
+body.dark-mode .job-card-management label,
+body.dark-mode .job-card-management .small {
+    color: var(--jc-muted) !important;
+}
+
+[data-theme="dark"] .job-card-management .text-indigo,
+body.dark-mode .job-card-management .text-indigo {
+    color: #93c5fd !important;
+}
+
+[data-theme="dark"] .job-card-management .el-input__wrapper,
+[data-theme="dark"] .job-card-management .el-select__wrapper,
+[data-theme="dark"] .job-card-management .el-input-number .el-input__wrapper,
+body.dark-mode .job-card-management .el-input__wrapper,
+body.dark-mode .job-card-management .el-select__wrapper,
+body.dark-mode .job-card-management .el-input-number .el-input__wrapper {
+    background: var(--jc-surface-2) !important;
+    border: 1px solid #475569 !important;
+    box-shadow: none !important;
+}
+
+[data-theme="dark"] .job-card-management .el-input__inner,
+[data-theme="dark"] .job-card-management .el-select__placeholder,
+[data-theme="dark"] .job-card-management .el-select__selected-item,
+body.dark-mode .job-card-management .el-input__inner,
+body.dark-mode .job-card-management .el-select__placeholder,
+body.dark-mode .job-card-management .el-select__selected-item {
+    color: var(--jc-text) !important;
+}
+
+[data-theme="dark"] .job-card-management .el-input__inner::placeholder,
+body.dark-mode .job-card-management .el-input__inner::placeholder {
+    color: #7f91ad !important;
+}
+
+[data-theme="dark"] .job-card-management .el-table,
+[data-theme="dark"] .job-card-management .el-table__inner-wrapper,
+[data-theme="dark"] .job-card-management .el-table__header-wrapper,
+[data-theme="dark"] .job-card-management .el-table__body-wrapper,
+[data-theme="dark"] .job-card-management .el-table__empty-block,
+[data-theme="dark"] .job-card-management .el-table tr,
+body.dark-mode .job-card-management .el-table,
+body.dark-mode .job-card-management .el-table__inner-wrapper,
+body.dark-mode .job-card-management .el-table__header-wrapper,
+body.dark-mode .job-card-management .el-table__body-wrapper,
+body.dark-mode .job-card-management .el-table__empty-block,
+body.dark-mode .job-card-management .el-table tr {
+    background: var(--jc-surface) !important;
+    color: var(--jc-text) !important;
+}
+
+[data-theme="dark"] .job-card-management .el-table th.el-table__cell,
+body.dark-mode .job-card-management .el-table th.el-table__cell {
+    background: var(--jc-surface-2) !important;
+    color: #dbeafe !important;
+    border-color: var(--jc-border) !important;
+}
+
+[data-theme="dark"] .job-card-management .el-table td.el-table__cell,
+body.dark-mode .job-card-management .el-table td.el-table__cell {
+    background: #172033 !important;
+    color: var(--jc-text) !important;
+    border-color: var(--jc-border) !important;
+}
+
+[data-theme="dark"] .job-card-management .el-table__empty-text,
+body.dark-mode .job-card-management .el-table__empty-text {
+    color: var(--jc-muted) !important;
+}
+
+[data-theme="dark"] .job-card-management .el-table--border::after,
+[data-theme="dark"] .job-card-management .el-table--border::before,
+[data-theme="dark"] .job-card-management .el-table__inner-wrapper::before,
+body.dark-mode .job-card-management .el-table--border::after,
+body.dark-mode .job-card-management .el-table--border::before,
+body.dark-mode .job-card-management .el-table__inner-wrapper::before {
+    background-color: var(--jc-border) !important;
+}
+
+[data-theme="dark"] .job-card-management .el-pagination button,
+[data-theme="dark"] .job-card-management .el-pager li,
+body.dark-mode .job-card-management .el-pagination button,
+body.dark-mode .job-card-management .el-pager li {
+    background: var(--jc-surface-2) !important;
+    color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .job-card-management .el-pager li.is-active,
+body.dark-mode .job-card-management .el-pager li.is-active {
+    background: #4f46e5 !important;
+    color: #fff !important;
+}
+
+[data-theme="dark"] .job-card-management .bg-white,
+[data-theme="dark"] .job-card-management .bg-light-soft,
+body.dark-mode .job-card-management .bg-white,
+body.dark-mode .job-card-management .bg-light-soft {
+    background: #172033 !important;
+    border-color: var(--jc-border) !important;
+    color: var(--jc-text) !important;
+}
+
+[data-theme="dark"] .job-card-management .job-create-workspace,
+body.dark-mode .job-card-management .job-create-workspace {
+    --jc-create-card: #111827;
+    --jc-create-card-soft: #172033;
+    --jc-create-border: #334155;
+    --jc-create-text: #f8fafc;
+    --jc-create-muted: #9fb0c8;
+}
+
+[data-theme="dark"] .job-card-management .job-form-card,
+[data-theme="dark"] .job-card-management .dimension-panel,
+[data-theme="dark"] .job-card-management .dieline-panel,
+[data-theme="dark"] .job-card-management .carton-preview-panel,
+[data-theme="dark"] .job-card-management .ink-grid,
+[data-theme="dark"] .job-card-management .addon-toggle,
+[data-theme="dark"] .job-card-management .compact-grid,
+body.dark-mode .job-card-management .job-form-card,
+body.dark-mode .job-card-management .dimension-panel,
+body.dark-mode .job-card-management .dieline-panel,
+body.dark-mode .job-card-management .carton-preview-panel,
+body.dark-mode .job-card-management .ink-grid,
+body.dark-mode .job-card-management .addon-toggle,
+body.dark-mode .job-card-management .compact-grid {
+    background: var(--jc-create-card-soft) !important;
+    border-color: var(--jc-create-border) !important;
+    color: var(--jc-create-text) !important;
+}
+
+[data-theme="dark"] .job-card-management .job-form-card,
+body.dark-mode .job-card-management .job-form-card {
+    background: var(--jc-create-card) !important;
+}
+
+[data-theme="dark"] .job-card-management .section-heading,
+[data-theme="dark"] .job-card-management .table-wrap,
+body.dark-mode .job-card-management .section-heading,
+body.dark-mode .job-card-management .table-wrap {
+    border-color: var(--jc-create-border) !important;
+}
+
+[data-theme="dark"] .job-card-management .section-heading h3,
+[data-theme="dark"] .job-card-management .dieline-panel strong,
+[data-theme="dark"] .job-card-management .addon-toggle strong,
+body.dark-mode .job-card-management .section-heading h3,
+body.dark-mode .job-card-management .dieline-panel strong,
+body.dark-mode .job-card-management .addon-toggle strong {
+    color: var(--jc-create-text) !important;
+}
+
+[data-theme="dark"] .job-card-management .section-heading p,
+[data-theme="dark"] .job-card-management .mini-label,
+[data-theme="dark"] .job-card-management .addon-toggle span,
+[data-theme="dark"] .job-card-management .carton-preview-panel span,
+body.dark-mode .job-card-management .section-heading p,
+body.dark-mode .job-card-management .mini-label,
+body.dark-mode .job-card-management .addon-toggle span,
+body.dark-mode .job-card-management .carton-preview-panel span {
+    color: var(--jc-create-muted) !important;
+}
+
+[data-theme="dark"] .job-card-management .carton-preview-fallback,
+[data-theme="dark"] .job-card-management .dieline-canvas,
+[data-theme="dark"] .job-card-management .dieline-empty,
+body.dark-mode .job-card-management .carton-preview-fallback,
+body.dark-mode .job-card-management .dieline-canvas,
+body.dark-mode .job-card-management .dieline-empty {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .job-card-management .construction-table th,
+body.dark-mode .job-card-management .construction-table th {
+    background: #1e293b !important;
+    color: #dbeafe !important;
+}
+
+[data-theme="dark"] .job-card-management .construction-table td,
+body.dark-mode .job-card-management .construction-table td {
+    background: #111827 !important;
+    border-color: #334155 !important;
+    color: #f8fafc !important;
+}
+
+[data-theme="dark"] .job-card-management .component-tabs,
+[data-theme="dark"] .job-card-management .component-tabs .el-tabs__content,
+[data-theme="dark"] .job-card-management .component-tabs .el-tabs__header,
+body.dark-mode .job-card-management .component-tabs,
+body.dark-mode .job-card-management .component-tabs .el-tabs__content,
+body.dark-mode .job-card-management .component-tabs .el-tabs__header {
+    background: #111827 !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .job-card-management .component-tabs .el-tabs__item,
+body.dark-mode .job-card-management .component-tabs .el-tabs__item {
+    color: #9fb0c8 !important;
+}
+
+[data-theme="dark"] .job-card-management .component-tabs .el-tabs__item.is-active,
+body.dark-mode .job-card-management .component-tabs .el-tabs__item.is-active {
+    color: #93c5fd !important;
 }
 </style>

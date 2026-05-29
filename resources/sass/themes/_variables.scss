@@ -1,0 +1,77 @@
+:root {
+  // Light Theme (Default)
+  --main-bg: #f8fafc;
+  --secondary-bg: #f1f5f9;
+  --card-bg: #ffffff;
+  --border-color: #dee2e6;
+  
+  --text-primary: #212529;
+  --text-secondary: #495057;
+  --text-muted: #6c757d;
+  
+  --brand-primary: #0d6efd;
+  --color-success: #198754;
+  --color-warning: #fd7e14;
+  --color-danger: #dc3545;
+  --color-info: #0dcaf0;
+  
+  --input-bg: #ffffff;
+  --input-text: #212529;
+  --input-placeholder: #6c757d;
+  --hover-bg: #e9ecef;
+  
+  // Custom specific
+  --navbar-bg: #343a40;
+  --menu-text-color: #f8f9fa;
+  --glass-border: 1px solid rgba(0, 0, 0, 0.1);
+  --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] {
+  // Recommended Dark Theme
+  --main-bg: #121212;
+  --secondary-bg: #1E1E1E;
+  --card-bg: #242424;
+  --border-color: #3A3A3A;
+  
+  --text-primary: #EAEAEA;
+  --text-secondary: #B0B0B0;
+  --text-muted: #888888;
+  
+  --brand-primary: #4F8CFF;
+  --color-success: #22C55E;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-info: #22d3ee;
+  
+  --input-bg: #2A2A2A;
+  --input-text: #F5F5F5;
+  --input-placeholder: #9CA3AF;
+  --hover-bg: #323232;
+  
+  // Custom specific
+  --navbar-bg: #1E1E1E;
+  --menu-text-color: #EAEAEA;
+  --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  
+  // Bootstrap 5.3 Overrides via Custom Properties mapping
+  --bs-body-bg: var(--main-bg);
+  --bs-body-color: var(--text-primary);
+  --bs-secondary-bg: var(--secondary-bg);
+  --bs-tertiary-bg: var(--card-bg);
+  --bs-border-color: var(--border-color);
+  --bs-heading-color: var(--text-primary);
+  --bs-primary: var(--brand-primary);
+  --bs-success: var(--color-success);
+  --bs-warning: var(--color-warning);
+  --bs-danger: var(--color-danger);
+  --bs-info: var(--color-info);
+  --bs-link-color: var(--brand-primary);
+  --bs-link-hover-color: #79a8ff;
+}
+
+// Global SCSS variables from the original setup
+$font-family-sans-serif: 'Nunito', 'Montserrat', sans-serif;
+$font-size-base: 0.9rem;
+$line-height-base: 1.6;

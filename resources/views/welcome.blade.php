@@ -1887,6 +1887,8 @@
                             <i class="bi bi-gear-wide-connected me-2" style="color: #a78bfa !important;"></i>
                             <span>Production</span>
                         </template>
+                        <el-menu-item index="qc-production">QC Production</el-menu-item>
+                        <el-menu-item index="production-configuration">Configuration</el-menu-item>
                         <el-menu-item index="job-cards">Job Cards</el-menu-item>
                         <el-menu-item index="production-dashboard">Production Analytics</el-menu-item>
                     </el-sub-menu>
@@ -2017,6 +2019,8 @@
                 <rm-report-component v-else-if="currentView === 'rm-reports'" :user="user"></rm-report-component>
                 <unit-of-measure-component v-else-if="currentView === 'unit-of-measures'" :user="user"></unit-of-measure-component>
                 <job-card-component v-else-if="currentView === 'job-cards'" :user="user"></job-card-component>
+                <qc-production-component v-else-if="currentView === 'qc-production'" :user="user" @navigate="setView"></qc-production-component>
+                <production-configuration-component v-else-if="currentView === 'production-configuration'" :user="user"></production-configuration-component>
                 <production-dashboard-component v-else-if="currentView === 'production-dashboard'" :user="user"></production-dashboard-component>
 
                 <best-ui-showcase-component v-else-if="currentView === 'best-ui'"></best-ui-showcase-component>

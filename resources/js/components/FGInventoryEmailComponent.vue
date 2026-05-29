@@ -1,8 +1,11 @@
 <template>
   <div class="fg-report-wrapper">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h2><i class="bi bi-envelope-at-fill"></i> Inventory Email Report</h2>
-      <div class="d-flex gap-2">
+    <div class="report-header">
+      <h2 class="report-title">
+        <span class="report-title-icon"><i class="bi bi-envelope-at-fill"></i></span>
+        Inventory Email Report
+      </h2>
+      <div class="report-actions">
         <el-button type="success" @click="exportToExcel" :disabled="!hasData">
           <i class="bi bi-file-earmark-excel me-2"></i> Export Excel
         </el-button>
@@ -15,29 +18,25 @@
       </div>
     </div>
 
-    <div class="card shadow-sm border-0 mb-4">
-      <div class="card-body bg-light-soft">
-        <div class="row g-2 align-items-end">
-          <div class="col-md-3">
-            <label class="small text-muted fw-bold">Customer</label>
-            <select v-model="filters.customer_id" @change="fetchReport" class="form-select form-select-sm shadow-sm">
-              <option value="">All Customers</option>
-              <option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label class="small text-muted fw-bold">Item / Code</label>
-            <div class="input-group input-group-sm shadow-sm">
-              <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-              <input v-model="filters.item_search" @input="debouncedFetch" type="text" class="form-control border-start-0" placeholder="Search by name or code...">
-            </div>
-          </div>
-          <div class="col-md-2">
-            <button @click="resetFilters" class="btn btn-sm btn-outline-secondary w-100 shadow-sm">
-              <i class="bi bi-x-circle me-1"></i> Clear Filters
-            </button>
-          </div>
+    <div class="report-filters">
+      <div class="filter-field filter-customer">
+        <label>Customer</label>
+        <select v-model="filters.customer_id" @change="fetchReport" class="form-select form-select-sm">
+          <option value="">All Customers</option>
+          <option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option>
+        </select>
+      </div>
+      <div class="filter-field filter-search">
+        <label>Item / Code</label>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input v-model="filters.item_search" @input="debouncedFetch" type="text" class="form-control" placeholder="Search by name or code...">
         </div>
+      </div>
+      <div class="filter-field filter-clear">
+        <button @click="resetFilters" class="btn btn-sm btn-clear btn-clear-filters">
+          Clear
+        </button>
       </div>
     </div>
 
@@ -302,9 +301,195 @@ export default {
 </script>
 
 <style scoped>
-.fg-report-wrapper { padding: 5px; }
-.bg-light-soft { background-color: rgba(248, 249, 250, 0.8); }
+.fg-report-wrapper {
+  padding: 5px;
+}
+
+.report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 26px;
+}
+
+.report-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: 2.45rem;
+  line-height: 1.1;
+  font-weight: 800;
+  color: #111827;
+}
+
+.report-title-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #111827;
+  color: #ffffff;
+  font-size: 1.45rem;
+  flex: 0 0 auto;
+}
+
+.report-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.report-actions :deep(.el-button) {
+  min-height: 42px;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.report-filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(280px, 420px) minmax(90px, 120px);
+  align-items: end;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.filter-field label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 1rem;
+  color: #64748b;
+}
+
+.filter-field .form-select,
+.filter-field .form-control,
+.filter-field .input-group-text {
+  height: 52px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 10px;
+}
+
+.filter-field .input-group-text {
+  width: 44px;
+  justify-content: center;
+}
+
+.filter-field .input-group .input-group-text {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.filter-field .input-group .form-control {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.btn-clear {
+  height: 52px;
+  min-width: 96px;
+  border-radius: 10px;
+  color: #475569;
+  font-weight: 700;
+  border: 0;
+}
+
 .table thead th { font-weight: 600; font-size: 0.85rem; letter-spacing: 0.5px; }
 .table tbody td { vertical-align: middle; padding: 10px 8px; font-size: 0.9rem; }
 .card { border-radius: 12px; }
+
+:global([data-theme="dark"]) .fg-report-wrapper {
+  color: #f8fafc;
+}
+
+:global([data-theme="dark"]) .fg-report-wrapper .report-title {
+  color: #ffffff;
+}
+
+:global([data-theme="dark"]) .fg-report-wrapper .report-title-icon {
+  background: #ffffff;
+  color: #020617;
+}
+
+:global([data-theme="dark"]) .fg-report-wrapper .report-filters {
+  background: transparent;
+}
+
+:global([data-theme="dark"]) .fg-report-wrapper .filter-field label {
+  color: #7890b5 !important;
+  font-weight: 500;
+}
+
+:global([data-theme="dark"]) .fg-report-wrapper .form-select,
+:global([data-theme="dark"]) .fg-report-wrapper .form-control {
+  background-color: #1c283b;
+  border-color: #41516a;
+  color: #ffffff;
+  box-shadow: none !important;
+}
+
+:global([data-theme="dark"]) .fg-report-wrapper .form-select:focus,
+:global([data-theme="dark"]) .fg-report-wrapper .form-control:focus {
+  border-color: #6ea8ff;
+  box-shadow: 0 0 0 0.18rem rgba(110, 168, 255, 0.18) !important;
+}
+
+:global([data-theme="dark"]) .fg-report-wrapper .form-control::placeholder {
+  color: #7f91ad;
+  opacity: 1;
+}
+
+:global([data-theme="dark"]) .fg-report-wrapper .input-group-text {
+  background-color: #1c283b !important;
+  border-color: #41516a;
+  color: #8fa2bf;
+}
+
+:global([data-theme="dark"]) .fg-report-wrapper .card {
+  background-color: #111827;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+}
+
+@media (max-width: 992px) {
+  .report-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .report-actions {
+    justify-content: flex-start;
+  }
+
+  .report-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .report-title {
+    font-size: 1.9rem;
+  }
+
+  .report-title-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 1.2rem;
+  }
+
+  .report-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .report-actions :deep(.el-button) {
+    width: 100%;
+    margin-left: 0;
+  }
+}
 </style>

@@ -3,6 +3,15 @@
     <div class="login-overlay"></div>
     <div class="login-card-container animate__animated animate__fadeIn">
       <div class="login-card-glass">
+        <button
+          type="button"
+          class="login-close-btn"
+          aria-label="Close window"
+          title="Close"
+          @click="closeWindow"
+        >
+          <i class="bi bi-x-lg"></i>
+        </button>
         <!-- Logo and Corporate branding -->
         <div class="text-center mb-4">
           <img src="/images/quality-cartons-logo.svg" alt="Quality Cartons" class="login-logo mb-3">
@@ -32,7 +41,7 @@
           <!-- Submit Button -->
           <button type="submit" class="btn btn-primary w-100 login-submit-btn" :disabled="loading">
             <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-            {{ loading ? 'Securing Session...' : 'Authenticate & Enter' }}
+            {{ loading ? 'Securing Session...' : 'Login' }}
           </button>
         </form>
         
@@ -58,6 +67,14 @@ export default {
     };
   },
   methods: {
+    closeWindow() {
+      window.close();
+      setTimeout(() => {
+        if (!window.closed) {
+          window.location.href = 'about:blank';
+        }
+      }, 150);
+    },
     login() {
       this.loading = true;
       this.error = null;
@@ -114,6 +131,7 @@ export default {
 }
 
 .login-card-glass {
+  position: relative;
   background: rgba(30, 41, 59, 0.65) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4) !important;
@@ -123,6 +141,29 @@ export default {
   padding: 40px 35px;
   color: #f1f5f9;
   transition: all 0.3s ease;
+}
+
+.login-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.55);
+  color: #cbd5e1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.login-close-btn:hover {
+  color: #ffffff;
+  border-color: rgba(248, 113, 113, 0.5);
+  background: rgba(127, 29, 29, 0.55);
 }
 
 .login-card-glass:hover {

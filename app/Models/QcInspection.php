@@ -20,6 +20,7 @@ class QcInspection extends Model implements Auditable
         'inspection_date',
         'inspector_name',
         'qc_status',
+        'decision_type',
         'remarks',
         'inspected_by',
         'avg_gsm',

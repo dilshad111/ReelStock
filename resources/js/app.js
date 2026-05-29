@@ -54,6 +54,8 @@ const PERMISSION_KEY_MAP = {
     'rm-reports': 'rm-reports',
     'unit-of-measures': 'rm-items',
     'job-cards': 'job-cards',
+    'qc-production': 'job-cards',
+    'production-configuration': 'job-cards',
     'production-dashboard': 'production-dashboard'
 };
 
@@ -154,6 +156,8 @@ const VIEW_ORDER = [
     'rm-reports',
     'unit-of-measures',
     'job-cards',
+    'qc-production',
+    'production-configuration',
     'production-dashboard',
     'profile'
 ];
@@ -207,6 +211,8 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     'rm-reports': 'rm-reports',
     'unit-of-measures': 'unit-of-measures',
     'job-cards': 'job-cards',
+    'qc-production': 'qc-production',
+    'production-configuration': 'production-configuration',
     'production-dashboard': 'production-dashboard',
     profile: 'profile'
 });
@@ -649,6 +655,8 @@ import RMDashboardComponent from './components/RMDashboardComponent.vue';
 import RMReportComponent from './components/RMReportComponent.vue';
 import UnitOfMeasureComponent from './components/UnitOfMeasureComponent.vue';
 import JobCardComponent from './components/JobCardComponent.vue';
+import QcProductionComponent from './components/QcProductionComponent.vue';
+import ProductionConfigurationComponent from './components/ProductionConfigurationComponent.vue';
 import ProductionDashboardComponent from './components/ProductionDashboardComponent.vue';
 import ThemeSelectorComponent from './components/ThemeSelectorComponent.vue';
 
@@ -702,6 +710,8 @@ app.component('rm-dashboard-component', RMDashboardComponent);
 app.component('rm-report-component', RMReportComponent);
 app.component('unit-of-measure-component', UnitOfMeasureComponent);
 app.component('job-card-component', JobCardComponent);
+app.component('qc-production-component', QcProductionComponent);
+app.component('production-configuration-component', ProductionConfigurationComponent);
 app.component('production-dashboard-component', ProductionDashboardComponent);
 app.component('theme-selector-component', ThemeSelectorComponent);
 

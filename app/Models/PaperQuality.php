@@ -16,12 +16,16 @@ class PaperQuality extends Model implements Auditable
         'item_code',
         'gsm_range',
         'min_gsm',
+        'standard_gsm',
         'max_gsm',
         'min_bursting',
+        'standard_bursting',
         'max_bursting',
         'min_moisture',
+        'standard_moisture',
         'max_moisture',
         'min_cobb',
+        'standard_cobb',
         'max_cobb',
         'paper_color',
         'paper_color_id',
@@ -29,12 +33,16 @@ class PaperQuality extends Model implements Auditable
 
     protected $casts = [
         'min_gsm' => 'decimal:2',
+        'standard_gsm' => 'decimal:2',
         'max_gsm' => 'decimal:2',
         'min_bursting' => 'decimal:2',
+        'standard_bursting' => 'decimal:2',
         'max_bursting' => 'decimal:2',
         'min_moisture' => 'decimal:2',
+        'standard_moisture' => 'decimal:2',
         'max_moisture' => 'decimal:2',
         'min_cobb' => 'decimal:2',
+        'standard_cobb' => 'decimal:2',
         'max_cobb' => 'decimal:2',
     ];
 

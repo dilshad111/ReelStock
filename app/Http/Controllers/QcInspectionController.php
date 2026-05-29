@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\QcInspection;
 use App\Models\QcInspectionDetail;
 use App\Models\ReelReceipt;
 use App\Models\PaperQuality;
 use App\Models\Reel;
 use App\Models\Supplier;
+use App\Models\Setting;
 
 class QcInspectionController extends Controller
 {
@@ -55,18 +57,9 @@ class QcInspectionController extends Controller
     public function openLots(Request $request)
     {
         try {
-            // Get all distinct lot numbers from reel_receipts that don't have a completed QC inspection
-            $inspectedLots = QcInspection::whereIn('qc_status', ['approved', 'rejected'])
-                ->pluck('lot_number')
-                ->toArray();
-
             $query = ReelReceipt::with(['reel.paperQuality', 'reel.supplier'])
                 ->whereNotNull('lot_number')
                 ->where('lot_number', '!=', '');
-
-            if (!empty($inspectedLots)) {
-                $query->whereNotIn('lot_number', $inspectedLots);
-            }
 
             if ($request->filled('lot_number')) {
                 $query->where('lot_number', 'like', '%' . $request->lot_number . '%');
@@ -75,22 +68,35 @@ class QcInspectionController extends Controller
             // Group by lot_number to get unique lots
             $receipts = $query->orderBy('id', 'desc')->get();
 
-            $lotGroups = $receipts->groupBy('lot_number')->map(function ($group) {
+            $latestInspections = QcInspection::orderByDesc('id')->get()->keyBy('lot_number');
+
+            $lotGroups = $receipts->groupBy('lot_number')->map(function ($group) use ($latestInspections) {
                 $first = $group->first();
                 $reel = $first->reel;
                 $quality = $reel ? $reel->paperQuality : null;
                 $supplier = $reel ? $reel->supplier : null;
+                $inspection = $latestInspections->get($first->lot_number);
+                $statusMap = [
+                    'pending' => 'Pending',
+                    'approved' => 'Completed',
+                    'rejected' => 'Rejected',
+                ];
+                $statusCode = $inspection ? $inspection->qc_status : 'pending';
+                $statusLabel = $statusMap[$statusCode] ?? ucfirst($statusCode);
 
                 return [
                     'lot_number' => $first->lot_number,
-                    'po_number' => $first->po_number,
-                    'grn_number' => $first->grn_number,
+                    'po_number' => $inspection && $inspection->po_number ? $inspection->po_number : $first->po_number,
+                    'grn_number' => $inspection && $inspection->grn_number ? $inspection->grn_number : $first->grn_number,
                     'receiving_date' => $first->receiving_date,
                     'paper_quality_id' => $reel ? $reel->paper_quality_id : null,
                     'paper_quality' => $quality ? ($quality->quality . ' ' . $quality->gsm_range) : 'N/A',
                     'paper_color' => $quality ? $quality->paper_color : null,
                     'supplier_id' => $reel ? $reel->supplier_id : null,
                     'supplier_name' => $supplier ? $supplier->name : 'N/A',
+                    'inspection_id' => $inspection ? $inspection->id : null,
+                    'qc_status' => $statusCode,
+                    'qc_status_label' => $statusLabel,
                     'reel_count' => $group->count(),
                     'total_weight' => $group->sum(function ($r) {
                         return $r->reel ? $r->reel->original_weight : 0;
@@ -187,6 +193,7 @@ class QcInspectionController extends Controller
                 'supplier_id' => 'required|exists:suppliers,id',
                 'inspection_date' => 'required|date',
                 'inspector_name' => 'required|string',
+                'decision_type' => 'nullable|in:lot_accept,lot_reject,temporary_accept,partial_accept',
                 'received_date' => 'required|date',
                 'details' => 'required|array|min:1',
                 'details.*.reel_id' => 'required|exists:reels,id',
@@ -212,6 +219,7 @@ class QcInspectionController extends Controller
                     'inspection_date' => $request->inspection_date,
                     'inspector_name' => $request->inspector_name,
                     'qc_status' => 'pending',
+                    'decision_type' => $request->decision_type ?: 'lot_accept',
                     'remarks' => $request->remarks,
                     'inspected_by' => auth()->id(),
                 ]);
@@ -294,6 +302,7 @@ class QcInspectionController extends Controller
             $request->validate([
                 'inspection_date' => 'sometimes|date',
                 'inspector_name' => 'sometimes|string',
+                'decision_type' => 'sometimes|in:lot_accept,lot_reject,temporary_accept,partial_accept',
                 'details' => 'sometimes|array',
                 'details.*.reel_id' => 'required_with:details|exists:reels,id',
                 'details.*.reel_size' => 'nullable|numeric|min:0',
@@ -310,7 +319,7 @@ class QcInspectionController extends Controller
                 $criteria = PaperQuality::find($inspection->paper_quality_id);
 
                 // Update header fields
-                $headerFields = ['inspection_date', 'inspector_name', 'remarks', 'po_number', 'grn_number'];
+                $headerFields = ['inspection_date', 'inspector_name', 'decision_type', 'remarks', 'po_number', 'grn_number'];
                 $inspection->update($request->only($headerFields));
 
                 // Update details if provided
@@ -397,6 +406,39 @@ class QcInspectionController extends Controller
             $data['paper_color'] = $inspection->paperQuality ? $inspection->paperQuality->paper_color : null;
 
             return response()->json($data);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Download QC inspection report as PDF
+     */
+    public function reportPdf($id)
+    {
+        try {
+            $inspection = QcInspection::with(['paperQuality', 'supplier', 'inspector', 'details.reel'])
+                ->findOrFail($id);
+            $approvedBy = Setting::where('key', 'qc_default_approved_by')->value('value') ?: '-';
+
+            $criteria = $inspection->paperQuality ? [
+                'min_gsm' => $inspection->paperQuality->min_gsm,
+                'max_gsm' => $inspection->paperQuality->max_gsm,
+                'min_bursting' => $inspection->paperQuality->min_bursting,
+                'max_bursting' => $inspection->paperQuality->max_bursting,
+                'min_moisture' => $inspection->paperQuality->min_moisture,
+                'max_moisture' => $inspection->paperQuality->max_moisture,
+                'min_cobb' => $inspection->paperQuality->min_cobb,
+                'max_cobb' => $inspection->paperQuality->max_cobb,
+            ] : null;
+
+            $pdf = Pdf::loadView('reports.qc-inspection-pdf', [
+                'inspection' => $inspection,
+                'criteria' => $criteria,
+                'approvedBy' => $approvedBy,
+            ])->setPaper('a4', 'portrait');
+
+            return $pdf->download('qc_inspection_' . $inspection->lot_number . '.pdf');
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }

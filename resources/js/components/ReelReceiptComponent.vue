@@ -250,7 +250,7 @@
         <input v-model="filters.date_to" type="date" class="form-control form-control-sm" @change="fetchReceipts">
       </div>
       <div class="col-md-2">
-        <button @click="clearFilters" class="btn btn-sm btn-outline-secondary w-100">Clear</button>
+        <button @click="clearFilters" class="btn btn-sm btn-clear-filters w-100">Clear</button>
       </div>
     </div>
     <table class="table table-striped table-sticky-header table-sm text-nowrap small">

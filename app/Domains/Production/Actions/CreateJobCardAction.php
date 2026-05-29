@@ -7,6 +7,7 @@ use App\Models\JobCardItem;
 use App\Models\JobCardStep;
 use App\Models\JobCardPiece;
 use App\Models\JobCardLayer;
+use App\Models\Product;
 use App\Domains\Production\DTOs\JobCardDTO;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -16,11 +17,13 @@ class CreateJobCardAction
     public function execute(JobCardDTO $dto): JobCard
     {
         return DB::transaction(function () use ($dto) {
+            $productId = $this->resolveProductId($dto);
+
             // 1. Create Job Card
             $jobCard = JobCard::create([
                 'job_card_no' => $this->generateJobCardNo($dto->job_card_no),
                 'customer_id' => $dto->customer_id,
-                'fg_product_id' => $dto->fg_product_id,
+                'fg_product_id' => $productId,
                 'planned_qty' => $dto->planned_qty,
                 'planned_date' => $dto->planned_date,
                 'delivery_date' => $dto->delivery_date,
@@ -148,5 +151,49 @@ class CreateJobCardAction
 
         $number = (int) substr($last->job_card_no, -4);
         return $prefix . '-' . str_pad($number + 1, 4, '0', STR_PAD_LEFT);
+    }
+
+    private function resolveProductId(JobCardDTO $dto): int
+    {
+        if ($dto->fg_product_id) {
+            return $dto->fg_product_id;
+        }
+
+        $itemName = trim((string) $dto->item_name);
+        if ($itemName === '') {
+            throw new \InvalidArgumentException('Item name is required.');
+        }
+
+        $itemCode = trim((string) ($dto->item_code ?: $this->generateProductCode($dto->customer_id)));
+
+        $product = Product::firstOrCreate(
+            [
+                'customer_id' => $dto->customer_id,
+                'item_code' => $itemCode,
+            ],
+            [
+                'item_name' => $itemName,
+                'rate' => null,
+                'opening_balance' => 0,
+            ]
+        );
+
+        if ($product->item_name !== $itemName) {
+            $product->update(['item_name' => $itemName]);
+        }
+
+        return $product->id;
+    }
+
+    private function generateProductCode(int $customerId): string
+    {
+        $prefix = 'JCITEM-' . $customerId . '-';
+        $last = Product::where('customer_id', $customerId)
+            ->where('item_code', 'like', $prefix . '%')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $number = $last ? ((int) substr($last->item_code, strlen($prefix))) + 1 : 1;
+        return $prefix . str_pad($number, 4, '0', STR_PAD_LEFT);
     }
 }

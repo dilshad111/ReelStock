@@ -1,524 +1,422 @@
+@php
+    $special = is_array($jobCard->special_details) ? $jobCard->special_details : [];
+    $product = $jobCard->product;
+    $customer = $jobCard->customer;
+    $cartonQuality = $special['carton_quality'] ?? 'normal';
+    $jobType = $special['job_type'] ?? 'Repeat';
+    $priority = $special['quality_priority'] ?? 'Normal';
+    $slotType = $special['slot_type'] ?? 'Simple';
+    $inkCoverage = $special['ink_coverage'] ?? null;
+    $tolerance = $jobCard->pieces_count == 1 && $jobCard->layers->count() >= 5 ? 5 : 3;
+    $printDate = now()->format('d/m/Y');
+    $itemCode = $product->item_code ?? $product->code ?? '-';
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Job Card Blueprint - {{ $jobCard->job_card_no }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Card - {{ $jobCard->job_card_no }}</title>
     <style>
-        @page {
-            size: A4 portrait;
-            margin: 3mm 5mm 3mm 10mm;
-        }
+        @page { size: A4 portrait; margin: 3mm 5mm 3mm 10mm; }
+        * { box-sizing: border-box; }
         body {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 11px;
-            color: #000;
-            line-height: 1.2;
             margin: 0;
             padding: 0;
+            background: #fff;
+            color: #000;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 9pt;
+            line-height: 1.25;
             -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
-        .container {
-            width: 100%;
-            max-width: 195mm; /* Max printable width */
-            margin: 0 auto;
+        .print-container {
+            border: 2.5px solid #000;
+            min-height: 285mm;
+            padding: 4px;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            height: 285mm; /* Perfect A4 height minus margins */
-            box-sizing: border-box;
+            gap: 2px;
         }
-        .border-heavy {
-            border: 2px solid #000;
-        }
-        .border-medium {
-            border: 1.5px solid #000;
-        }
-        .border-light {
-            border: 1px solid #000;
-        }
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
-        .fw-bold { font-weight: bold; }
-        .text-uppercase { text-transform: uppercase; }
-        
-        /* Split Banner Header */
-        .header-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 3px;
-        }
-        .header-table td {
-            border: 2px solid #000;
-            padding: 4px;
-            vertical-align: middle;
-        }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #000; padding: 3px 5px; vertical-align: middle; }
+        th { background: #e6e6e6; font-weight: 800; text-transform: uppercase; }
+        .doc-table td { border-width: 2px; }
         .logo-cell {
-            width: 25%;
-            font-size: 16px;
-            letter-spacing: 1px;
+            width: 10%;
+            text-align: center;
+            font-size: 11px;
+            font-weight: 800;
+            background: #f2f2f2;
         }
         .title-cell {
-            width: 50%;
+            position: relative;
+            text-align: center;
+            padding: 5px;
         }
         .title-cell h1 {
             margin: 0;
-            font-size: 18px;
+            color: #0000cd;
+            font-size: 16px;
             font-weight: 900;
-            letter-spacing: 2px;
         }
-        .meta-cell {
-            width: 25%;
+        .print-date {
+            position: absolute;
+            right: 6px;
+            top: 6px;
             font-size: 9px;
-            line-height: 1.3;
+            color: #000;
         }
-
-        /* Summary Box layout */
-        .summary-box {
-            display: flex;
-            width: 100%;
-            border: 2px solid #000;
-            margin-bottom: 3px;
+        .section-box {
+            border: 1.5px solid #000;
+            page-break-inside: avoid;
         }
-        .summary-details {
-            width: 65%;
-            border-right: 2px solid #000;
-            padding: 4px;
-        }
-        .summary-details table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .summary-details td {
-            padding: 2px 4px;
-            vertical-align: top;
-        }
-        .summary-cad {
-            width: 35%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 4px;
-            background: #fff;
-        }
-
-        /* Technical specs grid */
         .section-title {
-            background: #000;
+            margin: 1px;
+            padding: 3px 10px;
+            border: 1px solid #000;
+            border-radius: 4px;
+            background: linear-gradient(to bottom, #4d4d4d 0%, #000 100%);
             color: #fff;
-            font-weight: bold;
+            font-weight: 900;
+            font-size: 10pt;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .job-info {
+            display: grid;
+            grid-template-columns: 1fr 0.95in;
+            gap: 6px;
+            padding: 5px;
+            align-items: stretch;
+        }
+        .customer-name {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 3px;
+            background: #e6e6e6;
+            font-size: 14pt;
+            font-weight: 900;
+        }
+        .info-line {
+            margin-top: 4px;
             text-align: center;
-            padding: 2px 0;
-            font-size: 10px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
+            font-size: 11pt;
         }
-        .tech-table, .substrate-table, .ops-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 3px;
-        }
-        .tech-table th, .tech-table td,
-        .substrate-table th, .substrate-table td,
-        .ops-table th, .ops-table td {
-            border: 1px solid #000;
-            padding: 3px 5px;
-            vertical-align: middle;
-        }
-        .tech-table th, .substrate-table th, .ops-table th {
-            background-color: #f2f2f2;
-            font-weight: bold;
-            font-size: 9px;
-            text-transform: uppercase;
-        }
-
-        /* Pantone visual chips */
-        .pantone-container {
+        .sub-meta {
             display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
+            justify-content: center;
+            gap: 14px;
+            margin-top: 5px;
+            padding-top: 3px;
+            border-top: 1px dashed #aaa;
+            font-size: 8.5pt;
         }
-        .pantone-chip {
-            border: 1px solid #000;
-            padding: 1px 4px;
-            font-size: 8px;
-            font-weight: bold;
-            border-radius: 2px;
-            background-color: #eee;
+        .job-no-box {
+            border: 2px solid #000;
+            display: grid;
+            place-items: center;
+            font-size: 10px;
+            font-weight: 900;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
         }
-
-        /* Slotting matrix styles */
-        .slotting-matrix {
+        .speed-strip {
             display: flex;
             justify-content: space-around;
-            border: 1px solid #000;
+            gap: 10px;
+            border-top: 1.5px solid #000;
+            background: #f7f7f7;
+            padding: 3px 8px;
+            font-size: 8.5pt;
+        }
+        .corrugation-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
             padding: 4px;
+        }
+        .piece-box {
+            border: 1.5px solid #000;
             background: #fafafa;
-            margin-bottom: 3px;
-        }
-        .slotting-col {
-            text-align: center;
-            border-right: 1px dashed #000;
-            flex: 1;
-        }
-        .slotting-col:last-child {
-            border-right: none;
-        }
-        .slotting-val {
-            font-size: 12px;
-            font-weight: bold;
-            margin-top: 2px;
-        }
-
-        /* Notes & Instructions */
-        .instruction-box {
-            border: 1.5px solid #000;
             padding: 4px;
-            min-height: 45px;
-            margin-bottom: 3px;
-            font-size: 10px;
         }
-
-        /* Multi piece configuration */
-        .pieces-container {
-            border: 1.5px solid #000;
+        .piece-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 6px;
+            padding: 2px 4px;
+            background: #e6e6e6;
+            font-weight: 900;
+            border: 1px solid #999;
             margin-bottom: 3px;
-            padding: 3px;
         }
-        .piece-item {
+        .center { text-align: center; }
+        .right { text-align: right; }
+        .bold { font-weight: 900; }
+        .muted { color: #555; }
+        .warning-note {
+            margin: 3px;
+            padding: 4px;
+            border: 1.5px solid #d4a017;
+            background: #fff8c5;
+            font-weight: 700;
+        }
+        .info-note {
+            margin: 3px;
+            padding: 4px;
+            border: 1.5px solid #1976d2;
+            background: #dbeafe;
+            font-weight: 700;
+        }
+        .finish-note {
+            margin: 3px;
+            padding: 4px;
+            border: 1.5px solid #28a745;
+            background: #dcfce7;
+            font-weight: 700;
+        }
+        .pantone-chip {
+            display: inline-block;
             border: 1px solid #000;
-            margin-bottom: 3px;
-            padding: 3px;
-        }
-        .piece-item:last-child {
-            margin-bottom: 0;
-        }
-
-        /* Footer signatures */
-        .footer-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: auto;
-        }
-        .footer-table td {
-            border: 2px solid #000;
-            width: 33.33%;
-            padding: 8px 4px 2px 4px;
-            vertical-align: bottom;
-        }
-        .signature-line {
-            border-top: 1px dashed #000;
-            margin-top: 20px;
-            font-size: 9px;
-            text-align: center;
+            background: #eee;
+            border-radius: 2px;
+            padding: 1px 4px;
+            margin: 1px;
+            font-size: 8px;
+            font-weight: 800;
             text-transform: uppercase;
         }
-
-        /* SVG Box style */
-        .box-svg {
-            stroke: #000;
-            stroke-width: 1.5px;
-            fill: none;
-            stroke-dasharray: 4 2;
+        .signature-row {
+            margin-top: auto;
         }
-        .box-solid {
-            stroke: #000;
-            stroke-width: 1.8px;
-            fill: none;
+        .signature-row td {
+            height: 44px;
+            width: 33.33%;
+            vertical-align: bottom;
+            text-align: center;
+            font-size: 9pt;
+            font-weight: 800;
+        }
+        .signature-line {
+            border-top: 1.5px solid #000;
+            padding-top: 3px;
+            margin: 0 22px;
         }
     </style>
 </head>
 <body>
+<div class="print-container">
+    <table class="doc-table">
+        <tr>
+            <td rowspan="2" class="logo-cell">QC</td>
+            <td colspan="8" class="title-cell">
+                <h1>Job Card</h1>
+                <div class="print-date"><strong><u>Printing Date:</u></strong> {{ $printDate }}</div>
+            </td>
+        </tr>
+        <tr>
+            <td class="center"><strong>Document ID No</strong></td>
+            <td class="center"><strong>QC/DI3A/025</strong></td>
+            <td class="center"><strong>Rev. #</strong></td>
+            <td class="center bold">00</td>
+            <td class="center"><strong>Rev. Date</strong></td>
+            <td class="center"><strong>-</strong></td>
+            <td class="center"><strong>Page #</strong></td>
+            <td class="center"><strong>1 of 1</strong></td>
+        </tr>
+    </table>
 
-<div class="container">
-    <div>
-        <!-- 1. SPLIT BANNER HEADER -->
-        <table class="header-table">
-            <tr>
-                <td class="logo-cell text-center fw-bold">
-                    <div style="font-size: 18px; line-height: 1;">QUALITY</div>
-                    <div style="font-size: 10px; font-family: sans-serif; color: #555;">CARTONS</div>
-                </td>
-                <td class="title-cell text-center">
-                    <h1>MANUFACTURING SPECIFICATION</h1>
-                    <div style="font-size: 10px; font-weight: bold; margin-top: 2px;">JOB CARD: {{ $jobCard->job_card_no }}</div>
-                </td>
-                <td class="meta-cell">
-                    <strong>DOC ID :</strong> QC-JC-{{ str_pad($jobCard->id, 5, '0', STR_PAD_LEFT) }}<br>
-                    <strong>REV NO :</strong> 02 / ISO 9001<br>
-                    <strong>DATE   :</strong> {{ \Carbon\Carbon::parse($jobCard->planned_date)->format('d-M-Y') }}<br>
-                    <strong>PAGE   :</strong> 1 OF 1
-                </td>
-            </tr>
-        </table>
-
-        <!-- 2. JOB SUMMARY BOX -->
-        <div class="summary-box">
-            <div class="summary-details">
-                <table>
-                    <tr>
-                        <td class="fw-bold" style="width: 25%;">CUSTOMER:</td>
-                        <td class="fw-bold text-uppercase">{{ $jobCard->customer->name }}</td>
-                    </tr>
-                    <tr>
-                        <td class="fw-bold">FG ITEM:</td>
-                        <td class="text-uppercase">{{ $jobCard->product->item_name }} ({{ $jobCard->product->item_code }})</td>
-                    </tr>
-                    <tr>
-                        <td class="fw-bold">BOX TYPE:</td>
-                        <td>{{ $jobCard->carton_type }}</td>
-                    </tr>
-                    <tr>
-                        <td class="fw-bold">PLANNED QTY:</td>
-                        <td class="fw-bold" style="font-size: 12px;">{{ number_format($jobCard->planned_qty) }} PCS</td>
-                    </tr>
-                    <tr>
-                        <td class="fw-bold">OUTER SIZE:</td>
-                        <td class="fw-bold" style="font-size: 12px; letter-spacing: 0.5px;">
-                            {{ number_format($jobCard->length_mm, 1) }} x {{ number_format($jobCard->width_mm, 1) }} x {{ number_format($jobCard->height_mm, 1) }} {{ strtoupper($jobCard->uom) }}
-                        </td>
-                    </tr>
-                </table>
-            </div>
-            <div class="summary-cad">
-                <!-- Inline SVG CAD schematic for FEFCO 0201 Standard Box -->
-                <svg width="100%" height="80" viewBox="0 0 200 90">
-                    <!-- Flaps & Body unfolding structure -->
-                    <rect x="10" y="5" width="40" height="20" class="box-svg" />
-                    <rect x="50" y="5" width="45" height="20" class="box-svg" />
-                    <rect x="95" y="5" width="40" height="20" class="box-svg" />
-                    <rect x="135" y="5" width="45" height="20" class="box-svg" />
-
-                    <!-- Main Body Panel -->
-                    <rect x="10" y="25" width="40" height="40" class="box-solid" />
-                    <rect x="50" y="25" width="45" height="40" class="box-solid" />
-                    <rect x="95" y="25" width="40" height="40" class="box-solid" />
-                    <rect x="135" y="25" width="45" height="40" class="box-solid" />
-                    <!-- Joint flap -->
-                    <polygon points="180,25 186,28 186,62 180,65" class="box-solid" />
-
-                    <!-- Bottom Flaps -->
-                    <rect x="10" y="65" width="40" height="20" class="box-svg" />
-                    <rect x="50" y="65" width="45" height="20" class="box-svg" />
-                    <rect x="95" y="65" width="40" height="20" class="box-svg" />
-                    <rect x="135" y="65" width="45" height="20" class="box-svg" />
-
-                    <!-- Dimensions labels -->
-                    <text x="72" y="87" font-size="6" font-family="monospace" text-anchor="middle">L ({{ number_format($jobCard->length_mm, 0) }})</text>
-                    <text x="115" y="87" font-size="6" font-family="monospace" text-anchor="middle">W ({{ number_format($jobCard->width_mm, 0) }})</text>
-                    <text x="187" y="47" font-size="6" font-family="monospace" text-anchor="middle" transform="rotate(90,187,47)">H ({{ number_format($jobCard->height_mm, 0) }})</text>
-                </svg>
-            </div>
-        </div>
-
-        <!-- 3. PRODUCTION TECHNICAL PARAMETERS -->
-        <div class="section-title">Production Technical Parameters</div>
-        <table class="tech-table">
-            <thead>
-                <tr>
-                    <th>Deckle Size (in)</th>
-                    <th>Sheet Length (in)</th>
-                    <th>Ups (Outs)</th>
-                    <th>Est. Unit Weight (kg)</th>
-                    <th>Est. Total Weight (kg)</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td class="text-center fw-bold" style="font-size: 12px;">{{ number_format($jobCard->deckle_size, 2) }}"</td>
-                    <td class="text-center fw-bold" style="font-size: 12px;">{{ number_format($jobCard->sheet_length, 2) }}"</td>
-                    <td class="text-center" style="font-size: 12px;">{{ $jobCard->ups }}</td>
-                    <td class="text-center fw-bold" style="font-size: 12px;">{{ number_format($jobCard->est_unit_weight, 4) }}</td>
-                    <td class="text-center fw-bold" style="font-size: 12px;">{{ number_format($jobCard->est_unit_weight * $jobCard->planned_qty, 2) }}</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <!-- 4. RSC ONLINE FLUTES SLOTTING MATRIX -->
-        <div class="section-title">RSC Flutes &amp; Slotting Matrix (mm)</div>
-        <div class="slotting-matrix">
-            <div class="slotting-col">
-                <div>FLAP 1 (W/2 + Trim)</div>
-                <div class="slotting-val">{{ number_format($jobCard->width_mm / 2 + 5, 1) }}</div>
-            </div>
-            <div class="slotting-col">
-                <div>HEIGHT PROFILE</div>
-                <div class="slotting-val">{{ number_format($jobCard->height_mm + 3, 1) }}</div>
-            </div>
-            <div class="slotting-col">
-                <div>FLAP 2 (W/2 + Trim)</div>
-                <div class="slotting-val">{{ number_format($jobCard->width_mm / 2 + 5, 1) }}</div>
-            </div>
-        </div>
-
-        <!-- 5. CARDBOARD PAPER SUBSTRATE STRUCTURE (PLY TABLE) -->
-        <div class="section-title">Ply &amp; Cardboard Substrate Composition</div>
-        
-        @if($jobCard->pieces_count == 1)
-            <!-- Single Piece ply configuration -->
-            <table class="substrate-table">
-                <thead>
-                    <tr>
-                        <th>Ply No / Layer Type</th>
-                        <th>Paper Grade / Quality</th>
-                        <th class="text-right">GSM (g/m²)</th>
-                        <th>Flute Profile</th>
-                        <th>Factor</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @php $sumGsm = 0; @endphp
-                    @forelse($jobCard->layers as $layer)
-                        @php 
-                            $factor = 1.0;
-                            if (stripos($layer->flute_profile, 'B') !== false) $factor = 1.35;
-                            elseif (stripos($layer->flute_profile, 'C') !== false) $factor = 1.45;
-                            elseif (stripos($layer->flute_profile, 'E') !== false) $factor = 1.25;
-                            $sumGsm += $layer->gsm * $factor;
-                        @endphp
-                        <tr>
-                            <td class="fw-bold">{{ $layer->layer_type }}</td>
-                            <td>{{ $layer->paper_name ?? 'N/A' }}</td>
-                            <td class="text-right fw-bold">{{ $layer->gsm }}</td>
-                            <td class="text-center">{{ $layer->flute_profile }}</td>
-                            <td class="text-center">{{ number_format($factor, 2) }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="text-center text-muted">No ply structures configured for this Job Card.</td>
-                        </tr>
-                    @endforelse
-                    @if($jobCard->layers->isNotEmpty())
-                        <tr style="background: #fafafa;">
-                            <td colspan="2" class="fw-bold text-right">TOTAL MATERIAL STRENGTH:</td>
-                            <td class="text-right fw-bold" style="font-size: 11px;">{{ number_format($jobCard->layers->sum('gsm')) }} g/m²</td>
-                            <td colspan="2" class="text-center fw-bold">Effective: {{ number_format($sumGsm, 1) }} g/m²</td>
-                        </tr>
+    <div class="section-box">
+        <div class="section-title">1. Job Information</div>
+        <div class="job-info">
+            <div class="center">
+                <div><span class="customer-name">{{ $customer->name ?? '' }}</span></div>
+                <div class="info-line">
+                    <strong>Item Name:</strong> {{ $product->item_name ?? '-' }}
+                    <strong style="margin-left: 18px;">Item Code:</strong> {{ $itemCode }}
+                </div>
+                <div class="info-line">
+                    <strong>Size:</strong>
+                    <span class="bold">
+                        {{ number_format($jobCard->length_mm, $jobCard->uom === 'mm' ? 0 : 2) }} x
+                        {{ number_format($jobCard->width_mm, $jobCard->uom === 'mm' ? 0 : 2) }} x
+                        {{ number_format($jobCard->height_mm, $jobCard->uom === 'mm' ? 0 : 2) }}
+                        {{ $jobCard->uom }}
+                    </span>
+                    <span style="color:#c00; font-style:italic; font-weight:900;">(Tolerance: +/-{{ $tolerance }} mm)</span>
+                </div>
+                <div class="sub-meta">
+                    <span><strong>Job Type:</strong> {{ $jobType }}</span>
+                    <span><strong>Quality:</strong> {{ ucfirst(str_replace('_', ' ', $cartonQuality)) }}</span>
+                    <span><strong>Priority:</strong> {{ $priority }}</span>
+                    @if($inkCoverage !== null)
+                        <span><strong>Ink Coverage:</strong> {{ $inkCoverage }}%</span>
                     @endif
-                </tbody>
-            </table>
-        @else
-            <!-- Multi-piece Config -->
-            <div class="pieces-container">
-                <div style="font-weight: bold; margin-bottom: 2px; text-decoration: underline;">Multi-Piece Configuration ({{ $jobCard->pieces_count }} components):</div>
+                </div>
+            </div>
+            <div class="job-no-box">{{ $jobCard->job_card_no }}</div>
+        </div>
+        <div class="speed-strip">
+            <span><strong>Machine Target:</strong> {{ $jobCard->machine_name ?: 'N/A' }}</span>
+            <span><strong>Target Speed:</strong> {{ number_format($jobCard->target_speed) }} pcs/hr</span>
+            <span><strong>Box Type:</strong> {{ $jobCard->carton_type }}</span>
+        </div>
+    </div>
+
+    <div class="section-box">
+        <div class="section-title">2. Corrugation</div>
+        @if($jobCard->pieces_count > 1 && $jobCard->pieces->count() > 0)
+            <div class="corrugation-grid">
                 @foreach($jobCard->pieces as $piece)
-                    <div class="piece-item">
-                        <div style="font-weight: bold; display: flex; justify-content: space-between; border-bottom: 1px solid #000; margin-bottom: 2px;">
+                    <div class="piece-box">
+                        <div class="piece-head">
                             <span>{{ $piece->piece_name }}</span>
-                            <span>{{ $piece->length_mm }}x{{ $piece->width_mm }}x{{ $piece->height_mm }} mm | Deckle: {{ $piece->deckle_size }}" | Length: {{ $piece->sheet_length }}"</span>
+                            <span>{{ number_format($piece->length_mm, 0) }}x{{ number_format($piece->width_mm, 0) }}x{{ number_format($piece->height_mm, 0) }} mm</span>
                         </div>
-                        <table class="substrate-table" style="margin-bottom: 0;">
-                            <thead>
+                        <table>
+                            <tr>
+                                <th>Deckle</th>
+                                <th>Sheet Length</th>
+                                <th>In MM</th>
+                                <th>UPS</th>
+                                <th>Weight</th>
+                            </tr>
+                            <tr>
+                                <td class="center bold">{{ number_format($piece->deckle_size, 0) }}"</td>
+                                <td class="center bold">{{ number_format($piece->sheet_length, 2) }}"</td>
+                                <td class="center bold">{{ number_format($piece->sheet_length * 25.4, 0) }}</td>
+                                <td class="center bold">{{ $piece->ups }}</td>
+                                <td class="center bold">{{ number_format($piece->est_unit_weight, 3) }}kg</td>
+                            </tr>
+                        </table>
+                        <table style="margin-top:3px;">
+                            <tr><th>Layer</th><th>Paper</th><th>GSM</th><th>Flute</th></tr>
+                            @foreach($piece->layers as $layer)
                                 <tr>
-                                    <th>Layer Type</th>
-                                    <th>Paper Grade</th>
-                                    <th class="text-right">GSM</th>
-                                    <th>Flute</th>
+                                    <td class="bold">{{ $layer->layer_type }}</td>
+                                    <td>{{ $layer->paper_name }}</td>
+                                    <td class="center">{{ $layer->gsm }}</td>
+                                    <td class="center">{{ $layer->flute_profile }}</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($piece->layers as $layer)
-                                    <tr>
-                                        <td>{{ $layer->layer_type }}</td>
-                                        <td>{{ $layer->paper_name }}</td>
-                                        <td class="text-right fw-bold">{{ $layer->gsm }}</td>
-                                        <td class="text-center">{{ $layer->flute_profile }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
+                            @endforeach
                         </table>
                         @if($piece->instructions)
-                            <div style="font-size: 8px; font-style: italic; margin-top: 1px;">Instructions: {{ $piece->instructions }}</div>
+                            <div class="warning-note">{{ $piece->instructions }}</div>
                         @endif
                     </div>
                 @endforeach
             </div>
+        @else
+            <div class="center" style="padding:5px; font-size:13pt;">
+                <strong>Size (Inner):</strong>
+                <strong>{{ number_format($jobCard->length_mm, 0) }} x {{ number_format($jobCard->width_mm, 0) }} x {{ number_format($jobCard->height_mm, 0) }} {{ $jobCard->uom }}</strong>
+                <span style="margin-left:16px;"><strong>Ply Type:</strong> {{ $jobCard->layers->count() ?: '-' }}-Ply</span>
+            </div>
+            <table>
+                <tr>
+                    <th>Deckle Size</th>
+                    <th>Sheet Length (In)</th>
+                    <th>Sheet Length (MM)</th>
+                    <th>UPS</th>
+                    <th>Est. Unit Weight</th>
+                </tr>
+                <tr>
+                    <td class="center bold">{{ number_format($jobCard->deckle_size, 0) }}"</td>
+                    <td class="center bold">{{ number_format($jobCard->sheet_length, 2) }}"</td>
+                    <td class="center bold">{{ number_format($jobCard->sheet_length * 25.4, 0) }} mm</td>
+                    <td class="center bold">{{ $jobCard->ups }}</td>
+                    <td class="center bold">{{ number_format($jobCard->est_unit_weight, 3) }} kg</td>
+                </tr>
+            </table>
+            <table style="margin-top:3px;">
+                <tr><th>Layer</th><th>Paper Structure</th><th>GSM</th><th>Flute</th></tr>
+                @forelse($jobCard->layers as $layer)
+                    <tr>
+                        <td class="bold">{{ $layer->layer_type }}</td>
+                        <td>{{ $layer->paper_name }}</td>
+                        <td class="center">{{ $layer->gsm }}</td>
+                        <td class="center">{{ $layer->flute_profile }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="4" class="center muted">No paper structure configured.</td></tr>
+                @endforelse
+            </table>
         @endif
+        @if(!empty($special['corrugation_instruction']))
+            <div class="warning-note"><strong>Plant Instruction:</strong> {{ $special['corrugation_instruction'] }}</div>
+        @endif
+    </div>
 
-        <!-- 6. PROCESSING & INKS -->
-        <div class="section-title">Processing, Inks &amp; Pantone Color Passes</div>
-        <table class="ops-table">
+    <div class="section-box">
+        <div class="section-title">3. Printing &amp; Finishing</div>
+        <table>
             <tr>
-                <th style="width: 20%;">PRINTING PROCESS</th>
-                <td style="width: 30%;" class="fw-bold">{{ $jobCard->printing_process ?? 'FLEXOGRAPHIC' }}</td>
-                <th style="width: 20%;">CLOSURE METHOD</th>
-                <td style="width: 30%;" class="fw-bold">{{ $jobCard->pasting_closure ?? 'STITCHING / GLUING' }}</td>
+                <th style="width: 18%;">Process Type</th>
+                <td style="width: 32%;">{{ $jobCard->printing_process ?: 'FLEXOGRAPHIC' }}</td>
+                <th style="width: 18%;">Pasting Type</th>
+                <td style="width: 32%;">{{ $jobCard->pasting_closure ?: 'GLUING' }}</td>
             </tr>
             <tr>
-                <th>TARGET MACHINE</th>
-                <td class="fw-bold">{{ $jobCard->machine_name ?? 'N/A' }} ({{ $jobCard->target_speed }} pcs/hr)</td>
-                <th>COLOR PASSES</th>
-                <td>
-                    <span class="fw-bold" style="font-size: 11px;">{{ $jobCard->printing_colors_count }} Colors</span>
-                </td>
+                <th>Printing</th>
+                <td>{{ $jobCard->printing_colors_count > 0 ? $jobCard->printing_colors_count . ' Color Printing' : 'Un-Printed' }}</td>
+                <th>Slot Type</th>
+                <td>{{ $slotType }}</td>
             </tr>
             <tr>
-                <th>PANTONE MATCHES</th>
+                <th>Pantone / Ink</th>
                 <td colspan="3">
-                    <div class="pantone-container">
-                        @if(!empty($jobCard->pantone_colors))
-                            @foreach($jobCard->pantone_colors as $color)
-                                <span class="pantone-chip">{{ strtoupper($color) }}</span>
-                            @endforeach
-                        @else
-                            <span class="text-muted">No Pantone Colors Specified</span>
+                    @forelse(($jobCard->pantone_colors ?? []) as $color)
+                        @if($color)
+                            <span class="pantone-chip">{{ $color }}</span>
                         @endif
-                    </div>
+                    @empty
+                        <span class="muted">No Pantone colors specified</span>
+                    @endforelse
                 </td>
             </tr>
         </table>
-
-        <!-- 7. SPECIAL ADD-ONS & ADD DETAILS -->
-        @php 
-            $special = $jobCard->special_details; 
-            $honeycomb = isset($special['honeycomb']) && $special['honeycomb'];
-            $separators = isset($special['separators']) && $special['separators'];
-        @endphp
-        @if($honeycomb || $separators)
-            <div class="section-title">Special Packaging Add-ons</div>
-            <table class="ops-table">
-                <tr>
-                    <th style="width: 25%;">HONEYCOMB BLOCK</th>
-                    <td style="width: 25%;" class="fw-bold">{{ $honeycomb ? 'REQUIRED [YES]' : 'NONE' }}</td>
-                    <th style="width: 25%;">INNER SEPARATORS</th>
-                    <td style="width: 25%;" class="fw-bold">{{ $separators ? 'REQUIRED [YES]' : 'NONE' }}</td>
-                </tr>
-            </table>
+        @if(!empty($special['printing_instruction']))
+            <div class="info-note"><strong>Print:</strong> {{ $special['printing_instruction'] }}</div>
         @endif
+        @if(!empty($special['finishing_instruction']))
+            <div class="finish-note"><strong>Finish:</strong> {{ $special['finishing_instruction'] }}</div>
+        @endif
+    </div>
 
-        <!-- 8. FLOOR INSTRUCTIONS -->
-        <div class="section-title">Floor Processing &amp; Quality Control Instructions</div>
-        <div class="instruction-box">
-            @if($jobCard->notes)
-                {{ $jobCard->notes }}
-            @else
-                1. Ensure correct flute heights are maintained on the corrugator.
-                2. Check pasting strength and glue coverage across flaps.
-                3. Print registration must be inspected every 500 sheets.
-                4. Maintain structural pressure tolerances at delivery stackers.
-            @endif
+    <div class="section-box">
+        <div class="section-title">4. Special Add-ons</div>
+        <table>
+            <tr>
+                <th>Honeycomb</th>
+                <td>{{ !empty($special['honeycomb']) ? 'Required' : 'N/A' }}</td>
+                <th>Separator</th>
+                <td>{{ !empty($special['separators']) ? 'Required' : 'N/A' }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section-box">
+        <div class="section-title">5. Floor Processing &amp; Quality Control Instructions</div>
+        <div style="min-height:45px; padding:5px; font-size:10pt;">
+            {{ $jobCard->notes ?: '1. Ensure correct flute heights are maintained on the corrugator. 2. Check pasting strength and glue coverage across flaps. 3. Print registration must be inspected every 500 sheets. 4. Maintain structural pressure tolerances at delivery stackers.' }}
         </div>
     </div>
 
-    <!-- 9. SIGNATURES FOOTER -->
-    <table class="footer-table">
+    <table class="signature-row">
         <tr>
-            <td>
-                <div class="signature-line">PREPARED BY: CAD ENGINEER</div>
-            </td>
-            <td>
-                <div class="signature-line">VERIFIED BY: QC INSPECTOR</div>
-            </td>
-            <td>
-                <div class="signature-line">APPROVED BY: PLANT HEAD</div>
-            </td>
+            <td><div class="signature-line">Prepared By</div></td>
+            <td><div class="signature-line">Checked By</div></td>
+            <td><div class="signature-line">Approved By</div></td>
         </tr>
     </table>
 </div>
 
 <script>
-    window.onload = function() {
+    window.onload = function () {
         window.print();
-    }
+    };
 </script>
 </body>
 </html>

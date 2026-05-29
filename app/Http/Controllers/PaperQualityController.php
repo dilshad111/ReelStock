@@ -7,6 +7,41 @@ use App\Models\PaperQuality;
 
 class PaperQualityController extends Controller
 {
+    /**
+     * Auto-calculate standards from min/max values.
+     * Example: min 100, max 115 => standard 108
+     */
+    private function applyStandardValues(array $data): array
+    {
+        $pairs = [
+            ['min' => 'min_gsm', 'max' => 'max_gsm', 'standard' => 'standard_gsm'],
+            ['min' => 'min_bursting', 'max' => 'max_bursting', 'standard' => 'standard_bursting'],
+            ['min' => 'min_moisture', 'max' => 'max_moisture', 'standard' => 'standard_moisture'],
+            ['min' => 'min_cobb', 'max' => 'max_cobb', 'standard' => 'standard_cobb'],
+        ];
+
+        foreach ($pairs as $pair) {
+            $minKey = $pair['min'];
+            $maxKey = $pair['max'];
+            $standardKey = $pair['standard'];
+
+            if (
+                array_key_exists($minKey, $data) &&
+                array_key_exists($maxKey, $data) &&
+                $data[$minKey] !== null &&
+                $data[$minKey] !== '' &&
+                $data[$maxKey] !== null &&
+                $data[$maxKey] !== ''
+            ) {
+                $min = (float) $data[$minKey];
+                $max = (float) $data[$maxKey];
+                $data[$standardKey] = round(($min + $max) / 2, 0);
+            }
+        }
+
+        return $data;
+    }
+
     public function index()
     {
         return response()->json(PaperQuality::with('paperColor')->get());
@@ -23,16 +58,20 @@ class PaperQualityController extends Controller
             }
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'quality' => 'required|string',
             'gsm_range' => 'required|string',
             'min_gsm' => 'nullable|numeric|min:0',
+            'standard_gsm' => 'nullable|numeric|min:0',
             'max_gsm' => 'nullable|numeric|min:0',
             'min_bursting' => 'nullable|numeric|min:0',
+            'standard_bursting' => 'nullable|numeric|min:0',
             'max_bursting' => 'nullable|numeric|min:0',
             'min_moisture' => 'nullable|numeric|min:0',
+            'standard_moisture' => 'nullable|numeric|min:0',
             'max_moisture' => 'nullable|numeric|min:0',
             'min_cobb' => 'nullable|numeric|min:0',
+            'standard_cobb' => 'nullable|numeric|min:0',
             'max_cobb' => 'nullable|numeric|min:0',
             'paper_color' => 'nullable|string',
             'paper_color_id' => 'nullable|exists:paper_colors,id',
@@ -41,7 +80,8 @@ class PaperQualityController extends Controller
         // Always generate item_code from quality name
         $itemCode = $this->generateItemCode($request->quality);
 
-        $quality = PaperQuality::create(array_merge($request->all(), ['item_code' => $itemCode]));
+        $payload = $this->applyStandardValues($validated);
+        $quality = PaperQuality::create(array_merge($payload, ['item_code' => $itemCode]));
         return response()->json($quality->load('paperColor'), 201);
     }
 
@@ -62,23 +102,27 @@ class PaperQualityController extends Controller
             }
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'quality' => 'sometimes|string',
             'gsm_range' => 'sometimes|string',
             'min_gsm' => 'nullable|numeric|min:0',
+            'standard_gsm' => 'nullable|numeric|min:0',
             'max_gsm' => 'nullable|numeric|min:0',
             'min_bursting' => 'nullable|numeric|min:0',
+            'standard_bursting' => 'nullable|numeric|min:0',
             'max_bursting' => 'nullable|numeric|min:0',
             'min_moisture' => 'nullable|numeric|min:0',
+            'standard_moisture' => 'nullable|numeric|min:0',
             'max_moisture' => 'nullable|numeric|min:0',
             'min_cobb' => 'nullable|numeric|min:0',
+            'standard_cobb' => 'nullable|numeric|min:0',
             'max_cobb' => 'nullable|numeric|min:0',
             'paper_color' => 'nullable|string',
             'paper_color_id' => 'nullable|exists:paper_colors,id',
         ]);
 
         $quality = PaperQuality::findOrFail($id);
-        $data = $request->all();
+        $data = $this->applyStandardValues($validated);
 
         // Always regenerate item_code when quality name changes
         if ($request->has('quality') && $request->quality !== $quality->quality) {

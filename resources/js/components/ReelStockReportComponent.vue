@@ -83,7 +83,7 @@
           </div>
           <div class="col-md-3 d-flex gap-1 justify-content-end">
             <button @click="fetchReport" class="btn btn-primary btn-sm px-3">Apply</button>
-            <button @click="clearAllFilters" class="btn btn-outline-secondary btn-sm">Clear</button>
+            <button @click="clearAllFilters" class="btn btn-clear-filters btn-sm">Clear</button>
           </div>
         </div>
       </div>

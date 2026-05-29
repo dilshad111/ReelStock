@@ -105,7 +105,7 @@
         </select>
       </div>
       <div class="col-md-1">
-        <button @click="clearFilters" class="btn btn-sm btn-outline-secondary w-100">Clear</button>
+        <button @click="clearFilters" class="btn btn-sm btn-clear-filters w-100">Clear</button>
       </div>
     </div>
 

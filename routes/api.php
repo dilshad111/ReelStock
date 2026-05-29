@@ -42,6 +42,8 @@ use App\Http\Controllers\RMConsumptionController;
 use App\Http\Controllers\RMDashboardController;
 use App\Http\Controllers\RMReportController;
 use App\Http\Controllers\JobCardController;
+use App\Http\Controllers\ProductionConfigurationController;
+use App\Http\Controllers\CartonTypeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -189,6 +191,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('qc-inspections/open-lots', [QcInspectionController::class, 'openLots']);
     Route::get('qc-inspections/lot-details/{lotNumber}', [QcInspectionController::class, 'getLotDetails']);
     Route::get('qc-inspections/{id}/report', [QcInspectionController::class, 'report']);
+    Route::get('qc-inspections/{id}/report-pdf', [QcInspectionController::class, 'reportPdf']);
     Route::apiResource('qc-inspections', QcInspectionController::class);
 
     // Raw Material Inventory Module
@@ -206,6 +209,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Production / Job Card Routes
+    Route::get('/carton-types', [CartonTypeController::class, 'index']);
     Route::get('/job-cards', [JobCardController::class, 'index']);
     Route::get('/job-cards/dashboard', [JobCardController::class, 'dashboard']);
     Route::get('/job-cards/active-list', [JobCardController::class, 'activeJobCards']);
@@ -213,4 +217,35 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/job-cards', [JobCardController::class, 'store']);
     Route::post('/job-cards/record-production', [JobCardController::class, 'recordProduction']);
     Route::put('/job-cards/{id}/status', [JobCardController::class, 'updateStatus']);
+
+    // Production Configuration Module
+    Route::prefix('production-config')->group(function () {
+        Route::get('lookups', [ProductionConfigurationController::class, 'lookups']);
+
+        Route::get('printing-colors', [ProductionConfigurationController::class, 'printingColors']);
+        Route::post('printing-colors', [ProductionConfigurationController::class, 'storePrintingColor']);
+        Route::put('printing-colors/{printingColor}', [ProductionConfigurationController::class, 'updatePrintingColor']);
+        Route::delete('printing-colors/{printingColor}', [ProductionConfigurationController::class, 'destroyPrintingColor']);
+
+        Route::get('departments', [ProductionConfigurationController::class, 'departments']);
+        Route::post('departments', [ProductionConfigurationController::class, 'storeDepartment']);
+        Route::put('departments/{department}', [ProductionConfigurationController::class, 'updateDepartment']);
+        Route::delete('departments/{department}', [ProductionConfigurationController::class, 'destroyDepartment']);
+
+        Route::get('machines', [ProductionConfigurationController::class, 'machines']);
+        Route::post('machines', [ProductionConfigurationController::class, 'storeMachine']);
+        Route::put('machines/{machine}', [ProductionConfigurationController::class, 'updateMachine']);
+        Route::delete('machines/{machine}', [ProductionConfigurationController::class, 'destroyMachine']);
+
+        Route::get('operators', [ProductionConfigurationController::class, 'operators']);
+        Route::post('operators', [ProductionConfigurationController::class, 'storeOperator']);
+        Route::put('operators/{operator}', [ProductionConfigurationController::class, 'updateOperator']);
+        Route::delete('operators/{operator}', [ProductionConfigurationController::class, 'destroyOperator']);
+
+        Route::get('optimization-rules', [ProductionConfigurationController::class, 'optimizationRules']);
+        Route::post('optimization-rules', [ProductionConfigurationController::class, 'storeOptimizationRule']);
+        Route::put('optimization-rules/{rule}', [ProductionConfigurationController::class, 'updateOptimizationRule']);
+        Route::delete('optimization-rules/{rule}', [ProductionConfigurationController::class, 'destroyOptimizationRule']);
+        Route::post('optimization-rules/apply', [ProductionConfigurationController::class, 'applyOptimizationRules']);
+    });
 });
