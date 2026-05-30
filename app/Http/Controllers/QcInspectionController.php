@@ -250,6 +250,9 @@ class QcInspectionController extends Controller
                 // Recalculate averages and determine status
                 $inspection->recalculateAverages();
                 $inspection->determineStatus();
+                if ($inspection->qc_status === 'rejected') {
+                    $inspection->update(['decision_type' => 'lot_reject']);
+                }
 
                 return $inspection;
             });
@@ -352,6 +355,10 @@ class QcInspectionController extends Controller
                     // Recalculate
                     $inspection->recalculateAverages();
                     $inspection->determineStatus();
+                }
+
+                if ($inspection->qc_status === 'rejected' && $inspection->decision_type !== 'lot_reject') {
+                    $inspection->update(['decision_type' => 'lot_reject']);
                 }
 
                 return $inspection;

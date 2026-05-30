@@ -52,7 +52,17 @@
 </head>
 <body>
 @php
-    $pages = $inspection->details->chunk(13);
+    $inspectionCols = ['gsm', 'bursting', 'moisture', 'ash', 'cobb'];
+    $printableDetails = $inspection->details->filter(function ($detail) use ($inspectionCols) {
+        foreach ($inspectionCols as $key) {
+            $value = $detail->{$key};
+            if ($value !== null && $value !== '' && $value !== '-' && (float) $value != 0.0) {
+                return true;
+            }
+        }
+        return false;
+    })->values();
+    $pages = $printableDetails->chunk(13);
     if ($pages->count() === 0) {
         $pages = collect([collect([])]);
     }
@@ -64,8 +74,8 @@
         ['key' => 'ash', 'label' => 'Ash'],
         ['key' => 'cobb', 'label' => 'Cobb'],
     ]);
-    $optionalCols = $allCols->slice(2)->filter(function ($col) use ($inspection) {
-        return $inspection->details->contains(function ($detail) use ($col) {
+    $optionalCols = $allCols->slice(2)->filter(function ($col) use ($printableDetails) {
+        return $printableDetails->contains(function ($detail) use ($col) {
             $value = $detail->{$col['key']};
             return $value !== null && $value !== '' && $value !== '-' && (float) $value != 0.0;
         });
@@ -85,7 +95,9 @@
         if ($vals->count() === 0) return '-';
         return number_format($vals->avg(), 2);
     };
-    $decision = $inspection->decision_type ?? 'lot_accept';
+    $decision = ($inspection->qc_status ?? null) === 'rejected'
+        ? 'lot_reject'
+        : ($inspection->decision_type ?? 'lot_accept');
     $criterion = function ($key) use ($criteria) {
         if (!$criteria || !array_key_exists($key, $criteria)) return '-';
         return $criteria[$key] !== null && $criteria[$key] !== '' ? $criteria[$key] : '-';
@@ -190,10 +202,10 @@
 
     <table class="decision-table">
         <tr>
-            <td class="{{ $decision === 'lot_accept' ? 'selected' : '' }}">Lot Accept{{ $decision === 'lot_accept' ? ' ✓' : '' }}</td>
-            <td class="{{ $decision === 'lot_reject' ? 'selected' : '' }}">Lot Reject{{ $decision === 'lot_reject' ? ' ✓' : '' }}</td>
-            <td class="{{ $decision === 'temporary_accept' ? 'selected' : '' }}">Temporary Accept{{ $decision === 'temporary_accept' ? ' ✓' : '' }}</td>
-            <td class="{{ $decision === 'partial_accept' ? 'selected' : '' }}">Partial Accept{{ $decision === 'partial_accept' ? ' ✓' : '' }}</td>
+            <td class="{{ $decision === 'lot_accept' ? 'selected' : '' }}">Lot Accept{!! $decision === 'lot_accept' ? ' &#10003;' : '' !!}</td>
+            <td class="{{ $decision === 'lot_reject' ? 'selected' : '' }}">Lot Reject{!! $decision === 'lot_reject' ? ' &#10003;' : '' !!}</td>
+            <td class="{{ $decision === 'temporary_accept' ? 'selected' : '' }}">Temporary Accept{!! $decision === 'temporary_accept' ? ' &#10003;' : '' !!}</td>
+            <td class="{{ $decision === 'partial_accept' ? 'selected' : '' }}">Partial Accept{!! $decision === 'partial_accept' ? ' &#10003;' : '' !!}</td>
         </tr>
     </table>
 

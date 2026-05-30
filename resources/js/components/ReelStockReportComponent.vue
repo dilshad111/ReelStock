@@ -119,7 +119,7 @@
           <td class="text-center status-cell">{{ item.status }}</td>
         </tr>
         <!-- Subtotal Row -->
-        <tr class="table-info fw-bold">
+        <tr class="stock-total-row fw-bold">
           <td colspan="4" class="text-center">TOTAL</td>
           <td class="text-center">{{ formatWholeNumberWithSeparators(totalOriginalWeight) }}</td>
           <td class="text-center">{{ formatWholeNumberWithSeparators(totalConsumedWeight) }}</td>
@@ -867,11 +867,33 @@ h2 {
   vertical-align: middle;
 }
 
-.table-info.fw-bold td {
-  background-color: #f1f5f9 !important;
-  color: #1e293b !important;
-  border-top: 2px solid #cbd5e1 !important;
+.table.table-striped.align-middle .stock-total-row > td {
+  --bs-table-bg: #e8f0ff !important;
+  --bs-table-color: #0f172a !important;
+  --bs-table-striped-bg: #e8f0ff !important;
+  --bs-table-striped-color: #0f172a !important;
+  background-color: #e8f0ff !important;
+  box-shadow: inset 0 0 0 9999px #e8f0ff !important;
+  color: #0f172a !important;
+  border-top: 2px solid #93a4c8 !important;
   padding: 8px !important;
+}
+
+:global([data-theme="dark"] .table.table-striped.align-middle tbody .stock-total-row > td) {
+  --bs-table-bg: #2f3f63 !important;
+  --bs-table-color: #ffffff !important;
+  --bs-table-striped-bg: #2f3f63 !important;
+  --bs-table-striped-color: #ffffff !important;
+  background-color: #2f3f63 !important;
+  box-shadow: inset 0 0 0 9999px #2f3f63 !important;
+  color: #ffffff !important;
+  border-top-color: #7f91bf !important;
+  text-shadow: none !important;
+}
+
+:global([data-theme="dark"] .table.table-striped.align-middle tbody .stock-total-row > td *) {
+  color: #ffffff !important;
+  text-shadow: none !important;
 }
 
 .status-cell {

@@ -2,7 +2,7 @@ import './bootstrap';
 import { createApp } from 'vue';
 import axios from 'axios';
 
-axios.defaults.baseURL = 'http://192.168.10.47:8000';
+axios.defaults.baseURL = window.location.origin;
 
 const PERMISSION_KEY_MAP = {
     dashboard: 'dashboard',

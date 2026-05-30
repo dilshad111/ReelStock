@@ -28,18 +28,19 @@
       </select>
     </div>
   </div>
-  <table class="table table-striped table-sm small">
+  <div class="qc-table-wrap">
+  <table class="table table-striped table-sm small qc-open-lots-table">
     <thead><tr><th>Lot #</th><th>PO #</th><th>GRN #</th><th>Paper Quality</th><th>Supplier</th><th>Reels</th><th>Weight (kg)</th><th>Date</th><th>Aging (Days)</th><th>Status</th><th>Actions</th></tr></thead>
     <tbody>
       <tr v-for="lot in filteredLots" :key="lot.lot_number" :class="openLotRowClass(lot.qc_status)">
         <td><strong>{{lot.lot_number}}</strong></td>
-        <td>{{lot.po_number||'-'}}</td><td>{{lot.grn_number||'-'}}</td>
-        <td>{{lot.paper_quality}}</td><td>{{lot.supplier_name}}</td>
+        <td class="nowrap-cell">{{lot.po_number||'-'}}</td><td class="nowrap-cell">{{lot.grn_number||'-'}}</td>
+        <td class="truncate-cell" :title="lot.paper_quality">{{lot.paper_quality}}</td><td class="truncate-cell" :title="lot.supplier_name">{{lot.supplier_name}}</td>
         <td class="text-center">{{lot.reel_count}}</td>
         <td class="text-center">{{Math.round(lot.total_weight).toLocaleString()}}</td>
         <td>{{formatDate(lot.receiving_date)}}</td>
         <td class="text-center fw-semibold">{{ agingDays(lot) }}</td>
-        <td>
+        <td class="table-actions">
           <span class="status-pill" :class="statusBadgeClass(lot.qc_status)">
             {{ statusLabel(lot.qc_status) }}
           </span>
@@ -67,6 +68,7 @@
       <tr v-if="filteredLots.length===0"><td colspan="11" class="text-center text-muted">No lots found</td></tr>
     </tbody>
   </table>
+  </div>
 </div>
 
 <!-- INSPECTION FORM -->
@@ -241,18 +243,19 @@
     <div class="col-md-2"><input v-model="histGrnFilter" class="form-control form-control-sm" placeholder="Filter GRN #..."></div>
     <div class="col-md-2"><select v-model="histStatus" class="form-control form-control-sm" @change="fetchHistory"><option value="">All Status</option><option value="approved">Approved</option><option value="rejected">Rejected</option><option value="pending">Pending</option></select></div>
   </div>
-  <table class="table table-striped table-sm small">
+  <div class="qc-table-wrap">
+  <table class="table table-striped table-sm small inspection-history-table">
     <thead><tr><th>Lot #</th><th>Paper</th><th>Supplier</th><th>Inspection Date</th><th>Inspector</th><th>Avg GSM</th><th>Avg Burst</th><th>Avg Moist</th><th>Avg Cobb</th><th>Status</th><th>Actions</th></tr></thead>
     <tbody>
       <tr v-for="insp in historyList" :key="insp.id">
-        <td class="fw-bold">{{insp.lot_number}}</td>
-        <td>{{insp.paper_quality?.quality}} {{insp.paper_quality?.gsm_range}}</td>
-        <td>{{insp.supplier?.name}}</td>
+        <td class="fw-bold nowrap-cell">{{insp.lot_number}}</td>
+        <td class="history-paper-cell" :title="`${insp.paper_quality?.quality || ''} ${insp.paper_quality?.gsm_range || ''}`">{{insp.paper_quality?.quality}} {{insp.paper_quality?.gsm_range}}</td>
+        <td class="history-supplier-cell" :title="insp.supplier?.name">{{insp.supplier?.name}}</td>
         <td>{{formatDate(insp.inspection_date)}}</td>
-        <td>{{insp.inspector_name}}</td>
+        <td class="nowrap-cell">{{insp.inspector_name}}</td>
         <td>{{n(insp.avg_gsm)}}</td><td>{{n(insp.avg_bursting)}}</td><td>{{n(insp.avg_moisture)}}</td><td>{{n(insp.avg_cobb)}}</td>
         <td><span class="status-pill" :class="statusBadgeClass(insp.qc_status)">{{ statusLabel(insp.qc_status) }}</span></td>
-        <td>
+        <td class="history-actions">
           <button @click="editInspection(insp)" class="btn btn-sm btn-warning me-1">Edit</button>
           <button @click="printReport(insp.id)" class="btn btn-sm btn-info me-1"><i class="bi bi-printer"></i></button>
           <button @click="downloadPdf(insp.id)" class="btn btn-sm btn-danger me-1"><i class="bi bi-file-earmark-pdf"></i></button>
@@ -262,6 +265,7 @@
       <tr v-if="historyList.length===0"><td colspan="11" class="text-center text-muted">No records found</td></tr>
     </tbody>
   </table>
+  </div>
 </div>
 
 <!-- REJECTION MODAL -->
@@ -362,7 +366,7 @@ export default {
         if(d.existing_inspection){
           const ei=d.existing_inspection;
           this.editingId=ei.id;
-          this.formData={lot_number:d.lot_number,paper_quality:d.paper_quality,paper_quality_id:d.paper_quality_id,supplier_id:d.supplier_id,supplier_name:d.supplier_name,po_number:d.po_number,grn_number:d.grn_number,received_date:d.receiving_date,paper_color:d.paper_color,inspection_date:ei.inspection_date,inspector_name:ei.inspector_name,decision_type:ei.decision_type || 'lot_accept',remarks:ei.remarks,
+          this.formData={lot_number:d.lot_number,paper_quality:d.paper_quality,paper_quality_id:d.paper_quality_id,supplier_id:d.supplier_id,supplier_name:d.supplier_name,po_number:d.po_number,grn_number:d.grn_number,received_date:d.receiving_date,paper_color:d.paper_color,inspection_date:ei.inspection_date,inspector_name:ei.inspector_name,decision_type:this.resolveDecisionType(ei),remarks:ei.remarks,
             details:d.reels.map(rl=>{const ed=ei.details?.find(dd=>dd.reel_id===rl.reel_id);return{reel_id:rl.reel_id,reel_no:rl.reel_no,reel_size:rl.reel_size,reel_weight:ed?.reel_weight ?? rl.original_weight,gsm:ed?.gsm||'',bursting:ed?.bursting||'',moisture:ed?.moisture||'',ash:ed?.ash||'',cobb:ed?.cobb||'',is_passed:ed?.is_passed!==false,failed_params:ed?.failed_params||[]}})};
         }else{
           this.formData={lot_number:d.lot_number,paper_quality:d.paper_quality,paper_quality_id:d.paper_quality_id,supplier_id:d.supplier_id,supplier_name:d.supplier_name,po_number:d.po_number,grn_number:d.grn_number,received_date:d.receiving_date,paper_color:d.paper_color,inspection_date:new Date().toISOString().substr(0,10),inspector_name:this.settings.qc_default_inspector || '',decision_type:'lot_accept',remarks:'',
@@ -382,9 +386,14 @@ export default {
     },
     isFailed(d,param){return d.failed_params&&d.failed_params.includes(param)},
     avg(field){const vals=this.formData.details.map(d=>parseFloat(d[field])).filter(v=>!isNaN(v)&&v>0);if(!vals.length)return'-';return(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2)},
+    resolveDecisionType(inspection){
+      if (inspection?.qc_status === 'rejected') return 'lot_reject';
+      return inspection?.decision_type || 'lot_accept';
+    },
     saveInspection(){
       if(!this.formData.inspection_date||!this.formData.inspector_name){alert('Please fill inspection date and inspector name');return}
-      const payload={lot_number:this.formData.lot_number,paper_quality_id:this.formData.paper_quality_id,supplier_id:this.formData.supplier_id,po_number:this.formData.po_number,grn_number:this.formData.grn_number,received_date:this.formData.received_date,inspection_date:this.formData.inspection_date,inspector_name:this.formData.inspector_name,decision_type:this.formData.decision_type || 'lot_accept',remarks:this.formData.remarks,
+      const decisionType = this.overallStatus === 'Rejected' ? 'lot_reject' : (this.formData.decision_type || 'lot_accept');
+      const payload={lot_number:this.formData.lot_number,paper_quality_id:this.formData.paper_quality_id,supplier_id:this.formData.supplier_id,po_number:this.formData.po_number,grn_number:this.formData.grn_number,received_date:this.formData.received_date,inspection_date:this.formData.inspection_date,inspector_name:this.formData.inspector_name,decision_type:decisionType,remarks:this.formData.remarks,
         details:this.formData.details.map(d=>({reel_id:d.reel_id,reel_size:d.reel_size||null,reel_weight:d.reel_weight||null,gsm:d.gsm||null,bursting:d.bursting||null,moisture:d.moisture||null,ash:d.ash||null,cobb:d.cobb||null}))};
       const req=this.editingId?axios.put(`/api/qc-inspections/${this.editingId}`,payload):axios.post('/api/qc-inspections',payload);
       req.then(r=>{
@@ -398,7 +407,7 @@ export default {
     editInspection(insp){
       axios.get(`/api/qc-inspections/lot-details/${insp.lot_number}`).then(r=>{
         const d=r.data;this.criteria=d.criteria;this.editingId=insp.id;
-        this.formData={lot_number:insp.lot_number,paper_quality:insp.paper_quality?.quality+' '+insp.paper_quality?.gsm_range,paper_quality_id:insp.paper_quality_id,supplier_id:insp.supplier_id,supplier_name:insp.supplier?.name,po_number:insp.po_number,grn_number:insp.grn_number,received_date:insp.received_date,paper_color:d.paper_color,inspection_date:insp.inspection_date,inspector_name:insp.inspector_name,decision_type:insp.decision_type || 'lot_accept',remarks:insp.remarks,
+        this.formData={lot_number:insp.lot_number,paper_quality:insp.paper_quality?.quality+' '+insp.paper_quality?.gsm_range,paper_quality_id:insp.paper_quality_id,supplier_id:insp.supplier_id,supplier_name:insp.supplier?.name,po_number:insp.po_number,grn_number:insp.grn_number,received_date:insp.received_date,paper_color:d.paper_color,inspection_date:insp.inspection_date,inspector_name:insp.inspector_name,decision_type:this.resolveDecisionType(insp),remarks:insp.remarks,
           details:d.reels.map(rl=>{const ed=insp.details?.find(dd=>dd.reel_id===rl.reel_id);return{reel_id:rl.reel_id,reel_no:rl.reel_no,reel_size:rl.reel_size,reel_weight:ed?.reel_weight ?? rl.original_weight,gsm:ed?.gsm||'',bursting:ed?.bursting||'',moisture:ed?.moisture||'',ash:ed?.ash||'',cobb:ed?.cobb||'',is_passed:ed?.is_passed!==false,failed_params:ed?.failed_params||[]}})};
         this.tab='form';
       })
@@ -407,7 +416,12 @@ export default {
     printReport(id){
       axios.get(`/api/qc-inspections/${id}/report`).then(r=>{
         const d=r.data;
-        const details = d.details || [];
+        const inspectionFields = ['gsm', 'bursting', 'moisture', 'ash', 'cobb'];
+        const hasInspectionValue = (detail) => inspectionFields.some((field) => {
+          const value = detail[field];
+          return value !== null && value !== undefined && value !== '' && value !== '-' && Number(value) !== 0;
+        });
+        const details = (d.details || []).filter(hasInspectionValue);
         const companyName = this.settings?.company_name || 'QUALITY CARTONS (PVT.) LTD.';
         const approvedByName = this.settings?.qc_default_approved_by || '-';
         const companyAddress = this.settings?.company_address || '';
@@ -486,7 +500,7 @@ export default {
         const statusMarkup = d.qc_status === 'approved'
           ? '<span style="font-weight:700;text-decoration:underline;">APPROVED (LOT ACCEPTED)</span>'
           : `<span style="font-weight:700;">${statusText}</span>`;
-        const decisionType = d.decision_type || 'lot_accept';
+        const decisionType = this.resolveDecisionType(d);
         const decisionCell = (value, label) => {
           const selected = decisionType === value;
           return `<td class="${selected ? 'selected' : ''}">${label}${selected ? ' <span class="decision-check">&#10003;</span>' : ''}</td>`;
@@ -899,6 +913,106 @@ ${pagesHtml}
   color: #991b1b;
   background: #fee2e2;
   border-color: #fca5a5;
+}
+
+.qc-table-wrap {
+  width: 100%;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.qc-open-lots-table,
+.inspection-history-table {
+  table-layout: auto;
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.qc-open-lots-table {
+  min-width: 1120px;
+}
+
+.inspection-history-table {
+  min-width: 1180px;
+}
+
+.qc-open-lots-table th,
+.qc-open-lots-table td,
+.inspection-history-table th,
+.inspection-history-table td {
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.qc-open-lots-table th,
+.inspection-history-table th {
+  font-size: 0.78rem;
+  letter-spacing: 0;
+}
+
+.qc-open-lots-table td,
+.inspection-history-table td {
+  font-size: 0.84rem;
+}
+
+.qc-open-lots-table th:nth-child(1) { min-width: 160px; }
+.qc-open-lots-table th:nth-child(2) { min-width: 90px; }
+.qc-open-lots-table th:nth-child(3) { min-width: 100px; }
+.qc-open-lots-table th:nth-child(4) { min-width: 210px; }
+.qc-open-lots-table th:nth-child(5) { min-width: 150px; }
+.qc-open-lots-table th:nth-child(6) { min-width: 70px; }
+.qc-open-lots-table th:nth-child(7) { min-width: 110px; }
+.qc-open-lots-table th:nth-child(8) { min-width: 110px; }
+.qc-open-lots-table th:nth-child(9) { min-width: 100px; }
+.qc-open-lots-table th:nth-child(10) { min-width: 160px; }
+.qc-open-lots-table th:nth-child(11) { min-width: 105px; }
+
+.inspection-history-table th:nth-child(1) { min-width: 160px; }
+.inspection-history-table th:nth-child(2) { min-width: 210px; }
+.inspection-history-table th:nth-child(3) { min-width: 150px; }
+.inspection-history-table th:nth-child(4) { min-width: 120px; }
+.inspection-history-table th:nth-child(5) { min-width: 130px; }
+.inspection-history-table th:nth-child(6),
+.inspection-history-table th:nth-child(7),
+.inspection-history-table th:nth-child(8),
+.inspection-history-table th:nth-child(9) { min-width: 78px; }
+.inspection-history-table th:nth-child(10) { min-width: 160px; }
+.inspection-history-table th:nth-child(11) { min-width: 160px; }
+
+.nowrap-cell {
+  white-space: nowrap;
+}
+
+.truncate-cell,
+.history-paper-cell,
+.history-supplier-cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-paper-cell {
+  max-width: 190px;
+}
+
+.history-supplier-cell {
+  max-width: 130px;
+}
+
+.table-actions,
+.history-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.table-actions .btn,
+.history-actions .btn {
+  flex: 0 0 auto;
+  margin-right: 0 !important;
 }
 
 .qc-action-btn {

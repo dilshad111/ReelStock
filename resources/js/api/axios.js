@@ -2,7 +2,7 @@ import axios from 'axios';
 import { ElMessage } from 'element-plus';
 
 const apiClient = axios.create({
-    baseURL: 'http://192.168.10.47:8000/api',
+    baseURL: '/api',
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
