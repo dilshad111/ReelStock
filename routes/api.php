@@ -37,6 +37,8 @@ use App\Http\Controllers\VehicleTypeController;
 use App\Http\Controllers\QcInspectionController;
 use App\Http\Controllers\PaperColorController;
 use App\Http\Controllers\RMItemController;
+use App\Http\Controllers\RMItemSupplierRateController;
+use App\Http\Controllers\RMCategoryController;
 use App\Http\Controllers\RMReceiptController;
 use App\Http\Controllers\RMConsumptionController;
 use App\Http\Controllers\RMDashboardController;
@@ -195,7 +197,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('qc-inspections', QcInspectionController::class);
 
     // Raw Material Inventory Module
+    Route::apiResource('rm-categories', RMCategoryController::class);
+    Route::get('rm-subcategories', [RMCategoryController::class, 'subcategories']);
+    Route::post('rm-subcategories', [RMCategoryController::class, 'storeSubcategory']);
+    Route::put('rm-subcategories/{rmSubcategory}', [RMCategoryController::class, 'updateSubcategory']);
+    Route::delete('rm-subcategories/{rmSubcategory}', [RMCategoryController::class, 'destroySubcategory']);
     Route::apiResource('rm-items', RMItemController::class);
+    Route::apiResource('rm-item-supplier-rates', RMItemSupplierRateController::class)->except(['show']);
+    Route::post('rm-item-supplier-rates/resolve', [RMItemSupplierRateController::class, 'resolve']);
     Route::get('rm-receipts/next-grn', [RMReceiptController::class, 'nextGrnNo']);
     Route::apiResource('rm-receipts', RMReceiptController::class);
     Route::apiResource('rm-consumptions', RMConsumptionController::class);
@@ -206,11 +215,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('ledger', [RMReportController::class, 'stockLedger']);
         Route::get('receiving', [RMReportController::class, 'receivingReport']);
         Route::get('consumption', [RMReportController::class, 'consumptionReport']);
+        Route::get('reorder-requirement', [RMReportController::class, 'reorderRequirement']);
+        Route::get('cost-by-category', [RMReportController::class, 'materialCostByCategory']);
+        Route::get('consumption-analysis', [RMReportController::class, 'consumptionAnalysis']);
     });
 
     // Production / Job Card Routes
     Route::get('/carton-types', [CartonTypeController::class, 'index']);
     Route::get('/job-cards', [JobCardController::class, 'index']);
+    Route::get('/job-cards/next-number', [JobCardController::class, 'nextNumber']);
     Route::get('/job-cards/dashboard', [JobCardController::class, 'dashboard']);
     Route::get('/job-cards/active-list', [JobCardController::class, 'activeJobCards']);
     Route::get('/job-cards/{id}', [JobCardController::class, 'show']);

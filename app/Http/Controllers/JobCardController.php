@@ -12,6 +12,23 @@ use Illuminate\Support\Facades\Log;
 
 class JobCardController extends Controller
 {
+    public function nextNumber()
+    {
+        $prefix = 'QC-JC-';
+        $last = JobCard::where('job_card_no', 'like', $prefix . '%')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if (! $last) {
+            return response()->json(['next_job_card_no' => $prefix . '110001']);
+        }
+
+        $number = (int) preg_replace('/\D/', '', substr((string) $last->job_card_no, strlen($prefix)));
+        $next = $number > 0 ? $number + 1 : 110001;
+
+        return response()->json(['next_job_card_no' => $prefix . str_pad($next, 6, '0', STR_PAD_LEFT)]);
+    }
+
     public function dashboard(GetProductionDashboardDataAction $action)
     {
         return response()->json($action->execute());

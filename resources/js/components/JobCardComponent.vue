@@ -4,7 +4,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4 p-3 glass-header rounded shadow-sm">
             <div>
                 <h2 class="h4 mb-1 fw-bold text-dark">
-                    <i class="bi bi-file-earmark-ruled-fill text-indigo me-2"></i>{{ isCreating ? 'New Production Job' : 'Manufacturing Specifications & Job Cards' }}
+                    <i class="bi bi-file-earmark-ruled-fill text-indigo me-2"></i>{{ isCreating ? 'New Job Card' : 'Manufacturing Specifications & Job Cards' }}
                 </h2>
                 <p class="small text-muted mb-0">{{ isCreating ? 'Complete corrugated carton manufacturing job card.' : 'Packaging specifications, ply layer compositions, and real-time corrugation calculation engine.' }}</p>
             </div>
@@ -116,7 +116,10 @@
                                 <h3>Basic Information</h3>
                                 <p>Identity &amp; Dimensions</p>
                             </div>
-                            <span class="section-index">01</span>
+                            <div class="basic-info-heading-right">
+                                <div class="job-number-pill">{{ nextJobCardNo || 'QC-JC-110001' }}</div>
+                                <span class="section-index">01</span>
+                            </div>
                         </div>
 
                         <div class="basic-info-layout">
@@ -128,7 +131,7 @@
                                         </el-select>
                                     </el-form-item>
                                     <el-form-item label="Item Code">
-                                        <el-input v-model="createForm.item_code" placeholder="System Code" />
+                                        <el-input v-model="createForm.item_code" placeholder="Item Code" />
                                     </el-form-item>
                                 </div>
 
@@ -136,69 +139,39 @@
                                     <el-input v-model="createForm.item_name" placeholder="Name of the carton..." />
                                 </el-form-item>
 
-                                <div class="form-grid two-col align-start">
-                                    <el-form-item label="Carton Type" prop="carton_type_id">
-                                        <el-select v-model="createForm.carton_type_id" placeholder="Select carton type" class="w-100" filterable @change="onCartonTypeChange">
-                                            <el-option v-for="type in cartonTypes" :key="type.id" :label="cartonTypeLabel(type)" :value="type.id" />
-                                        </el-select>
-                                    </el-form-item>
-                                    <div class="carton-preview-panel">
-                                        <span>Carton Preview</span>
-                                        <img v-if="selectedCartonType?.preview_image && !cartonPreviewFailed" :src="selectedCartonType.preview_image" :alt="cartonTypeLabel(selectedCartonType)" @error="cartonPreviewFailed = true">
-                                        <div v-else class="carton-preview-fallback">
-                                            {{ selectedCartonType ? selectedCartonType.standard_code : 'Select Type' }}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="form-grid two-col">
-                                    <el-form-item label="Carton Quality">
-                                        <el-radio-group v-model="createForm.carton_quality" class="segmented-control" @change="fetchAllTargetSpeeds">
-                                            <el-radio-button label="normal">Standard</el-radio-button>
-                                            <el-radio-button label="high_quality">Premium</el-radio-button>
-                                        </el-radio-group>
-                                    </el-form-item>
-                                </div>
-
-                                <div class="dimension-panel">
-                                    <div class="form-grid four-col">
-                                        <el-form-item label="UOM">
-                                            <el-select v-model="createForm.uom" class="w-100" @change="recalculateSpecs">
-                                                <el-option label="Millimeters" value="mm" />
-                                                <el-option label="Inches" value="inch" />
-                                                <el-option label="Centimeters" value="cm" />
+                                <div class="carton-selection-layout">
+                                    <div class="carton-selection-fields">
+                                        <el-form-item label="Carton Type" prop="carton_type_id">
+                                            <el-select v-model="createForm.carton_type_id" placeholder="Select carton type" class="w-100" filterable @change="onCartonTypeChange">
+                                                <el-option v-for="type in cartonTypes" :key="type.id" :label="cartonTypeLabel(type)" :value="type.id" />
                                             </el-select>
                                         </el-form-item>
-                                        <el-form-item label="Length">
-                                            <el-input-number v-model="createForm.length" :min="0" :precision="2" class="w-100" :controls="false" @input="recalculateSpecs" />
-                                        </el-form-item>
-                                        <el-form-item label="Width">
-                                            <el-input-number v-model="createForm.width" :min="0" :precision="2" class="w-100" :controls="false" @input="recalculateSpecs" />
-                                        </el-form-item>
-                                        <el-form-item label="Height">
-                                            <el-input-number v-model="createForm.height" :min="0" :precision="2" class="w-100" :controls="false" @input="recalculateSpecs" />
-                                        </el-form-item>
-                                    </div>
-                                </div>
 
-                                <div class="metrics-strip">
-                                    <div>
-                                        <span>Deckle / Roll Width</span>
-                                        <strong>{{ formatNum(createForm.deckle_size, 2) }}"</strong>
+                                        <el-form-item label="Carton Quality" class="carton-quality-field">
+                                            <el-radio-group v-model="createForm.carton_quality" class="segmented-control" @change="fetchAllTargetSpeeds">
+                                                <el-radio-button label="normal">Standard</el-radio-button>
+                                                <el-radio-button label="high_quality">Premium</el-radio-button>
+                                            </el-radio-group>
+                                        </el-form-item>
                                     </div>
-                                    <div>
-                                        <span>Sheet Length</span>
-                                        <strong>{{ formatNum(createForm.sheet_length, 2) }}"</strong>
-                                    </div>
-                                    <div>
-                                        <span>Estimated Net Unit Weight</span>
-                                        <strong>{{ formatNum(createForm.est_unit_weight, 4) }} kg</strong>
+
+                                    <div class="carton-preview-panel">
+                                        <div class="preview-panel-header">
+                                            <span>Carton Preview</span>
+                                            <strong>{{ selectedCartonType?.standard_code || 'FEFCO' }}</strong>
+                                        </div>
+                                        <div class="carton-preview-stage">
+                                            <img v-if="selectedCartonType?.preview_image && !cartonPreviewFailed" :src="selectedCartonType.preview_image" :alt="cartonTypeLabel(selectedCartonType)" @error="cartonPreviewFailed = true">
+                                            <div v-else class="carton-preview-fallback">
+                                                {{ selectedCartonType ? selectedCartonType.standard_code : 'Select Type' }}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="dieline-panel">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div class="preview-panel-header dieline-header">
                                     <div>
                                         <span class="mini-label">Die-line Structure</span>
                                         <strong>{{ selectedCartonType ? cartonTypeLabel(selectedCartonType) : 'Carton layout preview' }}</strong>
@@ -209,6 +182,52 @@
                                 </div>
                                 <div v-if="hasDimensions" class="dieline-canvas" v-html="formDieLineSvg"></div>
                                 <div v-else class="dieline-empty">Enter length, width, and height to preview die-line.</div>
+                            </div>
+                        </div>
+
+                        <div class="sizing-section">
+                            <div class="dimension-panel">
+                                <div class="form-grid four-col dimension-input-row">
+                                    <el-form-item label="Cartons Category">
+                                        <el-select v-model="createForm.carton_category" class="w-100">
+                                            <el-option label="RSC Carton" value="RSC Carton" />
+                                            <el-option label="Top & Bottom Carton" value="Top & Bottom Carton" />
+                                            <el-option label="Separator" value="Separator" />
+                                            <el-option label="Honeycomb" value="Honeycomb" />
+                                        </el-select>
+                                    </el-form-item>
+                                    <el-form-item label="UOM">
+                                        <el-select v-model="createForm.uom" class="w-100" @change="recalculateSpecs">
+                                            <el-option label="Millimeters" value="mm" />
+                                            <el-option label="Inches" value="inch" />
+                                            <el-option label="Centimeters" value="cm" />
+                                        </el-select>
+                                    </el-form-item>
+                                    <el-form-item label="Length">
+                                        <el-input-number v-model="createForm.length" :min="0" :precision="2" class="w-100" :controls="false" @input="recalculateSpecs" />
+                                    </el-form-item>
+                                    <el-form-item label="Width">
+                                        <el-input-number v-model="createForm.width" :min="0" :precision="2" class="w-100" :controls="false" @input="recalculateSpecs" />
+                                    </el-form-item>
+                                    <el-form-item label="Height">
+                                        <el-input-number v-model="createForm.height" :min="0" :precision="2" class="w-100" :controls="false" @input="recalculateSpecs" />
+                                    </el-form-item>
+                                </div>
+                            </div>
+
+                            <div class="metrics-strip">
+                                <div>
+                                    <span>Deckle / Roll Width</span>
+                                    <strong>{{ formatNum(createForm.deckle_size, 2) }}"</strong>
+                                </div>
+                                <div>
+                                    <span>Sheet Length</span>
+                                    <strong>{{ formatNum(createForm.sheet_length, 2) }}"</strong>
+                                </div>
+                                <div>
+                                    <span>Estimated Net Unit Weight</span>
+                                    <strong>{{ formatNum(createForm.est_unit_weight, 4) }} kg</strong>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -222,7 +241,7 @@
                             <span class="section-index">02</span>
                         </div>
 
-                        <div class="form-grid four-col">
+                        <div class="form-grid four-col piece-config-row">
                             <el-form-item label="Pieces Count" prop="pieces_count">
                                 <el-select v-model="createForm.pieces_count" class="w-100" @change="onPiecesCountChange">
                                     <el-option label="Monolithic (1-Piece)" :value="1" />
@@ -243,12 +262,6 @@
 
                         <div v-if="createForm.pieces_count === 1">
                             <div class="form-grid three-col">
-                                <el-form-item label="Corrugation Machine" prop="corrugation_machine_id">
-                                    <el-select v-model="createForm.corrugation_machine_id" placeholder="Select corrugation plant" class="w-100" filterable @change="fetchCorrugationSpeed">
-                                        <el-option v-for="machine in corrugationMachines" :key="machine.id" :label="machineLabel(machine)" :value="machine.id" />
-                                    </el-select>
-                                    <div v-if="createForm.corrugation_speed" class="target-speed">Target: {{ createForm.corrugation_speed }} m/min</div>
-                                </el-form-item>
                                 <el-form-item label="Ply Type" prop="ply_type">
                                     <el-select v-model="createForm.ply_type" class="w-100" @change="onPlyTypeChange">
                                         <el-option label="3-Ply" :value="3" />
@@ -431,12 +444,6 @@
                                     <el-option v-for="n in 6" :key="n" :label="`${n} Color Printing`" :value="n" />
                                 </el-select>
                             </el-form-item>
-                            <el-form-item label="Printing Machine">
-                                <el-select v-model="createForm.printing_machine_id" class="w-100" filterable @change="fetchPrintingSpeed">
-                                    <el-option v-for="machine in printingMachines" :key="machine.id" :label="machineLabel(machine)" :value="machine.id" />
-                                </el-select>
-                                <div v-if="createForm.printing_speed" class="target-speed">Target: {{ createForm.printing_speed }} sh/min</div>
-                            </el-form-item>
                         </div>
 
                         <div v-if="createForm.print_colors > 0" class="ink-grid mb-3">
@@ -465,6 +472,7 @@
                                 <el-select v-model="createForm.process_type" class="w-100">
                                     <el-option label="Rotary Slotter" value="Rotary Slotter" />
                                     <el-option label="Flatbed Die-Cut" value="Die Cutting" />
+                                    <el-option label="Rotary Slotter + Flatbed Die-cut" value="Rotary Slotter + Flatbed Die-cut" />
                                 </el-select>
                             </el-form-item>
                             <el-form-item v-if="createForm.process_type === 'Die Cutting'" label="Die Cutting Machine">
@@ -493,24 +501,24 @@
 
                         <div class="addon-toggle">
                             <div>
-                                <strong>Honeycomb Fitting</strong>
+                                <strong>Honeycomb</strong>
                                 <span>{{ createForm.special_details.honeycomb.enabled ? 'Include' : 'Disabled' }}</span>
                             </div>
                             <el-switch v-model="createForm.special_details.honeycomb.enabled" />
                         </div>
                         <div v-if="createForm.special_details.honeycomb.enabled" class="form-grid three-col compact-grid">
-                            <el-input-number v-model="createForm.special_details.honeycomb.length" :min="0" :controls="false" placeholder="Length" />
-                            <el-input-number v-model="createForm.special_details.honeycomb.width" :min="0" :controls="false" placeholder="Width" />
-                            <el-input-number v-model="createForm.special_details.honeycomb.height" :min="0" :controls="false" placeholder="Height" />
                             <el-select v-model="createForm.special_details.honeycomb.unit" placeholder="Unit">
                                 <el-option label="mm" value="mm" />
                                 <el-option label="inch" value="inch" />
                             </el-select>
+                            <el-input-number v-model="createForm.special_details.honeycomb.length" :min="0" :controls="false" placeholder="Length" />
+                            <el-input-number v-model="createForm.special_details.honeycomb.width" :min="0" :controls="false" placeholder="Width" />
+                            <el-input-number v-model="createForm.special_details.honeycomb.height" :min="0" :controls="false" placeholder="Height" />
                             <el-input-number v-model="createForm.special_details.honeycomb.holes" :min="0" :controls="false" placeholder="Holes" />
                             <el-select v-model="createForm.special_details.honeycomb.ply" placeholder="Ply">
-                                <el-option label="3" :value="3" />
-                                <el-option label="5" :value="5" />
-                                <el-option label="7" :value="7" />
+                                <el-option label="3-Ply" :value="3" />
+                                <el-option label="5-Ply" :value="5" />
+                                <el-option label="7-Ply" :value="7" />
                             </el-select>
                             <el-input v-model="createForm.special_details.honeycomb.material" placeholder="Material" />
                             <el-select v-model="createForm.special_details.honeycomb.source" placeholder="Source">
@@ -518,6 +526,7 @@
                                 <el-option label="Outsource Purchase" value="outsource" />
                             </el-select>
                             <el-input v-if="createForm.special_details.honeycomb.source === 'outsource'" v-model="createForm.special_details.honeycomb.supplier_name" placeholder="Supplier Name" />
+                            <el-input v-if="createForm.special_details.honeycomb.source === 'inhouse'" v-model="createForm.special_details.honeycomb.inhouse_details" placeholder="Packing" />
                         </div>
 
                         <div class="addon-toggle mt-3">
@@ -528,22 +537,23 @@
                             <el-switch v-model="createForm.special_details.separator.enabled" />
                         </div>
                         <div v-if="createForm.special_details.separator.enabled" class="form-grid three-col compact-grid">
-                            <el-input-number v-model="createForm.special_details.separator.length" :min="0" :controls="false" placeholder="Length" />
-                            <el-input-number v-model="createForm.special_details.separator.width" :min="0" :controls="false" placeholder="Width" />
                             <el-select v-model="createForm.special_details.separator.unit" placeholder="Unit">
                                 <el-option label="mm" value="mm" />
                                 <el-option label="inch" value="inch" />
                             </el-select>
+                            <el-input-number v-model="createForm.special_details.separator.length" :min="0" :controls="false" placeholder="Length" />
+                            <el-input-number v-model="createForm.special_details.separator.width" :min="0" :controls="false" placeholder="Width" />
                             <el-select v-model="createForm.special_details.separator.ply" placeholder="Ply">
-                                <el-option label="3" :value="3" />
-                                <el-option label="5" :value="5" />
-                                <el-option label="7" :value="7" />
+                                <el-option label="3-Ply" :value="3" />
+                                <el-option label="5-Ply" :value="5" />
+                                <el-option label="7-Ply" :value="7" />
                             </el-select>
                             <el-select v-model="createForm.special_details.separator.source" placeholder="Source">
                                 <el-option label="In-House Manufacture" value="inhouse" />
                                 <el-option label="Outsource Purchase" value="outsource" />
                             </el-select>
                             <el-input v-if="createForm.special_details.separator.source === 'outsource'" v-model="createForm.special_details.separator.supplier_name" placeholder="Supplier Name" />
+                            <el-input v-if="createForm.special_details.separator.source === 'inhouse'" v-model="createForm.special_details.separator.inhouse_details" placeholder="Material" />
                         </div>
                     </section>
 
@@ -710,7 +720,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import axios from 'axios';
 import { ElMessage, ElMessageBox } from 'element-plus';
 
@@ -730,6 +740,7 @@ const productionMachines = ref([]);
 const loading = ref(false);
 const submitting = ref(false);
 const isCreating = ref(false);
+const nextJobCardNo = ref('QC-JC-110001');
 const cartonPreviewFailed = ref(false);
 const prodDialogVisible = ref(false);
 const detailsDialogVisible = ref(false);
@@ -764,7 +775,8 @@ const makeSpecialDetails = () => ({
         ply: 3,
         material: '',
         source: 'inhouse',
-        supplier_name: ''
+        supplier_name: '',
+        inhouse_details: ''
     },
     separator: {
         enabled: false,
@@ -773,7 +785,8 @@ const makeSpecialDetails = () => ({
         unit: 'mm',
         ply: 3,
         source: 'inhouse',
-        supplier_name: ''
+        supplier_name: '',
+        inhouse_details: ''
     }
 });
 
@@ -840,6 +853,7 @@ const makeCreateForm = () => ({
     item_code: '',
     item_name: '',
     carton_type_id: 1,
+    carton_category: 'RSC Carton',
     carton_quality: 'normal',
     planned_qty: 1,
     planned_date: todayString(),
@@ -898,7 +912,6 @@ const createRules = {
     carton_type_id: [{ required: true, message: 'Select carton type', trigger: 'change' }],
     item_name: [{ required: true, message: 'Enter item name', trigger: 'blur' }],
     pieces_count: [{ required: true, message: 'Select pieces count', trigger: 'change' }],
-    corrugation_machine_id: [{ required: true, message: 'Select corrugation machine', trigger: 'change' }],
     ply_type: [{ required: true, message: 'Select ply type', trigger: 'change' }],
     pasting_type: [{ required: true, message: 'Select joinery technique', trigger: 'change' }]
 };
@@ -916,29 +929,37 @@ const corrugationMachines = computed(() => machineByDepartment(['corrugation', '
 const printingMachines = computed(() => machineByDepartment(['printing', 'print', 'flexo']));
 const dieCuttingMachines = computed(() => machineByDepartment(['die', 'cut']));
 
+const escapeSvgText = (value) => String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 const formDieLineSvg = computed(() => {
     const dims = dimensionsToMm(createForm.length, createForm.width, createForm.height, createForm.uom);
     const length = Math.max(dims.length, 1);
     const width = Math.max(dims.width, 1);
     const height = Math.max(dims.height, 1);
     const glue = 35;
-    const nearFlap = width * 0.5;
-    const farFlap = (width * 0.5) + height;
+    const flap = width * 0.5;
     const totalWidth = glue + (2 * length) + (2 * width);
-    const totalHeight = height + nearFlap + farFlap;
-    const scale = Math.min(620 / totalWidth, 260 / totalHeight);
+    const totalHeight = height + (flap * 2);
+    const scale = Math.min(760 / totalWidth, 360 / totalHeight);
     const pad = 44;
+    const dimensionGutter = 64;
     const headerSpace = 58;
     const footerSpace = 42;
-    const y = pad + headerSpace + farFlap * scale;
+    const y = pad + headerSpace + flap * scale;
     const bodyHeight = height * scale;
-    const topFlapHeight = farFlap * scale;
-    const bottomFlapHeight = nearFlap * scale;
-    const widthPx = totalWidth * scale + (pad * 2);
+    const topFlapHeight = flap * scale;
+    const bottomFlapHeight = flap * scale;
+    const panelRight = pad + totalWidth * scale;
+    const widthPx = totalWidth * scale + (pad * 2) + dimensionGutter;
     const heightPx = totalHeight * scale + (pad * 2) + headerSpace + footerSpace;
-    const customerName = selectedCustomer.value?.name || 'Customer Name';
-    const itemCode = createForm.item_code || 'Item Code';
-    const itemName = createForm.item_name || 'Item Name';
+    const customerName = escapeSvgText(selectedCustomer.value?.name || 'Customer Name');
+    const itemCode = escapeSvgText(createForm.item_code || 'Item Code');
+    const itemName = escapeSvgText(createForm.item_name || 'Item Name');
     const dimText = (value) => Number(value || 0).toFixed(2);
 
     const panels = [
@@ -953,13 +974,13 @@ const formDieLineSvg = computed(() => {
     const panelMarkup = panels.map((panel, index) => {
         const panelWidth = panel.width * scale;
         const topFlapMarkup = index > 0
-            ? `<rect x="${cursor}" y="${y - topFlapHeight}" width="${panelWidth}" height="${topFlapHeight}" class="jc-svg-flap" />`
+            ? `<rect x="${cursor}" y="${y - topFlapHeight}" width="${panelWidth}" height="${topFlapHeight}" class="jc-svg-fill" />`
             : '';
         const bottomFlapMarkup = index > 0
-            ? `<rect x="${cursor}" y="${y + bodyHeight}" width="${panelWidth}" height="${bottomFlapHeight}" class="jc-svg-flap" />`
+            ? `<rect x="${cursor}" y="${y + bodyHeight}" width="${panelWidth}" height="${bottomFlapHeight}" class="jc-svg-fill" />`
             : '';
         const markup = `
-            <rect x="${cursor}" y="${y}" width="${panelWidth}" height="${bodyHeight}" class="jc-svg-panel ${panel.type}" />
+            <rect x="${cursor}" y="${y}" width="${panelWidth}" height="${bodyHeight}" class="jc-svg-fill ${panel.type}" />
             ${topFlapMarkup}
             ${bottomFlapMarkup}
         `;
@@ -969,15 +990,26 @@ const formDieLineSvg = computed(() => {
 
     const lPanelX = pad + (glue * scale);
     const wPanelX = lPanelX + (length * scale);
-    const heightArrowX = pad + widthPx - (pad * 1.25);
+    const heightArrowX = panelRight + 24;
+    const heightTextX = heightArrowX + 22;
+    const heightTextY = y + (bodyHeight / 2);
+    const lengthArrowY = y - topFlapHeight - 16;
+    const widthArrowY = y + bodyHeight + bottomFlapHeight + 16;
+    const glueRight = pad + glue * scale;
+    const mainPanelBreaks = [
+        glueRight,
+        pad + (glue + length) * scale,
+        pad + (glue + length + width) * scale,
+        pad + (glue + length + width + length) * scale
+    ];
+    const topBottomPanelBreaks = mainPanelBreaks.slice(1);
 
     return `
-        <svg viewBox="0 0 ${widthPx} ${heightPx}" role="img" aria-label="Carton die-line preview">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${widthPx} ${heightPx}" role="img" aria-label="Carton die-line preview">
             <style>
-                .jc-svg-panel{fill:#fff;stroke:#111;stroke-width:1.2}
-                .jc-svg-panel.glue{fill:#fff}
-                .jc-svg-flap{fill:#fff;stroke:#111;stroke-width:1.1}
-                .jc-svg-fold{stroke:#111;stroke-width:1;stroke-dasharray:6 5}
+                .jc-svg-fill{fill:#fff;stroke:none}
+                .jc-svg-cut{stroke:#111;stroke-width:1.2;fill:none}
+                .jc-svg-fold{stroke:#111;stroke-width:1;stroke-dasharray:2 4;stroke-linecap:round;fill:none}
                 .jc-svg-head{font:700 13px Arial,sans-serif;fill:#111}
                 .jc-svg-sub{font:600 11px Arial,sans-serif;fill:#111}
                 .jc-svg-foot{font:700 11px Arial,sans-serif;fill:#111}
@@ -986,34 +1018,37 @@ const formDieLineSvg = computed(() => {
                 .jc-svg-ext{stroke:#111;stroke-width:1}
             </style>
             <defs>
-                <marker id="arrow" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
-                    <path d="M0,0 L7,3.5 L0,7 z" fill="#111"></path>
+                <marker id="arrow" markerWidth="8" markerHeight="8" refX="7.2" refY="4" orient="auto-start-reverse">
+                    <path d="M0,0 L8,4 L0,8 z" fill="#111"></path>
                 </marker>
             </defs>
             <text x="${widthPx / 2}" y="${pad}" text-anchor="middle" class="jc-svg-head">${customerName}</text>
             <text x="${widthPx / 2}" y="${pad + 18}" text-anchor="middle" class="jc-svg-sub">${itemCode} | ${itemName}</text>
             ${panelMarkup}
+            <path d="M${glueRight} ${y - topFlapHeight} H${panelRight} V${y + bodyHeight + bottomFlapHeight} H${glueRight} V${y - topFlapHeight} Z" class="jc-svg-cut" />
+            <path d="M${pad} ${y} H${glueRight} V${y + bodyHeight} H${pad} V${y} Z" class="jc-svg-cut" />
             <line x1="${pad}" y1="${y}" x2="${pad + totalWidth * scale}" y2="${y}" class="jc-svg-fold" />
             <line x1="${pad}" y1="${y + bodyHeight}" x2="${pad + totalWidth * scale}" y2="${y + bodyHeight}" class="jc-svg-fold" />
-            <line x1="${pad + glue * scale}" y1="${y}" x2="${pad + glue * scale}" y2="${y + bodyHeight}" class="jc-svg-fold" />
-            <line x1="${pad + (glue + length) * scale}" y1="${y}" x2="${pad + (glue + length) * scale}" y2="${y + bodyHeight}" class="jc-svg-fold" />
-            <line x1="${pad + (glue + length + width) * scale}" y1="${y}" x2="${pad + (glue + length + width) * scale}" y2="${y + bodyHeight}" class="jc-svg-fold" />
-            <line x1="${pad + (glue + length + width + length) * scale}" y1="${y}" x2="${pad + (glue + length + width + length) * scale}" y2="${y + bodyHeight}" class="jc-svg-fold" />
+            ${mainPanelBreaks.map(x => `<line x1="${x}" y1="${y}" x2="${x}" y2="${y + bodyHeight}" class="jc-svg-fold" />`).join('')}
+            ${topBottomPanelBreaks.map(x => `
+                <line x1="${x}" y1="${y - topFlapHeight}" x2="${x}" y2="${y}" class="jc-svg-cut" />
+                <line x1="${x}" y1="${y + bodyHeight}" x2="${x}" y2="${y + bodyHeight + bottomFlapHeight}" class="jc-svg-cut" />
+            `).join('')}
 
-            <line x1="${lPanelX}" y1="${y - 16}" x2="${lPanelX + (length * scale)}" y2="${y - 16}" class="jc-svg-arrow" />
-            <line x1="${lPanelX}" y1="${y - 10}" x2="${lPanelX}" y2="${y + 3}" class="jc-svg-ext" />
-            <line x1="${lPanelX + (length * scale)}" y1="${y - 10}" x2="${lPanelX + (length * scale)}" y2="${y + 3}" class="jc-svg-ext" />
-            <text x="${lPanelX + (length * scale / 2)}" y="${y - 21}" text-anchor="middle" class="jc-svg-dim">L = ${dimText(length)} mm</text>
+            <line x1="${lPanelX}" y1="${lengthArrowY}" x2="${lPanelX + (length * scale)}" y2="${lengthArrowY}" class="jc-svg-arrow" />
+            <line x1="${lPanelX}" y1="${lengthArrowY + 6}" x2="${lPanelX}" y2="${y - topFlapHeight}" class="jc-svg-ext" />
+            <line x1="${lPanelX + (length * scale)}" y1="${lengthArrowY + 6}" x2="${lPanelX + (length * scale)}" y2="${y - topFlapHeight}" class="jc-svg-ext" />
+            <text x="${lPanelX + (length * scale / 2)}" y="${lengthArrowY - 8}" text-anchor="middle" class="jc-svg-dim">L = ${dimText(length)} mm</text>
 
-            <line x1="${wPanelX}" y1="${y + bodyHeight + 16}" x2="${wPanelX + (width * scale)}" y2="${y + bodyHeight + 16}" class="jc-svg-arrow" />
-            <line x1="${wPanelX}" y1="${y + bodyHeight + 10}" x2="${wPanelX}" y2="${y + bodyHeight - 3}" class="jc-svg-ext" />
-            <line x1="${wPanelX + (width * scale)}" y1="${y + bodyHeight + 10}" x2="${wPanelX + (width * scale)}" y2="${y + bodyHeight - 3}" class="jc-svg-ext" />
-            <text x="${wPanelX + (width * scale / 2)}" y="${y + bodyHeight + 30}" text-anchor="middle" class="jc-svg-dim">W = ${dimText(width)} mm</text>
+            <line x1="${wPanelX}" y1="${widthArrowY}" x2="${wPanelX + (width * scale)}" y2="${widthArrowY}" class="jc-svg-arrow" />
+            <line x1="${wPanelX}" y1="${widthArrowY - 6}" x2="${wPanelX}" y2="${y + bodyHeight + bottomFlapHeight}" class="jc-svg-ext" />
+            <line x1="${wPanelX + (width * scale)}" y1="${widthArrowY - 6}" x2="${wPanelX + (width * scale)}" y2="${y + bodyHeight + bottomFlapHeight}" class="jc-svg-ext" />
+            <text x="${wPanelX + (width * scale / 2)}" y="${widthArrowY + 15}" text-anchor="middle" class="jc-svg-dim">W = ${dimText(width)} mm</text>
 
             <line x1="${heightArrowX}" y1="${y}" x2="${heightArrowX}" y2="${y + bodyHeight}" class="jc-svg-arrow" />
             <line x1="${heightArrowX - 8}" y1="${y}" x2="${heightArrowX + 2}" y2="${y}" class="jc-svg-ext" />
             <line x1="${heightArrowX - 8}" y1="${y + bodyHeight}" x2="${heightArrowX + 2}" y2="${y + bodyHeight}" class="jc-svg-ext" />
-            <text x="${heightArrowX + 14}" y="${y + (bodyHeight / 2)}" class="jc-svg-dim">H = ${dimText(height)} mm</text>
+            <text x="${heightTextX}" y="${heightTextY}" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 ${heightTextX} ${heightTextY})" class="jc-svg-dim">H = ${dimText(height)} mm</text>
 
             <text x="${widthPx / 2}" y="${heightPx - 12}" text-anchor="middle" class="jc-svg-foot">Quality Cartons (Pvt.) Ltd.</text>
         </svg>
@@ -1057,8 +1092,18 @@ const fetchData = async () => {
     }
 };
 
+const fetchNextJobCardNo = async () => {
+    try {
+        const res = await axios.get('/api/job-cards/next-number');
+        nextJobCardNo.value = res.data?.next_job_card_no || 'QC-JC-110001';
+    } catch (error) {
+        nextJobCardNo.value = 'QC-JC-110001';
+    }
+};
+
 const openCreateForm = () => {
     resetCreateForm();
+    fetchNextJobCardNo();
     isCreating.value = true;
 };
 
@@ -1086,7 +1131,14 @@ const onCartonTypeChange = () => {
     cartonPreviewFailed.value = false;
 };
 
-const paperGsm = (paper) => Number(paper.gsm || paper.min_gsm || paper.max_gsm || 0);
+const paperGsm = (paper) => Number(
+    paper.standard_gsm
+    ?? paper.std_gsm
+    ?? paper.gsm
+    ?? paper.min_gsm
+    ?? paper.max_gsm
+    ?? 0
+);
 
 const paperLabel = (paper) => {
     const name = paper.paper_name || paper.quality || paper.name || paper.item_code || 'Paper';
@@ -1120,18 +1172,23 @@ const onPaperChange = (layer, paperId, piece = null) => {
 };
 
 const dimensionsToMm = (length, width, height, uom) => {
+    const toNum = (value) => {
+        const parsed = Number.parseFloat(value);
+        return Number.isFinite(parsed) ? parsed : 0;
+    };
     const factor = uom === 'inch' ? 25.4 : (uom === 'cm' ? 10 : 1);
     return {
-        length: Number(length || 0) * factor,
-        width: Number(width || 0) * factor,
-        height: Number(height || 0) * factor
+        length: Math.max(0, toNum(length)) * factor,
+        width: Math.max(0, toNum(width)) * factor,
+        height: Math.max(0, toNum(height)) * factor
     };
 };
 
 const calculateSpecs = (length, width, height, layers, uom, ups = 1) => {
     const dims = dimensionsToMm(length, width, height, uom);
-    const deckle = (dims.width + dims.height + 25) / 25.4;
-    const sheetLength = ((dims.length * 2) + (dims.width * 2) + 75) / 25.4;
+    const mmToInch = 0.03937007874015748;
+    const deckle = (dims.width + dims.height + 25) * mmToInch;
+    const sheetLength = ((dims.length * 2) + (dims.width * 2) + 75) * mmToInch;
     const fluteFactors = { Flat: 1, B: 1.35, C: 1.45, E: 1.25 };
     const gsmTotal = (layers || []).reduce((sum, layer) => sum + (Number(layer.gsm || 0) * (fluteFactors[layer.flute_profile] || 1)), 0);
     const areaM2 = deckle * sheetLength * 0.00064516;
@@ -1170,6 +1227,12 @@ const recalculatePieceSpecs = (piece) => {
     piece.sheet_length = result.sheet_length;
     piece.est_unit_weight = result.weight;
 };
+
+// Keep deckle/sheet formulas always in sync even when UI events do not fire.
+watch(
+    () => [createForm.length, createForm.width, createForm.height, createForm.uom, createForm.ups, createForm.pieces_count],
+    () => recalculateSpecs()
+);
 
 const onPlyTypeChange = () => {
     createForm.layers = layersForPly(createForm.ply_type);
@@ -1375,6 +1438,7 @@ const buildJobCardPayload = () => {
         special_details: {
             carton_type_id: createForm.carton_type_id,
             carton_type_code: cartonType?.standard_code,
+            carton_category: createForm.carton_category,
             carton_quality: createForm.carton_quality,
             corrugation_machine_id: createForm.corrugation_machine_id,
             corrugation_speed: createForm.corrugation_speed,
@@ -1455,7 +1519,7 @@ const downloadDieLine = async () => {
         ElMessage.error('Unable to generate JPEG die-line.');
     });
 
-    if (!image.complete) return;
+    if (!image.complete || !image.naturalWidth) return;
 
     const canvas = document.createElement('canvas');
     canvas.width = width * 2;
@@ -1550,6 +1614,7 @@ const formatNum = (val, dec) => Number(val || 0).toLocaleString(undefined, { min
 onMounted(() => {
     fetchJobCards();
     fetchData();
+    fetchNextJobCardNo();
 });
 </script>
 
@@ -1612,23 +1677,40 @@ onMounted(() => {
     grid-column: 1 / -1;
 }
 .basic-info-layout {
-    align-items: stretch;
+    align-items: start;
     display: grid;
     gap: 18px;
-    grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.75fr);
+    grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
 }
 .basic-info-fields {
     min-width: 0;
 }
+.carton-selection-layout {
+    align-items: stretch;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: minmax(0, 1.34fr) minmax(208px, 0.66fr);
+}
+.carton-selection-fields {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.carton-selection-fields :deep(.el-form-item:last-child) {
+    margin-bottom: 0;
+}
+.carton-quality-field {
+    margin-top: auto;
+}
 .basic-info-card .dieline-panel {
     display: flex;
     flex-direction: column;
-    min-height: 100%;
+    min-height: 0;
 }
 .basic-info-card .dieline-canvas,
 .basic-info-card .dieline-empty {
-    flex: 1;
-    min-height: 300px;
+    height: 271px;
+    min-height: 271px;
 }
 .section-heading {
     display: flex;
@@ -1653,6 +1735,22 @@ onMounted(() => {
     font-weight: 700;
     margin: 3px 0 0;
 }
+.basic-info-heading-right {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+}
+.job-number-pill {
+    background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+    border: 1px solid #93c5fd;
+    border-radius: 10px;
+    color: #1d4ed8;
+    font-size: 1.12rem;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    padding: 7px 14px;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+}
 .section-index {
     background: #eef2ff;
     border: 1px solid #c7d2fe;
@@ -1674,6 +1772,12 @@ onMounted(() => {
 }
 .four-col {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.piece-config-row {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+.dimension-input-row {
+    grid-template-columns: 1.05fr 0.9fr 1fr 1fr 1fr;
 }
 .align-start {
     align-items: start;
@@ -1700,20 +1804,62 @@ onMounted(() => {
     padding: 12px;
 }
 .carton-preview-panel {
-    min-height: 94px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 184px;
+    overflow: hidden;
 }
+.preview-panel-header {
+    align-items: center;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid #dbe3ef;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 0;
+    padding: 9px 11px;
+}
+.preview-panel-header span,
 .carton-preview-panel span {
     color: var(--jc-create-muted);
     display: block;
     font-size: 0.76rem;
     font-weight: 800;
-    margin-bottom: 8px;
+    line-height: 1.1;
+    margin: 0;
+    text-transform: uppercase;
+}
+.preview-panel-header strong {
+    color: var(--jc-create-text);
+    font-size: 0.8rem;
+    font-weight: 900;
+    letter-spacing: 0;
+}
+.carton-preview-stage {
+    align-items: center;
+    background:
+        linear-gradient(#ffffff, #ffffff) padding-box,
+        repeating-linear-gradient(45deg, #eef2f7 0 1px, transparent 1px 10px);
+    border: 1px solid #dbe3ef;
+    border-radius: 8px;
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    min-height: 128px;
+    overflow: hidden;
+    padding: 10px;
 }
 .carton-preview-panel img {
     display: block;
-    max-height: 58px;
+    height: 100%;
+    max-height: 146px;
     max-width: 100%;
     object-fit: contain;
+    transform: scale(1.22);
+    transform-origin: center;
+    width: 100%;
 }
 .carton-preview-fallback {
     align-items: center;
@@ -1722,9 +1868,11 @@ onMounted(() => {
     border-radius: 8px;
     color: #334155;
     display: flex;
+    flex: 1;
     font-weight: 900;
     justify-content: center;
-    min-height: 58px;
+    min-height: 100%;
+    width: 100%;
 }
 .segmented-control {
     width: 100%;
@@ -1739,7 +1887,12 @@ onMounted(() => {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
-    margin: 14px 0;
+    margin: 0;
+}
+.sizing-section {
+    display: grid;
+    gap: 12px;
+    margin-top: 18px;
 }
 .metrics-strip div {
     background: #172033;
@@ -1766,21 +1919,28 @@ onMounted(() => {
     display: block;
     font-size: 0.9rem;
 }
+.dieline-header {
+    margin-bottom: 12px;
+}
 .dieline-canvas,
 .dieline-empty {
     align-items: center;
-    background: #ffffff;
-    border: 1px dashed #cbd5e1;
+    background:
+        linear-gradient(#ffffff, #ffffff) padding-box,
+        repeating-linear-gradient(45deg, #eef2f7 0 1px, transparent 1px 12px);
+    border: 1px solid #dbe3ef;
     border-radius: 8px;
     display: flex;
     justify-content: center;
     min-height: 176px;
-    overflow: auto;
-    padding: 10px;
+    overflow: hidden;
+    padding: 10px 12px;
 }
 .dieline-canvas :deep(svg) {
     display: block;
-    min-width: 320px;
+    height: 100%;
+    max-height: 253px;
+    min-width: 0;
     width: 100%;
 }
 .dieline-empty {
@@ -2040,11 +2200,20 @@ onMounted(() => {
     .basic-info-layout {
         grid-template-columns: 1fr;
     }
+    .carton-selection-layout {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (min-width: 1101px) and (max-width: 1360px) {
     .four-col {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .dimension-input-row {
+        grid-template-columns: 1.05fr 0.9fr 1fr 1fr 1fr;
+    }
+    .piece-config-row {
+        grid-template-columns: 1fr 1fr 1fr 1fr;
     }
 }
 
@@ -2298,12 +2467,24 @@ body.dark-mode .job-card-management .carton-preview-panel span {
     color: var(--jc-create-muted) !important;
 }
 
+[data-theme="dark"] .job-card-management .job-number-pill,
+body.dark-mode .job-card-management .job-number-pill {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+    border-color: #60a5fa;
+    color: #dbeafe;
+    text-shadow: none;
+}
+
 [data-theme="dark"] .job-card-management .carton-preview-fallback,
+[data-theme="dark"] .job-card-management .carton-preview-stage,
 [data-theme="dark"] .job-card-management .dieline-canvas,
 [data-theme="dark"] .job-card-management .dieline-empty,
+[data-theme="dark"] .job-card-management .preview-panel-header,
 body.dark-mode .job-card-management .carton-preview-fallback,
+body.dark-mode .job-card-management .carton-preview-stage,
 body.dark-mode .job-card-management .dieline-canvas,
-body.dark-mode .job-card-management .dieline-empty {
+body.dark-mode .job-card-management .dieline-empty,
+body.dark-mode .job-card-management .preview-panel-header {
     background: #0f172a !important;
     border-color: #334155 !important;
     color: #cbd5e1 !important;

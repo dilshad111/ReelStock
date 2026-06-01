@@ -557,6 +557,8 @@ const filteredVehicles = computed(() => {
     return vehicles.value.filter(v => v.transporter_id === mainForm.value.transporter_id);
 });
 
+const isAuthError = (error) => error?.response?.status === 401;
+
 const fetchBaseData = async () => {
     try {
         const [t, c, v] = await Promise.all([
@@ -568,6 +570,7 @@ const fetchBaseData = async () => {
         customers.value = c.data;
         vehicles.value = v.data;
     } catch (error) {
+        if (isAuthError(error)) return;
         ElMessage.error('Error fetching requirements');
     }
 };
@@ -577,6 +580,10 @@ const fetchHistory = async () => {
     try {
         const response = await axios.get('/api/cartage-bills');
         history.value = response.data;
+    } catch (error) {
+        if (!isAuthError(error)) {
+            ElMessage.error('Error fetching cartage bills');
+        }
     } finally {
         loading.value = false;
     }

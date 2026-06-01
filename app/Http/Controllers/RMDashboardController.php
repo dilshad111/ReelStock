@@ -14,12 +14,17 @@ class RMDashboardController extends Controller
     public function index()
     {
         // 1. Total Stock Valuation
-        $items = RMItem::all();
+        $items = RMItem::with('category')->get();
         $totalValuation = 0;
+        $valuationByCategory = [];
         foreach ($items as $item) {
             $lastLedger = RMStockLedger::where('rm_item_id', $item->id)->latest('id')->first();
             $balance = $lastLedger ? (float)$lastLedger->balance_after : 0;
-            $totalValuation += $balance * (float)$item->cost_price;
+            $valuation = $balance * (float)$item->cost_price;
+            $totalValuation += $valuation;
+
+            $category = $item->category?->name ?: 'Uncategorised';
+            $valuationByCategory[$category] = ($valuationByCategory[$category] ?? 0) + $valuation;
         }
 
         // 2. Low Stock Items Count
@@ -27,7 +32,8 @@ class RMDashboardController extends Controller
         foreach ($items as $item) {
             $lastLedger = RMStockLedger::where('rm_item_id', $item->id)->latest('id')->first();
             $balance = $lastLedger ? (float)$lastLedger->balance_after : 0;
-            if ($balance < (float)$item->min_stock_alert) {
+            $reorderLevel = (float) ($item->reorder_level ?: $item->minimum_stock ?: $item->min_stock_alert);
+            if ($reorderLevel > 0 && $balance <= $reorderLevel) {
                 $lowStockCount++;
             }
         }
@@ -72,7 +78,10 @@ class RMDashboardController extends Controller
                 'monthly_receiving' => (float)$monthlyReceiving,
             ],
             'top_consumed' => $topConsumed,
-            'consumption_trend' => $consumptionTrend
+            'consumption_trend' => $consumptionTrend,
+            'valuation_by_category' => collect($valuationByCategory)
+                ->map(fn ($value, $category) => ['category' => $category, 'valuation' => round($value, 2)])
+                ->values(),
         ]);
     }
 }

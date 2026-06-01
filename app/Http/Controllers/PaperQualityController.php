@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\PaperQuality;
+use App\Models\RMCategory;
+use App\Models\RMItem;
+use App\Models\RMStockLedger;
+use Illuminate\Support\Facades\DB;
 
 class PaperQualityController extends Controller
 {
@@ -82,6 +86,8 @@ class PaperQualityController extends Controller
 
         $payload = $this->applyStandardValues($validated);
         $quality = PaperQuality::create(array_merge($payload, ['item_code' => $itemCode]));
+        $this->syncPaperQualityRawMaterial($quality);
+
         return response()->json($quality->load('paperColor'), 201);
     }
 
@@ -130,6 +136,8 @@ class PaperQualityController extends Controller
         }
 
         $quality->update($data);
+        $this->syncPaperQualityRawMaterial($quality->fresh());
+
         return response()->json($quality->load('paperColor'));
     }
 
@@ -171,6 +179,67 @@ class PaperQualityController extends Controller
 
         $nextNum = $lastCode ? intval(substr($lastCode->item_code, strlen($prefix))) + 1 : 1;
         return $prefix . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
+    }
+
+    private function syncPaperQualityRawMaterial(PaperQuality $quality): void
+    {
+        $paperBoardCategory = RMCategory::where('name', 'Paper & Board')->first();
+
+        if (! $paperBoardCategory) {
+            return;
+        }
+
+        DB::transaction(function () use ($quality, $paperBoardCategory) {
+            $item = RMItem::firstOrNew(['paper_quality_id' => $quality->id]);
+            $isNew = ! $item->exists;
+
+            if ($isNew) {
+                $item->code = $this->nextRawMaterialCode();
+                $item->opening_stock = 0;
+                $item->min_stock_alert = 0;
+                $item->reorder_level = 0;
+                $item->minimum_stock = 0;
+                $item->maximum_stock = 0;
+                $item->status = 'Active';
+            }
+
+            $item->fill([
+                'name' => trim($quality->quality . ' ' . $quality->gsm_range),
+                'rm_category_id' => $paperBoardCategory->id,
+                'rm_subcategory_id' => null,
+                'unit_type' => 'Kg',
+                'material_type' => 'Direct Material',
+                'cost_price' => $item->cost_price ?? 0,
+                'remarks' => 'Auto-created from Reels Inventory paper quality.',
+            ]);
+
+            $item->save();
+
+            if ($isNew) {
+                RMStockLedger::create([
+                    'rm_item_id' => $item->id,
+                    'transaction_type' => 'opening',
+                    'reference_id' => $item->id,
+                    'quantity_in' => 0,
+                    'quantity_out' => 0,
+                    'balance_after' => 0,
+                    'transaction_date' => now()->toDateString(),
+                ]);
+            }
+        });
+    }
+
+    private function nextRawMaterialCode(): string
+    {
+        $lastItem = RMItem::orderBy('id', 'desc')->first();
+        $nextId = $lastItem ? $lastItem->id + 1 : 1;
+
+        do {
+            $code = 'RM-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
+            $nextId++;
+        } while (RMItem::where('code', $code)->exists());
+
+        return $code;
     }
 }
 

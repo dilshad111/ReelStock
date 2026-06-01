@@ -48,6 +48,7 @@ const PERMISSION_KEY_MAP = {
     'approve_cartage': 'approve_cartage',
     'qc-inspection': 'qc-inspection',
     'rm-dashboard': 'rm-dashboard',
+    'rm-categories': 'rm-categories',
     'rm-items': 'rm-items',
     'rm-receipts': 'rm-receipts',
     'rm-consumptions': 'rm-consumptions',
@@ -101,6 +102,7 @@ const PERMISSION_KEYS = [
     'reconciliation',
     'qc-inspection',
     'rm-dashboard',
+    'rm-categories',
     'rm-items',
     'rm-receipts',
     'rm-consumptions',
@@ -150,6 +152,7 @@ const VIEW_ORDER = [
     'fg-inventory-email',
     'qc-inspection',
     'rm-dashboard',
+    'rm-categories',
     'rm-items',
     'rm-receipts',
     'rm-consumptions',
@@ -205,6 +208,7 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     'fg-inventory-email': 'fg-inventory-email',
     'qc-inspection': 'qc-inspection',
     'rm-dashboard': 'rm-dashboard',
+    'rm-categories': 'rm-categories',
     'rm-items': 'rm-items',
     'rm-receipts': 'rm-receipts',
     'rm-consumptions': 'rm-consumptions',
@@ -321,6 +325,7 @@ const app = createApp({
             currentView: 'dashboard',
             user: null,
             token: localStorage.getItem('token'),
+            authChecking: false,
             permissions: createEmptyPermissions(),
             permissionsLoaded: false,
             initialRouteView: null,
@@ -342,15 +347,17 @@ const app = createApp({
             this.currentView = this.initialRouteView;
         }
         window.addEventListener('popstate', this.handlePopState);
+        let storedUser = null;
         try {
-            this.user = JSON.parse(localStorage.getItem('user')) || null;
+            storedUser = JSON.parse(localStorage.getItem('user')) || null;
         } catch (e) {
-            this.user = null;
+            storedUser = null;
         }
         if (this.token) {
+            this.authChecking = true;
             axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
             this.checkAuth();
-        } else if (this.user) {
+        } else if (storedUser) {
             this.logout(); // Token cleared, logout
         }
 
@@ -360,16 +367,10 @@ const app = createApp({
         window.addEventListener('mousedown', this.resetIdleTimer);
         window.addEventListener('scroll', this.resetIdleTimer);
 
-        if (this.user) {
-            this.fetchTriggeredCount();
-            this.fetchPendingCartageCount();
-        }
-
         // Periodic check for stock alerts (every 2 minutes)
         setInterval(() => {
-            if (this.user) {
-                this.fetchTriggeredCount();
-                this.fetchPendingCartageCount();
+            if (this.user && this.token && this.permissionsLoaded) {
+                this.refreshHeaderCounts();
             }
         }, 120000);
 
@@ -440,8 +441,16 @@ const app = createApp({
             this.setView(view, { replace: true, skipRoute: true });
         },
         checkAuth() {
+            this.token = localStorage.getItem('token');
+            if (!this.token) {
+                this.logout();
+                return;
+            }
+            this.authChecking = true;
+            axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
             axios.get('/api/user').then(response => {
                 this.user = response.data;
+                this.startIdleTimer();
                 this.fetchPermissions();
             }).catch(() => {
                 this.logout();
@@ -455,6 +464,8 @@ const app = createApp({
                 if (!this.applyInitialRouteView({ replace: true })) {
                     this.setView(this.getFirstPermittedView(), { replace: true });
                 }
+                this.authChecking = false;
+                this.refreshHeaderCounts();
                 return;
             }
             axios.get(`/api/user-permissions/${this.user.id}`).then(response => {
@@ -481,6 +492,8 @@ const app = createApp({
                 if (!this.applyInitialRouteView({ replace: true })) {
                     this.setView(this.getFirstPermittedView(), { replace: true });
                 }
+                this.authChecking = false;
+                this.refreshHeaderCounts();
             }).catch(error => {
                 console.error('Error loading permissions:', error);
                 this.permissions = createEmptyPermissions();
@@ -488,6 +501,7 @@ const app = createApp({
                 if (!this.applyInitialRouteView({ replace: true })) {
                     this.setView(this.getFirstPermittedView(), { replace: true });
                 }
+                this.authChecking = false;
             });
         },
         startIdleTimer() {
@@ -504,6 +518,10 @@ const app = createApp({
         },
         logout() {
             this.user = null;
+            this.token = null;
+            this.authChecking = false;
+            this.triggeredCount = 0;
+            this.pendingCartageCount = 0;
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             delete axios.defaults.headers.common['Authorization'];
@@ -528,7 +546,13 @@ const app = createApp({
                 return false;
             }
             const permission = this.permissions[permKey];
-            return permission ? permission.can_view : false;
+            if (permission?.can_view) {
+                return true;
+            }
+            if (view === 'rm-categories') {
+                return !!this.permissions['rm-items']?.can_view;
+            }
+            return false;
         },
         canSeeAmounts(view) {
             const permKey = PERMISSION_KEY_MAP[view];
@@ -582,18 +606,32 @@ const app = createApp({
             }
             return 'dashboard';
         },
+        refreshHeaderCounts() {
+            if (!this.user || !this.token) return;
+            this.fetchTriggeredCount();
+            this.fetchPendingCartageCount();
+        },
         fetchTriggeredCount() {
+            if (!this.user || !this.token) return;
             axios.get('/api/stock-alerts/triggered').then(response => {
                 this.triggeredCount = response.data.length;
             }).catch(error => {
+                if (error.response?.status === 401) {
+                    this.logout();
+                    return;
+                }
                 console.error('Error fetching triggered alerts:', error);
             });
         },
         fetchPendingCartageCount() {
-            if (!this.user) return;
+            if (!this.user || !this.token) return;
             axios.get('/api/cartage-bills/pending-count').then(response => {
                 this.pendingCartageCount = response.data.count;
             }).catch(error => {
+                if (error.response?.status === 401) {
+                    this.logout();
+                    return;
+                }
                 console.error('Error fetching pending cartage count:', error);
             });
         }
@@ -648,6 +686,7 @@ import FGInventoryEmailComponent from './components/FGInventoryEmailComponent.vu
 import FGDashboardComponent from './components/FGDashboardComponent.vue';
 import QcInspectionComponent from './components/QcInspectionComponent.vue';
 
+import RMCategoryComponent from './components/RMCategoryComponent.vue';
 import RMItemComponent from './components/RMItemComponent.vue';
 import RMReceiptComponent from './components/RMReceiptComponent.vue';
 import RMConsumptionComponent from './components/RMConsumptionComponent.vue';
@@ -703,6 +742,7 @@ app.component('fg-inventory-email-component', FGInventoryEmailComponent);
 app.component('fg-dashboard-component', FGDashboardComponent);
 app.component('qc-inspection-component', QcInspectionComponent);
 
+app.component('rm-category-component', RMCategoryComponent);
 app.component('rm-item-component', RMItemComponent);
 app.component('rm-receipt-component', RMReceiptComponent);
 app.component('rm-consumption-component', RMConsumptionComponent);

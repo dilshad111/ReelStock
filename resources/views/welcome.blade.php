@@ -1759,6 +1759,12 @@
         <div v-if="currentView === 'best-ui'">
             <best-ui-showcase-component></best-ui-showcase-component>
         </div>
+        <div v-else-if="authChecking" class="d-flex align-items-center justify-content-center min-vh-100">
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status"></div>
+                <div class="mt-3 fw-bold text-muted">Checking session...</div>
+            </div>
+        </div>
         <div v-else-if="!user">
             <login-component @logged-in="user = $event; checkAuth()"></login-component>
         </div>
@@ -1867,12 +1873,13 @@
                         <el-menu-item index="fg-inventory-email" v-if="canView('fg-inventory-email')">Inventory Email</el-menu-item>
                     </el-sub-menu>
 
-                    <el-sub-menu index="raw-materials" v-if="canView('rm-dashboard') || canView('rm-items') || canView('rm-receipts') || canView('rm-consumptions') || canView('rm-reports')">
+                    <el-sub-menu index="raw-materials" v-if="canView('rm-dashboard') || canView('rm-categories') || canView('rm-items') || canView('rm-receipts') || canView('rm-consumptions') || canView('rm-reports')">
                         <template #title>
                             <i class="bi bi-layers-fill me-2" style="color: #a78bfa !important;"></i>
                             <span>Raw Material</span>
                         </template>
                         <el-menu-item index="rm-dashboard" v-if="canView('rm-dashboard')">RM Dashboard</el-menu-item>
+                        <el-menu-item index="rm-categories" v-if="canView('rm-categories')">Categories</el-menu-item>
                         <el-menu-item index="rm-items" v-if="canView('rm-items')">Material Master</el-menu-item>
                         <el-menu-item index="unit-of-measures" v-if="canView('unit-of-measures')">UoM Master</el-menu-item>
                         <el-menu-item index="rm-receipts" v-if="canView('rm-receipts')">RM Receiving (GRN)</el-menu-item>
@@ -2013,6 +2020,7 @@
                 <qc-inspection-component v-else-if="currentView === 'qc-inspection'" :user="user"></qc-inspection-component>
                 
                 <rm-dashboard-component v-else-if="currentView === 'rm-dashboard'" :user="user"></rm-dashboard-component>
+                <rm-category-component v-else-if="currentView === 'rm-categories'" :user="user"></rm-category-component>
                 <rm-item-component v-else-if="currentView === 'rm-items'" :user="user"></rm-item-component>
                 <rm-receipt-component v-else-if="currentView === 'rm-receipts'" :user="user"></rm-receipt-component>
                 <rm-consumption-component v-else-if="currentView === 'rm-consumptions'" :user="user"></rm-consumption-component>

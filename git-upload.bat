@@ -8,7 +8,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "QC Inspection Print"
+git commit -m "RM Module Updates"
 
 echo.
 echo Pushing to origin main...

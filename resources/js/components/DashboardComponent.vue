@@ -89,6 +89,20 @@
           </div>
 
           <div class="row g-4 mb-5">
+            <div class="col-12">
+              <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent border-0 pt-3 d-flex justify-content-between align-items-center">
+                  <h6 class="fw-bold mb-0 text-slate-700"><i class="bi bi-bar-chart-line"></i> Last 12 Months Reel Receipt & Usage</h6>
+                  <el-tag size="small" type="success" effect="plain">Tonnage</el-tag>
+                </div>
+                <div class="card-body pt-0">
+                  <canvas id="receiptUsage12MonthChart" height="110"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-4 mb-5">
             <div class="col-md-8">
               <div class="card shadow-sm border-0 h-100">
                 <div class="card-header bg-transparent border-0 pt-3 d-flex justify-content-between align-items-center">
@@ -519,7 +533,39 @@ export default {
           options: { interaction: { intersect: false, mode: 'index' }, scales: { x: { grid: { display: false } } } }
       });
 
-      // 7. Usage by Size
+      // 7. Last 12 Months Receipt vs Usage (Tonnage)
+      const monthlyReceiptUsage = d.receiving_analysis.monthly_receipt_usage_12 || [];
+      this.charts.receiptUsage12Month = new Chart(document.getElementById('receiptUsage12MonthChart'), {
+          type: 'bar',
+          data: {
+              labels: monthlyReceiptUsage.map(i => i.label || i.month),
+              datasets: [
+                  { label: 'Received (tons)', data: monthlyReceiptUsage.map(i => i.received_tons), backgroundColor: 'rgba(16, 185, 129, 0.75)', borderColor: '#10b981', borderWidth: 1, borderRadius: 5 },
+                  { label: 'Usage (tons)', data: monthlyReceiptUsage.map(i => i.used_tons), backgroundColor: 'rgba(99, 102, 241, 0.75)', borderColor: '#6366f1', borderWidth: 1, borderRadius: 5 }
+              ]
+          },
+          options: {
+              responsive: true,
+              interaction: { intersect: false, mode: 'index' },
+              plugins: {
+                  tooltip: {
+                      callbacks: {
+                          label: context => `${context.dataset.label}: ${this.formatTons(context.parsed.y)} tons`
+                      }
+                  }
+              },
+              scales: {
+                  x: { grid: { display: false } },
+                  y: {
+                      beginAtZero: true,
+                      title: { display: true, text: 'Metric Tons' },
+                      ticks: { callback: value => this.formatTons(value) }
+                  }
+              }
+          }
+      });
+
+      // 8. Usage by Size
       this.charts.usageBySize = new Chart(document.getElementById('usageBySizeChart'), {
           type: 'bar',
           data: {
@@ -628,7 +674,8 @@ export default {
       });
     },
     destroyCharts() { Object.values(this.charts).forEach(c => c.destroy()); this.charts = {}; },
-    formatNumber(val) { return Number(val || 0).toLocaleString(undefined, { maximumFractionDigits: 0 }); }
+    formatNumber(val) { return Number(val || 0).toLocaleString(undefined, { maximumFractionDigits: 0 }); },
+    formatTons(val) { return Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
   },
   beforeUnmount() { this.destroyCharts(); }
 };

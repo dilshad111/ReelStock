@@ -169,6 +169,7 @@ export default {
         category: 'Raw Materials Inventory',
         items: [
           { key: 'rm-dashboard', name: 'RM Dashboard', hasAmounts: false },
+          { key: 'rm-categories', name: 'Categories & Subcategories', hasAmounts: false },
           { key: 'rm-items', name: 'Material Master', hasAmounts: false },
           { key: 'rm-receipts', name: 'RM Receiving (GRN)', hasAmounts: true },
           { key: 'rm-consumptions', name: 'RM Consumption', hasAmounts: true },
@@ -354,6 +355,7 @@ export default {
             'fg-inventory-email': 'bi bi-envelope-at',
             'qc-inspection': 'bi bi-clipboard2-check',
             'rm-dashboard': 'bi bi-layers',
+            'rm-categories': 'bi bi-diagram-3',
             'rm-items': 'bi bi-box-fill',
             'rm-receipts': 'bi bi-file-earmark-arrow-down',
             'rm-consumptions': 'bi bi-file-earmark-arrow-up',

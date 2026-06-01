@@ -28,7 +28,7 @@
             <div class="col-md-4">
               <div class="mb-3">
                 <label class="form-label fw-semibold text-slate-700">Supplier <span class="text-danger">*</span></label>
-                <select v-model="form.supplier_id" class="form-control" required>
+                <select v-model="form.supplier_id" class="form-control" required @change="onSupplierChange">
                   <option value="">Select Supplier</option>
                   <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
                 </select>
@@ -37,7 +37,7 @@
             <div class="col-md-4">
               <div class="mb-3">
                 <label class="form-label fw-semibold text-slate-700">Receiving Date <span class="text-danger">*</span></label>
-                <input v-model="form.date" type="date" class="form-control" required />
+                <input v-model="form.date" type="date" class="form-control" required @change="onSupplierChange" />
               </div>
             </div>
           </div>
@@ -78,6 +78,7 @@
                     </td>
                     <td>
                       <input v-model.number="row.rate" type="number" step="0.01" min="0" class="form-control form-control-sm" @input="calculateRowTotal(row)" required />
+                      <small class="text-muted">{{ row.rate_source === 'supplier_mapping' ? 'Mapped Rate' : 'Default Rate' }}</small>
                     </td>
                     <td class="text-end fw-semibold text-slate-800">
                       Rs. {{ formatAmount(row.total_amount) }}
@@ -275,7 +276,8 @@ const addItemRow = () => {
         quantity: 0,
         unit: 'KG',
         rate: 0,
-        total_amount: 0
+        total_amount: 0,
+        rate_source: 'item_default'
     });
 };
 
@@ -284,13 +286,38 @@ const removeItemRow = (index) => {
     if (form.items.length === 0) addItemRow();
 };
 
-const onItemChange = (row) => {
+const onItemChange = async (row) => {
     const item = rmItems.value.find(i => i.id === row.rm_item_id);
     if (item) {
         row.unit = item.unit_type;
         row.rate = Number(item.cost_price);
+        row.rate_source = 'item_default';
+        await applyResolvedRate(row);
         calculateRowTotal(row);
     }
+};
+
+const applyResolvedRate = async (row) => {
+    if (!form.supplier_id || !row.rm_item_id) {
+        return;
+    }
+
+    try {
+        const res = await axios.post('/api/rm-item-supplier-rates/resolve', {
+            supplier_id: form.supplier_id,
+            rm_item_id: row.rm_item_id,
+            date: form.date
+        });
+        row.rate = Number(res.data.rate || 0);
+        row.rate_source = res.data.source || 'item_default';
+        calculateRowTotal(row);
+    } catch (error) {
+        row.rate_source = 'item_default';
+    }
+};
+
+const onSupplierChange = async () => {
+    await Promise.all(form.items.map(row => applyResolvedRate(row)));
 };
 
 const calculateRowTotal = (row) => {

@@ -15,6 +15,7 @@ class GetStockDashboardDataAction
     {
         $startDate = now()->subDays($timeRange)->startOfDay();
         $startOfMonth = now()->startOfMonth();
+        $startOf12Months = now()->subMonths(11)->startOfMonth();
 
         // 1. STOCK OVERVIEW (Real-time Godown Stock)
         $currentStockReels = Reel::with(['paperQuality', 'supplier', 'receipts', 'returns'])
@@ -105,6 +106,46 @@ class GetStockDashboardDataAction
         })->map(function($group) {
             return $group->sum('quantity_issued');
         });
+
+        // 12-month operational receipt vs usage trend in metric tons.
+        $received12MonthsData = ReelReceipt::with(['reel'])
+            ->where('receiving_date', '>=', $startOf12Months)
+            ->get()
+            ->groupBy(function ($receipt) {
+                return date('Y-m', strtotime($receipt->receiving_date));
+            })->map(function ($group) {
+                return $group->sum(function ($receipt) {
+                    return $receipt->reel->original_weight ?? 0;
+                });
+            });
+
+        $usage12MonthsData = ReelIssue::query()
+            ->where('issue_date', '>=', $startOf12Months)
+            ->get()
+            ->groupBy(function ($issue) {
+                return date('Y-m', strtotime($issue->issue_date));
+            })->map(function ($group) {
+                return $group->sum(function ($issue) {
+                    return $issue->net_consumed_weight ?? $issue->quantity_issued ?? 0;
+                });
+            });
+
+        $monthlyReceiptUsage12 = [];
+        for ($i = 0; $i < 12; $i++) {
+            $month = now()->subMonths(11 - $i);
+            $monthKey = $month->format('Y-m');
+            $receivedKg = (float) $received12MonthsData->get($monthKey, 0);
+            $usedKg = (float) $usage12MonthsData->get($monthKey, 0);
+
+            $monthlyReceiptUsage12[] = [
+                'month' => $monthKey,
+                'label' => $month->format('M Y'),
+                'received_kg' => round($receivedKg, 2),
+                'used_kg' => round($usedKg, 2),
+                'received_tons' => round($receivedKg / 1000, 2),
+                'used_tons' => round($usedKg / 1000, 2),
+            ];
+        }
 
         // 4. PARTIAL REEL RETURN TRACKING
         $partialReturnsOverTime = $issuedData->where('return_to_stock_weight', '>', 0)
@@ -200,6 +241,7 @@ class GetStockDashboardDataAction
             ],
             'receiving_analysis' => [
                 'over_time' => $receivedOverTime,
+                'monthly_receipt_usage_12' => $monthlyReceiptUsage12,
             ],
             'consumption_analysis' => [
                 'over_time' => $issuedOverTime,

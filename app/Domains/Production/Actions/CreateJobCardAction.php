@@ -140,17 +140,19 @@ class CreateJobCardAction
             return $requestedNo;
         }
 
-        $prefix = 'JC-' . date('Y');
+        $prefix = 'QC-JC-';
         $last = JobCard::where('job_card_no', 'like', $prefix . '%')
             ->orderBy('id', 'desc')
             ->first();
 
         if (!$last) {
-            return $prefix . '-0001';
+            return $prefix . '110001';
         }
 
-        $number = (int) substr($last->job_card_no, -4);
-        return $prefix . '-' . str_pad($number + 1, 4, '0', STR_PAD_LEFT);
+        $number = (int) preg_replace('/\D/', '', substr((string) $last->job_card_no, strlen($prefix)));
+        $next = $number > 0 ? $number + 1 : 110001;
+
+        return $prefix . str_pad($next, 6, '0', STR_PAD_LEFT);
     }
 
     private function resolveProductId(JobCardDTO $dto): int
