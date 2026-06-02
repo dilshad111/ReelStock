@@ -8,7 +8,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "Transport Milage Updated"
+git commit -m "Transport Distance Error Resolved"
 
 echo.
 echo Pushing to origin main...

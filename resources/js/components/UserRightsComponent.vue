@@ -138,49 +138,30 @@ export default {
       {
         category: 'Reels Inventory',
         items: [
-          { key: 'suppliers', name: 'Supplier Management', hasAmounts: false },
+          { key: 'suppliers', name: 'Suppliers', hasAmounts: false },
+        ]
+      },
+      {
+        category: 'Paper',
+        items: [
           { key: 'qualities', name: 'Paper Qualities', hasAmounts: false },
-          { key: 'receipts', name: 'Paper Reel Receipt', hasAmounts: true },
-          { key: 'issues', name: 'Reel Issue and Return', hasAmounts: true },
-          { key: 'return-supplier', name: 'Return to Supplier', hasAmounts: true },
+          { key: 'paper-colors', name: 'Paper Colors', hasAmounts: false },
+          { key: 'receipts', name: 'Receipts', hasAmounts: true },
+          { key: 'issues', name: 'Reel Issue', hasAmounts: true },
+          { key: 'return-supplier', name: 'Return to Supp.', hasAmounts: true },
           { key: 'stock-alerts', name: 'Stock Alerts', hasAmounts: false },
-          { key: 'monthly-consumption', name: 'Monthly Consumption Report', hasAmounts: true },
-          { key: 'reel-stock', name: 'Reel Stock Report', hasAmounts: true },
-          { key: 'reel-receipt', name: 'Reel Received Report', hasAmounts: true },
-          { key: 'monthly-closing', name: 'Monthly Closing Stock', hasAmounts: true },
+        ]
+      },
+      {
+        category: 'Reports',
+        items: [
+          { key: 'monthly-consumption', name: 'Monthly Cons.', hasAmounts: true },
+          { key: 'reel-stock', name: 'Reel Stock', hasAmounts: true },
+          { key: 'reel-receipt', name: 'Reel Received', hasAmounts: true },
+          { key: 'monthly-closing', name: 'Monthly Closing', hasAmounts: true },
           { key: 'reel-stock-count', name: 'Stock Count', hasAmounts: true },
-          { key: 'usage-intelligence', name: 'Usage Intelligence', hasAmounts: true },
+          { key: 'usage-intelligence', name: 'Usage Intel.', hasAmounts: true },
           { key: 'old-reels', name: 'Old Reels Report', hasAmounts: true },
-          { key: 'reconciliation', name: 'Stock Reconciliation', hasAmounts: false },
-        ]
-      },
-      {
-        category: 'Finished Goods',
-        items: [
-          { key: 'fg-dashboard', name: 'FG Dashboard', hasAmounts: false },
-          { key: 'fg-products', name: 'Product Master', hasAmounts: false },
-          { key: 'fg-receipts', name: 'Production Entry', hasAmounts: false },
-          { key: 'fg-dispatches', name: 'Dispatch Entry', hasAmounts: false },
-          { key: 'fg-reports', name: 'FG Reports', hasAmounts: false },
-          { key: 'fg-inventory-email', name: 'Inventory Email Report', hasAmounts: false },
-        ]
-      },
-      {
-        category: 'Raw Materials Inventory',
-        items: [
-          { key: 'rm-dashboard', name: 'RM Dashboard', hasAmounts: false },
-          { key: 'rm-categories', name: 'Categories & Subcategories', hasAmounts: false },
-          { key: 'rm-items', name: 'Material Master', hasAmounts: false },
-          { key: 'rm-receipts', name: 'RM Receiving (GRN)', hasAmounts: true },
-          { key: 'rm-consumptions', name: 'RM Consumption', hasAmounts: true },
-          { key: 'rm-reports', name: 'RM Reports', hasAmounts: true },
-        ]
-      },
-      {
-        category: 'Production & Job Cards',
-        items: [
-          { key: 'job-cards', name: 'Production Job Cards', hasAmounts: false },
-          { key: 'production-dashboard', name: 'Production Analytics', hasAmounts: false },
         ]
       },
       {
@@ -190,27 +171,65 @@ export default {
         ]
       },
       {
-        category: 'Transport Management',
+        category: 'Transport',
         items: [
-          { key: 'customers', name: 'Customer Management', hasAmounts: false },
-          { key: 'transporters', name: 'Transporter Management', hasAmounts: false },
-          { key: 'vehicles', name: 'Vehicle Management', hasAmounts: false },
+          { key: 'customers', name: 'Customers', hasAmounts: false },
+          { key: 'transporters', name: 'Transporters', hasAmounts: false },
+          { key: 'vehicles', name: 'Vehicles', hasAmounts: false },
           { key: 'vehicle-types', name: 'Vehicle Classifications', hasAmounts: false },
-          { key: 'cartage-rates', name: 'Cartage Rate Setup', hasAmounts: true },
+          { key: 'cartage-rates', name: 'Cartage Rates', hasAmounts: true },
           { key: 'cartage', name: 'Cartage Billing', hasAmounts: true },
           { key: 'cartage-list', name: 'Cartage Bill List', hasAmounts: true },
           { key: 'cartage-report', name: 'Cartage Report', hasAmounts: true },
+          { key: 'fuel-cost-report', name: 'Fuel Cost Report', hasAmounts: true },
           { key: 'cartage-increment', name: 'Cartage Rate Increment', hasAmounts: true },
           { key: 'cartage-increment-history', name: 'Increment History', hasAmounts: true },
         ]
       },
       {
-        category: 'Administration',
+        category: 'Finished Goods',
         items: [
-          { key: 'setup', name: 'System Setup', hasAmounts: false },
-          { key: 'users', name: 'User Management', hasAmounts: false },
-          { key: 'user-rights', name: 'User Rights Management', hasAmounts: false },
+          { key: 'fg-dashboard', name: 'FG Dashboard', hasAmounts: false },
+          { key: 'fg-products', name: 'Products', hasAmounts: false },
+          { key: 'fg-receipts', name: 'Production Entry', hasAmounts: false },
+          { key: 'fg-dispatches', name: 'Dispatch Entry', hasAmounts: false },
+          { key: 'fg-reports', name: 'FG Reports', hasAmounts: false },
+          { key: 'fg-inventory-email', name: 'Inventory Email', hasAmounts: false },
+        ]
+      },
+      {
+        category: 'Raw Material',
+        items: [
+          { key: 'rm-dashboard', name: 'RM Dashboard', hasAmounts: false },
+          { key: 'rm-categories', name: 'Categories', hasAmounts: false },
+          { key: 'rm-items', name: 'Material Master', hasAmounts: false },
+          { key: 'unit-of-measures', name: 'UoM Master', hasAmounts: false },
+          { key: 'rm-receipts', name: 'RM Receiving (GRN)', hasAmounts: true },
+          { key: 'rm-consumptions', name: 'RM Consumption', hasAmounts: true },
+          { key: 'rm-reports', name: 'RM Reports', hasAmounts: true },
+        ]
+      },
+      {
+        category: 'Production',
+        items: [
+          { key: 'qc-production', name: 'QC Production', hasAmounts: false },
+          { key: 'production-configuration', name: 'Configuration', hasAmounts: false },
+          { key: 'job-cards', name: 'Job Cards', hasAmounts: false },
+          { key: 'production-dashboard', name: 'Production Analytics', hasAmounts: false },
+        ]
+      },
+      {
+        category: 'Users',
+        items: [
+          { key: 'users', name: 'Manage Users', hasAmounts: false },
+          { key: 'user-rights', name: 'User Rights', hasAmounts: false },
           { key: 'audit-log', name: 'Audit Logs', hasAmounts: false },
+        ]
+      },
+      {
+        category: 'Setup',
+        items: [
+          { key: 'setup', name: 'Setup', hasAmounts: false },
         ]
       }
     ];
@@ -223,7 +242,7 @@ export default {
         });
     });
     const permissions = {};
-    menus.forEach(m => {
+    menus.filter(m => !m.isHeader).forEach(m => {
       permissions[m.key] = { can_view: false, can_add: false, can_edit: false, can_delete: false, can_see_amounts: false };
     });
     return {
@@ -271,7 +290,7 @@ export default {
       axios.get(`/api/user-permissions/${this.selectedUserId}`).then(response => {
         const perms = response.data;
         this.permissions = {};
-        this.menus.forEach(menu => {
+        this.menus.filter(menu => !menu.isHeader).forEach(menu => {
           const perm = perms.find(p => p.menu === menu.key);
           this.permissions[menu.key] = {
             can_view: perm ? perm.can_view : false,
@@ -285,7 +304,7 @@ export default {
         console.error('Error loading permissions:', error);
         // Still set default permissions
         this.permissions = {};
-        this.menus.forEach(menu => {
+        this.menus.filter(menu => !menu.isHeader).forEach(menu => {
           this.permissions[menu.key] = {
             can_view: false,
             can_add: false,
@@ -324,8 +343,10 @@ export default {
         const icons = {
             dashboard: 'bi bi-speedometer2',
             'management-dashboard': 'bi bi-graph-up-arrow',
+            'transport-dashboard': 'bi bi-truck',
             suppliers: 'bi bi-truck',
             qualities: 'bi bi-file-earmark-text',
+            'paper-colors': 'bi bi-palette',
             receipts: 'bi bi-box-seam',
             issues: 'bi bi-arrow-left-right',
             'return-supplier': 'bi bi-reply-all',
@@ -345,6 +366,7 @@ export default {
             cartage: 'bi bi-receipt',
             'cartage-list': 'bi bi-view-list',
             'cartage-report': 'bi bi-file-bar-graph',
+            'fuel-cost-report': 'bi bi-fuel-pump',
             'cartage-increment': 'bi bi-graph-up',
             'cartage-increment-history': 'bi bi-clock-history',
             'fg-dashboard': 'bi bi-speedometer',
@@ -360,7 +382,10 @@ export default {
             'rm-receipts': 'bi bi-file-earmark-arrow-down',
             'rm-consumptions': 'bi bi-file-earmark-arrow-up',
             'rm-reports': 'bi bi-clipboard-data',
+            'unit-of-measures': 'bi bi-rulers',
             'job-cards': 'bi bi-card-checklist',
+            'qc-production': 'bi bi-clipboard-check',
+            'production-configuration': 'bi bi-sliders',
             'production-dashboard': 'bi bi-cpu',
             users: 'bi bi-person-lines-fill',
             'user-rights': 'bi bi-shield-lock',

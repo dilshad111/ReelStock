@@ -9,7 +9,7 @@ const PERMISSION_KEY_MAP = {
     suppliers: 'suppliers',
     receipts: 'receipts',
     qualities: 'qualities',
-    'paper-colors': 'qualities',
+    'paper-colors': 'paper-colors',
     issues: 'issues',
     'return-supplier': 'return-supplier',
     'monthly-consumption': 'monthly-consumption',
@@ -37,7 +37,7 @@ const PERMISSION_KEY_MAP = {
     'cartage-increment': 'cartage-increment',
     'cartage-increment-history': 'cartage-increment-history',
     'cartage-report': 'cartage-report',
-    'fuel-cost-report': 'cartage-report',
+    'fuel-cost-report': 'fuel-cost-report',
     'setup': 'setup',
     'transport-dashboard': 'transport-dashboard',
     'fg-products': 'fg-products',
@@ -54,10 +54,10 @@ const PERMISSION_KEY_MAP = {
     'rm-receipts': 'rm-receipts',
     'rm-consumptions': 'rm-consumptions',
     'rm-reports': 'rm-reports',
-    'unit-of-measures': 'rm-items',
+    'unit-of-measures': 'unit-of-measures',
     'job-cards': 'job-cards',
-    'qc-production': 'job-cards',
-    'production-configuration': 'job-cards',
+    'qc-production': 'qc-production',
+    'production-configuration': 'production-configuration',
     'production-dashboard': 'production-dashboard'
 };
 
@@ -109,7 +109,10 @@ const PERMISSION_KEYS = [
     'rm-receipts',
     'rm-consumptions',
     'rm-reports',
+    'unit-of-measures',
     'job-cards',
+    'qc-production',
+    'production-configuration',
     'production-dashboard'
 ];
 
@@ -174,7 +177,7 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     'management-dashboard': 'management-dashboard',
     suppliers: 'suppliers',
     qualities: 'qualities',
-    'paper-colors': 'qualities',
+    'paper-colors': 'paper-colors',
     receipts: 'receipts',
     issues: 'issues',
     'return-supplier': 'return-supplier',

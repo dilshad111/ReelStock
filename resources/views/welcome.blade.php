@@ -1796,7 +1796,7 @@
                         <el-menu-item index="transport-dashboard" v-if="canView('transport-dashboard')">Transport Dashboard</el-menu-item>
                     </el-sub-menu>
                     
-                    <el-sub-menu index="reels-inventory" v-if="canView('suppliers') || canView('qualities') || canView('monthly-consumption')">
+                    <el-sub-menu index="reels-inventory" v-if="canView('suppliers') || canView('qualities') || canView('paper-colors') || canView('receipts') || canView('issues') || canView('return-supplier') || canView('stock-alerts') || canView('monthly-consumption') || canView('reel-stock') || canView('reel-receipt') || canView('monthly-closing') || canView('reel-stock-count') || canView('usage-intelligence') || canView('old-reels') || canView('qc-inspection')">
                         <template #title>
                             <i class="bi bi-stack me-2" style="color: #60a5fa !important;"></i>
                             <span>Reels Inventory</span>
@@ -1807,7 +1807,7 @@
                             <span>Suppliers</span>
                         </el-menu-item>
 
-                        <el-sub-menu index="paper" v-if="canView('qualities') || canView('receipts') || canView('issues') || canView('return-supplier') || canView('stock-alerts')">
+                        <el-sub-menu index="paper" v-if="canView('qualities') || canView('paper-colors') || canView('receipts') || canView('issues') || canView('return-supplier') || canView('stock-alerts')">
                             <template #title>
                                 <i class="bi bi-file-earmark-text me-2 icon-paper"></i>
                                 <span>Paper</span>
@@ -1874,7 +1874,7 @@
                         <el-menu-item index="fg-inventory-email" v-if="canView('fg-inventory-email')">Inventory Email</el-menu-item>
                     </el-sub-menu>
 
-                    <el-sub-menu index="raw-materials" v-if="canView('rm-dashboard') || canView('rm-categories') || canView('rm-items') || canView('rm-receipts') || canView('rm-consumptions') || canView('rm-reports')">
+                    <el-sub-menu index="raw-materials" v-if="canView('rm-dashboard') || canView('rm-categories') || canView('rm-items') || canView('unit-of-measures') || canView('rm-receipts') || canView('rm-consumptions') || canView('rm-reports')">
                         <template #title>
                             <i class="bi bi-layers-fill me-2" style="color: #a78bfa !important;"></i>
                             <span>Raw Material</span>
@@ -1890,18 +1890,18 @@
 
 
 
-                    <el-sub-menu index="production-module" v-if="canView('job-cards')">
+                    <el-sub-menu index="production-module" v-if="canView('qc-production') || canView('production-configuration') || canView('job-cards') || canView('production-dashboard')">
                         <template #title>
                             <i class="bi bi-gear-wide-connected me-2" style="color: #a78bfa !important;"></i>
                             <span>Production</span>
                         </template>
-                        <el-menu-item index="qc-production">QC Production</el-menu-item>
-                        <el-menu-item index="production-configuration">Configuration</el-menu-item>
-                        <el-menu-item index="job-cards">Job Cards</el-menu-item>
-                        <el-menu-item index="production-dashboard">Production Analytics</el-menu-item>
+                        <el-menu-item index="qc-production" v-if="canView('qc-production')">QC Production</el-menu-item>
+                        <el-menu-item index="production-configuration" v-if="canView('production-configuration')">Configuration</el-menu-item>
+                        <el-menu-item index="job-cards" v-if="canView('job-cards')">Job Cards</el-menu-item>
+                        <el-menu-item index="production-dashboard" v-if="canView('production-dashboard')">Production Analytics</el-menu-item>
                     </el-sub-menu>
 
-                    <el-sub-menu index="users" v-if="canView('users') || canView('audit-log')">
+                    <el-sub-menu index="users" v-if="canView('users') || canView('user-rights') || canView('audit-log')">
                         <template #title>
                             <i class="bi bi-people me-2 icon-users"></i>
                             <span>Users</span>

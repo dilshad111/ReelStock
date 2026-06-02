@@ -20,4 +20,19 @@ class ShippingAddress extends Model
     {
         return $this->hasMany(CartageRate::class);
     }
+
+    public function cartageEntries()
+    {
+        return $this->hasMany(CartageEntry::class);
+    }
+
+    public function cartageIncrementDetails()
+    {
+        return $this->hasMany(CartageIncrementDetail::class);
+    }
+
+    public function hasTransportHistory()
+    {
+        return $this->cartageEntries()->exists() || $this->cartageIncrementDetails()->exists();
+    }
 }
