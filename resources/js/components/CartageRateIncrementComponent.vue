@@ -570,6 +570,35 @@ onMounted(() => {
     color: black !important;
 }
 
+[data-theme="dark"] .cartage-increment-page {
+    background-color: #0f172a !important;
+}
+
+[data-theme="dark"] .cartage-increment-page .professional-card,
+[data-theme="dark"] .cartage-increment-page :deep(.el-card__header),
+[data-theme="dark"] .cartage-increment-page :deep(.el-card__body) {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .cartage-increment-page .filters-section {
+    background: #334155 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .cartage-increment-page .text-slate-800,
+[data-theme="dark"] .cartage-increment-page .text-muted {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .cartage-increment-page .modern-table :deep(.el-table th),
+[data-theme="dark"] .cartage-increment-page .modern-table :deep(.el-table td) {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+
 @media print {
     /* Hide everything by default */
     body * {

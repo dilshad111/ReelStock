@@ -53,13 +53,13 @@
         <el-dialog v-model="dialogVisible" :title="form.id ? 'Edit Transporter' : 'Add Transporter'" width="500px" class="professional-dialog">
             <el-form :model="form" label-position="top" :rules="rules" ref="formRef">
                 <el-form-item label="Transporter Name" prop="name">
-                    <el-input v-model="form.name" placeholder="Enter company name" />
+                    <input v-model="form.name" type="text" class="form-control fg-like-input" placeholder="Enter company name" />
                 </el-form-item>
                 <el-form-item label="Contact Phone" prop="phone">
-                    <el-input v-model="form.phone" placeholder="Contact number" />
+                    <input v-model="form.phone" type="text" class="form-control fg-like-input" placeholder="Contact number" />
                 </el-form-item>
                 <el-form-item label="Head Office Address" prop="address">
-                    <el-input type="textarea" :rows="3" v-model="form.address" placeholder="Enter full address" />
+                    <textarea v-model="form.address" rows="4" class="form-control fg-like-textarea" placeholder="Enter full address"></textarea>
                 </el-form-item>
                 <el-form-item label="Transporter Logo" prop="logo">
                     <div class="d-flex align-items-center gap-3">
@@ -246,6 +246,50 @@ onMounted(fetchTransporters);
     color: #475569;
     padding-bottom: 8px !important;
 }
+.professional-dialog :deep(.el-form-item) {
+    margin-bottom: 22px;
+}
+.professional-dialog :deep(.el-input__wrapper) {
+    min-height: 44px;
+    border-radius: 12px;
+}
+.professional-dialog :deep(.el-input__inner) {
+    font-size: 1rem;
+    line-height: 1.35;
+}
+.professional-dialog :deep(.el-textarea__inner) {
+    min-height: 132px !important;
+    border-radius: 12px;
+    font-size: 1rem;
+    line-height: 1.45;
+    padding-top: 12px;
+}
+
+.fg-like-input {
+    height: 52px !important;
+    min-height: 52px !important;
+    border-radius: 10px !important;
+    font-size: 1.1rem !important;
+    padding: 0 16px !important;
+}
+.fg-like-input::placeholder {
+    font-size: 1rem !important;
+    color: #8fa1bd !important;
+    opacity: 1 !important;
+}
+.fg-like-textarea {
+    min-height: 120px !important;
+    border-radius: 10px !important;
+    font-size: 1.1rem !important;
+    line-height: 1.45 !important;
+    padding: 14px 16px !important;
+    resize: vertical;
+}
+.fg-like-textarea::placeholder {
+    font-size: 1rem !important;
+    color: #8fa1bd !important;
+    opacity: 1 !important;
+}
 
 .logo-uploader {
     border: 1px dashed #d9d9d9;
@@ -271,5 +315,17 @@ onMounted(fetchTransporters);
     width: 80px;
     height: 80px;
     object-fit: contain;
+}
+
+[data-theme="dark"] .professional-dialog :deep(.el-input__wrapper),
+[data-theme="dark"] .professional-dialog :deep(.el-textarea__inner) {
+    border-color: #3a5078;
+}
+
+[data-theme="dark"] .fg-like-input,
+[data-theme="dark"] .fg-like-textarea {
+    background-color: #1e293b !important;
+    border-color: #475569 !important;
+    color: #e2e8f0 !important;
 }
 </style>

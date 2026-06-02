@@ -613,4 +613,45 @@ export default {
     backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.5);
 }
+
+[data-theme="dark"] .auth-form-container,
+[data-theme="dark"] .card-header,
+[data-theme="dark"] .card-footer {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .custom-audit-table thead,
+[data-theme="dark"] .custom-audit-table thead th,
+[data-theme="dark"] .custom-audit-table tbody td {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .audit-row:hover {
+    background: #334155 !important;
+    box-shadow: none;
+}
+
+[data-theme="dark"] .date-box,
+[data-theme="dark"] .btn-view-details,
+[data-theme="dark"] .bg-light,
+[data-theme="dark"] .bg-white {
+    background: #334155 !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .custom-pagination .page-link {
+    background: #334155 !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .modal-content,
+[data-theme="dark"] .modal-body {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+}
 </style>

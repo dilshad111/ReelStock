@@ -30,6 +30,1272 @@
 }
 
 [data-theme="dark"] .btn-clear-filters {
-    --clear-btn-bg: linear-gradient(135deg, #f59e0b 0%, #e11d48 100%);
-    --clear-btn-shadow: rgba(225, 29, 72, 0.32);
+    --clear-btn-bg: linear-gradient(135deg, #fde047 0%, #f59e0b 100%);
+    --clear-btn-shadow: rgba(245, 158, 11, 0.42);
+    color: #111827 !important;
+    border: 1px solid #facc15 !important;
+}
+
+[data-theme="dark"] .btn-clear-filters:hover,
+[data-theme="dark"] .btn-clear-filters:focus {
+    background: linear-gradient(135deg, #facc15 0%, #f97316 100%) !important;
+    color: #0f172a !important;
+}
+
+/* Shared dark-mode hardening for forms, tables, cards and controls */
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select,
+[data-theme="dark"] .el-input__wrapper,
+[data-theme="dark"] .el-select__wrapper,
+[data-theme="dark"] .el-textarea__inner {
+    background-color: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .form-control::placeholder,
+[data-theme="dark"] .el-input__inner::placeholder,
+[data-theme="dark"] .el-textarea__inner::placeholder {
+    color: #94a3b8 !important;
+    opacity: 1 !important;
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus,
+[data-theme="dark"] .el-input__wrapper.is-focus,
+[data-theme="dark"] .el-select__wrapper.is-focused,
+[data-theme="dark"] .el-textarea__inner:focus {
+    border-color: #818cf8 !important;
+    box-shadow: 0 0 0 0.2rem rgba(129, 140, 248, 0.25) !important;
+}
+
+[data-theme="dark"] .form-control:disabled,
+[data-theme="dark"] .form-select:disabled,
+[data-theme="dark"] .el-input.is-disabled .el-input__wrapper,
+[data-theme="dark"] .el-select.is-disabled .el-select__wrapper {
+    background-color: #334155 !important;
+    color: #94a3b8 !important;
+    border-color: #475569 !important;
+    opacity: 1 !important;
+}
+
+[data-theme="dark"] .card.bg-white,
+[data-theme="dark"] .card.bg-light,
+[data-theme="dark"] .bg-white,
+[data-theme="dark"] .bg-light {
+    background-color: #1e293b !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .table thead th,
+[data-theme="dark"] .table-dark th,
+[data-theme="dark"] .table-dark td {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > * {
+    color: #dbe4f0 !important;
+}
+
+[data-theme="dark"] .text-dark,
+[data-theme="dark"] .text-black {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .badge.bg-warning.text-dark,
+[data-theme="dark"] .badge.bg-info.text-dark,
+[data-theme="dark"] .bg-warning.text-dark,
+[data-theme="dark"] .bg-info.text-dark {
+    color: #0f172a !important;
+}
+
+[data-theme="dark"] .badge.bg-light,
+[data-theme="dark"] .table .badge.bg-light {
+    background-color: #334155 !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .table-light,
+[data-theme="dark"] .table thead.bg-light,
+[data-theme="dark"] .table thead.table-light {
+    background-color: #1e293b !important;
+    color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .card-header.bg-white,
+[data-theme="dark"] .card-header.bg-light {
+    background-color: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .input-group-text.bg-light {
+    background-color: #334155 !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .text-slate-800,
+[data-theme="dark"] .text-slate-700,
+[data-theme="dark"] .text-slate-600,
+[data-theme="dark"] .text-indigo {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .bg-light-soft,
+[data-theme="dark"] .bg-primary-subtle,
+[data-theme="dark"] .bg-success-subtle,
+[data-theme="dark"] .bg-danger-subtle,
+[data-theme="dark"] .bg-info-subtle {
+    background-color: #334155 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .border-primary-subtle,
+[data-theme="dark"] .border-success-subtle,
+[data-theme="dark"] .border-danger-subtle,
+[data-theme="dark"] .border-info-subtle {
+    border-color: #475569 !important;
+}
+
+/* Transport module unified form sizing */
+.customer-management .el-form-item,
+.transporter-management .el-form-item,
+.vehicle-management .el-form-item,
+.vehicle-type-setup .el-form-item,
+.cartage-rate-setup .el-form-item,
+.cartage-report .el-form-item,
+.cartage-billing .el-form-item {
+    margin-bottom: 20px !important;
+}
+
+.customer-management .el-input__wrapper,
+.customer-management .el-select__wrapper,
+.transporter-management .el-input__wrapper,
+.transporter-management .el-select__wrapper,
+.vehicle-management .el-input__wrapper,
+.vehicle-management .el-select__wrapper,
+.vehicle-type-setup .el-input__wrapper,
+.vehicle-type-setup .el-select__wrapper,
+.cartage-rate-setup .el-input__wrapper,
+.cartage-rate-setup .el-select__wrapper,
+.cartage-report .el-input__wrapper,
+.cartage-report .el-select__wrapper,
+.cartage-report .el-date-editor.el-input__wrapper,
+.cartage-billing .main-form-row .el-input__wrapper,
+.cartage-billing .main-form-row .el-select__wrapper {
+    min-height: 44px !important;
+    border-radius: 10px !important;
+}
+
+/* Strong transport dialog form sizing */
+.customer-management .professional-dialog .el-input__wrapper,
+.customer-management .professional-dialog .el-select__wrapper,
+.transporter-management .professional-dialog .el-input__wrapper,
+.transporter-management .professional-dialog .el-select__wrapper,
+.vehicle-management .professional-dialog .el-input__wrapper,
+.vehicle-management .professional-dialog .el-select__wrapper,
+.vehicle-type-setup .professional-dialog .el-input__wrapper,
+.vehicle-type-setup .professional-dialog .el-select__wrapper,
+.cartage-rate-setup .professional-dialog .el-input__wrapper,
+.cartage-rate-setup .professional-dialog .el-select__wrapper,
+.cartage-report .filter-section .el-input__wrapper,
+.cartage-report .filter-section .el-select__wrapper,
+.cartage-report .filter-section .el-date-editor.el-input__wrapper {
+    min-height: 52px !important;
+    height: 52px !important;
+    border-radius: 12px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.customer-management .el-input__inner,
+.transporter-management .el-input__inner,
+.vehicle-management .el-input__inner,
+.vehicle-type-setup .el-input__inner,
+.cartage-rate-setup .el-input__inner,
+.cartage-report .el-input__inner,
+.cartage-billing .main-form-row .el-input__inner {
+    font-size: 15px !important;
+    line-height: 1.35 !important;
+}
+
+.customer-management .professional-dialog .el-input__inner,
+.transporter-management .professional-dialog .el-input__inner,
+.vehicle-management .professional-dialog .el-input__inner,
+.vehicle-type-setup .professional-dialog .el-input__inner,
+.cartage-rate-setup .professional-dialog .el-input__inner,
+.cartage-report .filter-section .el-input__inner {
+    height: 50px !important;
+    line-height: 50px !important;
+    font-size: 17px !important;
+}
+
+.customer-management .el-textarea__inner,
+.transporter-management .el-textarea__inner {
+    min-height: 120px !important;
+    border-radius: 10px !important;
+}
+
+.customer-management .professional-dialog .el-textarea__inner,
+.transporter-management .professional-dialog .el-textarea__inner {
+    min-height: 150px !important;
+    font-size: 17px !important;
+    line-height: 1.45 !important;
+    padding: 14px 16px !important;
+}
+
+.transporter-management .professional-dialog .el-form-item,
+.customer-management .professional-dialog .el-form-item,
+.vehicle-management .professional-dialog .el-form-item,
+.vehicle-type-setup .professional-dialog .el-form-item,
+.cartage-rate-setup .professional-dialog .el-form-item {
+    margin-bottom: 24px !important;
+}
+
+/* Teleported Element Plus dialogs: enforce professional control height */
+.professional-dialog .el-input__wrapper,
+.professional-dialog .el-select__wrapper,
+.professional-dialog .el-date-editor.el-input__wrapper {
+    min-height: 54px !important;
+    height: 54px !important;
+    border-radius: 12px !important;
+}
+
+.professional-dialog .el-input__inner {
+    height: 52px !important;
+    line-height: 52px !important;
+    font-size: 1.08rem !important;
+}
+
+/* Extra-strong override for teleported Element Plus dialog body */
+.el-dialog.professional-dialog .el-input__wrapper,
+.el-dialog.professional-dialog .el-select__wrapper,
+.el-dialog.professional-dialog .el-date-editor.el-input__wrapper {
+    min-height: 52px !important;
+    height: 52px !important;
+    border-radius: 10px !important;
+    padding: 0 16px !important;
+}
+
+.el-dialog.professional-dialog .el-input__inner,
+.el-dialog.professional-dialog .el-select__selected-item,
+.el-dialog.professional-dialog .el-select__placeholder {
+    height: 50px !important;
+    line-height: 50px !important;
+    font-size: 1.05rem !important;
+}
+
+/* Transport module aligned to FG module visual language */
+.customer-management .card,
+.transporter-management .card,
+.vehicle-management .card,
+.vehicle-type-setup .card,
+.cartage-rate-setup .card,
+.cartage-report .card,
+.cartage-billing .card,
+.customer-management .el-card,
+.transporter-management .el-card,
+.vehicle-management .el-card,
+.vehicle-type-setup .el-card,
+.cartage-rate-setup .el-card,
+.cartage-report .el-card,
+.cartage-billing .el-card {
+    border-radius: 12px !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04) !important;
+}
+
+.customer-management .form-control,
+.transporter-management .form-control,
+.vehicle-management .form-control,
+.vehicle-type-setup .form-control,
+.cartage-rate-setup .form-control,
+.cartage-report .form-control,
+.cartage-billing .form-control {
+    height: 44px !important;
+    min-height: 44px !important;
+    font-size: 0.95rem !important;
+    border-radius: 10px !important;
+}
+
+.customer-management .form-select,
+.transporter-management .form-select,
+.vehicle-management .form-select,
+.vehicle-type-setup .form-select,
+.cartage-rate-setup .form-select,
+.cartage-report .form-select,
+.cartage-billing .form-select {
+    height: 44px !important;
+    min-height: 44px !important;
+    font-size: 0.95rem !important;
+    border-radius: 10px !important;
+}
+
+.customer-management .professional-dialog .el-input__wrapper,
+.customer-management .professional-dialog .el-select__wrapper,
+.transporter-management .professional-dialog .el-input__wrapper,
+.transporter-management .professional-dialog .el-select__wrapper,
+.vehicle-management .professional-dialog .el-input__wrapper,
+.vehicle-management .professional-dialog .el-select__wrapper,
+.vehicle-type-setup .professional-dialog .el-input__wrapper,
+.vehicle-type-setup .professional-dialog .el-select__wrapper,
+.cartage-rate-setup .professional-dialog .el-input__wrapper,
+.cartage-rate-setup .professional-dialog .el-select__wrapper {
+    min-height: 52px !important;
+    height: 52px !important;
+    border-radius: 10px !important;
+    padding: 0 16px !important;
+}
+
+.customer-management .professional-dialog .el-input__inner,
+.customer-management .professional-dialog .el-select__selected-item,
+.customer-management .professional-dialog .el-select__placeholder,
+.transporter-management .professional-dialog .el-input__inner,
+.transporter-management .professional-dialog .el-select__selected-item,
+.transporter-management .professional-dialog .el-select__placeholder,
+.vehicle-management .professional-dialog .el-input__inner,
+.vehicle-management .professional-dialog .el-select__selected-item,
+.vehicle-management .professional-dialog .el-select__placeholder,
+.vehicle-type-setup .professional-dialog .el-input__inner,
+.vehicle-type-setup .professional-dialog .el-select__selected-item,
+.vehicle-type-setup .professional-dialog .el-select__placeholder,
+.cartage-rate-setup .professional-dialog .el-input__inner,
+.cartage-rate-setup .professional-dialog .el-select__selected-item,
+.cartage-rate-setup .professional-dialog .el-select__placeholder {
+    height: 50px !important;
+    line-height: 50px !important;
+    font-size: 1.05rem !important;
+}
+
+.customer-management .professional-dialog textarea,
+.transporter-management .professional-dialog textarea,
+.customer-management .professional-dialog .el-textarea__inner,
+.transporter-management .professional-dialog .el-textarea__inner {
+    min-height: 118px !important;
+    font-size: 1.05rem !important;
+    line-height: 1.45 !important;
+    border-radius: 10px !important;
+}
+
+/* FG-like neutral card headers for transport module */
+.customer-management .card-header,
+.transporter-management .card-header,
+.vehicle-management .card-header,
+.vehicle-type-setup .card-header,
+.cartage-rate-setup .card-header,
+.cartage-report .card-header,
+.cartage-billing .card-header,
+.customer-management .el-card__header,
+.transporter-management .el-card__header,
+.vehicle-management .el-card__header,
+.vehicle-type-setup .el-card__header,
+.cartage-rate-setup .el-card__header,
+.cartage-report .el-card__header,
+.cartage-billing .el-card__header {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+/* FG-like table density */
+.customer-management .modern-table td,
+.transporter-management .modern-table td,
+.vehicle-management .modern-table td,
+.vehicle-type-setup .modern-table td,
+.cartage-rate-setup .modern-table td,
+.cartage-report .modern-table td {
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+    font-size: 0.9rem !important;
+}
+
+.customer-management .modern-table th,
+.transporter-management .modern-table th,
+.vehicle-management .modern-table th,
+.vehicle-type-setup .modern-table th,
+.cartage-rate-setup .modern-table th,
+.cartage-report .modern-table th {
+    font-size: 0.78rem !important;
+    letter-spacing: 0.4px !important;
+}
+
+/* Final Transport/Customer UI standard: align with FG module form proportions */
+.customer-management,
+.transporter-management,
+.vehicle-management,
+.vehicle-type-setup,
+.cartage-rate-setup,
+.cartage-report,
+.cartage-billing,
+.cartage-increment-page,
+.cartage-history-page,
+.transport-dashboard {
+    font-family: 'Montserrat', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+}
+
+.customer-management .el-form-item__label,
+.transporter-management .el-form-item__label,
+.vehicle-management .el-form-item__label,
+.vehicle-type-setup .el-form-item__label,
+.cartage-rate-setup .el-form-item__label,
+.cartage-report .el-form-item__label,
+.cartage-billing .el-form-item__label,
+.cartage-increment-page .form-label,
+.cartage-history-page .el-form-item__label {
+    color: #5f708b !important;
+    font-size: 0.92rem !important;
+    font-weight: 800 !important;
+    line-height: 1.25 !important;
+}
+
+.customer-management .professional-dialog .form-control,
+.customer-management .professional-dialog .form-select,
+.transporter-management .professional-dialog .form-control,
+.transporter-management .professional-dialog .form-select,
+.vehicle-management .professional-dialog .form-control,
+.vehicle-management .professional-dialog .form-select,
+.el-dialog.professional-dialog .fg-like-input,
+.el-dialog.professional-dialog .customer-manual-input {
+    height: 52px !important;
+    min-height: 52px !important;
+    border-radius: 10px !important;
+    font-size: 1.05rem !important;
+    font-weight: 500 !important;
+    padding: 0 16px !important;
+}
+
+.customer-management .professional-dialog textarea.form-control,
+.transporter-management .professional-dialog textarea.form-control,
+.el-dialog.professional-dialog .fg-like-textarea,
+.el-dialog.professional-dialog .customer-manual-textarea {
+    min-height: 118px !important;
+    height: auto !important;
+    border-radius: 10px !important;
+    font-size: 1.05rem !important;
+    font-weight: 500 !important;
+    line-height: 1.45 !important;
+    padding: 14px 16px !important;
+}
+
+.customer-management .professional-dialog .form-control::placeholder,
+.customer-management .professional-dialog .form-select,
+.transporter-management .professional-dialog .form-control::placeholder,
+.transporter-management .professional-dialog .form-select,
+.vehicle-management .professional-dialog .form-control::placeholder,
+.vehicle-management .professional-dialog .form-select,
+.el-dialog.professional-dialog .fg-like-input::placeholder,
+.el-dialog.professional-dialog .fg-like-textarea::placeholder,
+.el-dialog.professional-dialog .customer-manual-input::placeholder,
+.el-dialog.professional-dialog .customer-manual-textarea::placeholder {
+    color: #8fa1bd !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    opacity: 1 !important;
+}
+
+.vehicle-type-setup .professional-dialog .el-input__wrapper,
+.cartage-rate-setup .professional-dialog .el-input__wrapper,
+.cartage-rate-setup .professional-dialog .el-select__wrapper,
+.cartage-rate-setup .professional-dialog .el-input-number,
+.cartage-rate-setup .filters-bar .el-input__wrapper,
+.cartage-rate-setup .filters-bar .el-select__wrapper,
+.cartage-report .filter-section .el-input__wrapper,
+.cartage-report .filter-section .el-select__wrapper,
+.cartage-report .filter-section .el-date-editor.el-input__wrapper,
+.cartage-increment-page .filters-section .el-input__wrapper,
+.cartage-increment-page .filters-section .el-select__wrapper,
+.cartage-increment-page .filters-section .el-input-number,
+.cartage-increment-page .filters-section .el-date-editor.el-input__wrapper {
+    height: 52px !important;
+    min-height: 52px !important;
+    border-radius: 10px !important;
+}
+
+.vehicle-type-setup .professional-dialog .el-input__inner,
+.cartage-rate-setup .professional-dialog .el-input__inner,
+.cartage-rate-setup .professional-dialog .el-select__selected-item,
+.cartage-rate-setup .professional-dialog .el-select__placeholder,
+.cartage-rate-setup .filters-bar .el-input__inner,
+.cartage-rate-setup .filters-bar .el-select__selected-item,
+.cartage-rate-setup .filters-bar .el-select__placeholder,
+.cartage-report .filter-section .el-input__inner,
+.cartage-report .filter-section .el-select__selected-item,
+.cartage-report .filter-section .el-select__placeholder,
+.cartage-increment-page .filters-section .el-input__inner,
+.cartage-increment-page .filters-section .el-select__selected-item,
+.cartage-increment-page .filters-section .el-select__placeholder {
+    height: 50px !important;
+    line-height: 50px !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+}
+
+.cartage-billing .main-form-row .form-control,
+.cartage-billing .main-form-row .el-input__wrapper,
+.cartage-billing .main-form-row .el-select__wrapper,
+.cartage-billing .filters-bar .el-input__wrapper,
+.cartage-billing .entry-table .el-input__wrapper,
+.cartage-billing .entry-table .el-select__wrapper,
+.cartage-billing .entry-table .form-control {
+    height: 44px !important;
+    min-height: 44px !important;
+    border-radius: 9px !important;
+}
+
+.customer-management .el-card__header,
+.transporter-management .el-card__header,
+.vehicle-management .el-card__header,
+.vehicle-type-setup .el-card__header,
+.cartage-rate-setup .el-card__header,
+.cartage-report .el-card__header,
+.cartage-billing .el-card__header,
+.cartage-increment-page .el-card__header,
+.cartage-history-page .el-card__header,
+.transport-dashboard .el-card__header {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="dark"] .customer-management,
+[data-theme="dark"] .transporter-management,
+[data-theme="dark"] .vehicle-management,
+[data-theme="dark"] .vehicle-type-setup,
+[data-theme="dark"] .cartage-rate-setup,
+[data-theme="dark"] .cartage-report,
+[data-theme="dark"] .cartage-billing,
+[data-theme="dark"] .cartage-increment-page,
+[data-theme="dark"] .cartage-history-page,
+[data-theme="dark"] .transport-dashboard {
+    background: #0f172a !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .customer-management .el-card,
+[data-theme="dark"] .transporter-management .el-card,
+[data-theme="dark"] .vehicle-management .el-card,
+[data-theme="dark"] .vehicle-type-setup .el-card,
+[data-theme="dark"] .cartage-rate-setup .el-card,
+[data-theme="dark"] .cartage-report .el-card,
+[data-theme="dark"] .cartage-billing .el-card,
+[data-theme="dark"] .cartage-increment-page .el-card,
+[data-theme="dark"] .cartage-history-page .el-card,
+[data-theme="dark"] .transport-dashboard .el-card,
+[data-theme="dark"] .customer-management .el-card__header,
+[data-theme="dark"] .transporter-management .el-card__header,
+[data-theme="dark"] .vehicle-management .el-card__header,
+[data-theme="dark"] .vehicle-type-setup .el-card__header,
+[data-theme="dark"] .cartage-rate-setup .el-card__header,
+[data-theme="dark"] .cartage-report .el-card__header,
+[data-theme="dark"] .cartage-billing .el-card__header,
+[data-theme="dark"] .cartage-increment-page .el-card__header,
+[data-theme="dark"] .cartage-history-page .el-card__header,
+[data-theme="dark"] .transport-dashboard .el-card__header {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .customer-management .el-form-item__label,
+[data-theme="dark"] .transporter-management .el-form-item__label,
+[data-theme="dark"] .vehicle-management .el-form-item__label,
+[data-theme="dark"] .vehicle-type-setup .el-form-item__label,
+[data-theme="dark"] .cartage-rate-setup .el-form-item__label,
+[data-theme="dark"] .cartage-report .el-form-item__label,
+[data-theme="dark"] .cartage-billing .el-form-item__label,
+[data-theme="dark"] .cartage-increment-page .form-label,
+[data-theme="dark"] .cartage-history-page .el-form-item__label {
+    color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .customer-management .professional-dialog .form-control,
+[data-theme="dark"] .customer-management .professional-dialog .form-select,
+[data-theme="dark"] .transporter-management .professional-dialog .form-control,
+[data-theme="dark"] .transporter-management .professional-dialog .form-select,
+[data-theme="dark"] .vehicle-management .professional-dialog .form-control,
+[data-theme="dark"] .vehicle-management .professional-dialog .form-select,
+[data-theme="dark"] .el-dialog.professional-dialog .fg-like-input,
+[data-theme="dark"] .el-dialog.professional-dialog .fg-like-textarea,
+[data-theme="dark"] .el-dialog.professional-dialog .customer-manual-input,
+[data-theme="dark"] .el-dialog.professional-dialog .customer-manual-textarea {
+    background: #1e293b !important;
+    border-color: #475569 !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .cartage-rate-setup .filters-bar,
+[data-theme="dark"] .cartage-report .filter-section,
+[data-theme="dark"] .cartage-billing .main-form-row,
+[data-theme="dark"] .cartage-billing .filters-bar,
+[data-theme="dark"] .cartage-increment-page .filters-section {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+
+/* ========================================================================
+   Transport module final app-standard skin
+   Matches FG/Reel Inventory: Bootstrap-like cards, compact labels,
+   readable fields, and practical dense tables.
+   ======================================================================== */
+.customer-management,
+.transporter-management,
+.vehicle-management,
+.vehicle-type-setup,
+.cartage-rate-setup,
+.cartage-report,
+.cartage-billing,
+.cartage-increment-page,
+.cartage-history-page,
+.transport-dashboard {
+    padding: 1.5rem !important;
+    min-height: calc(100vh - 120px) !important;
+    background: transparent !important;
+    font-family: 'Montserrat', system-ui, -apple-system, 'Segoe UI', sans-serif !important;
+}
+
+.customer-management .fs-4,
+.transporter-management .fs-4,
+.vehicle-management .fs-4,
+.vehicle-type-setup .fs-4,
+.cartage-rate-setup .fs-4,
+.cartage-report .fs-4,
+.cartage-billing .fs-5,
+.cartage-increment-page .fs-4,
+.cartage-history-page .fs-4,
+.transport-dashboard h2 {
+    font-size: 1.75rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0 !important;
+}
+
+.customer-management .professional-card,
+.transporter-management .professional-card,
+.vehicle-management .professional-card,
+.vehicle-type-setup .professional-card,
+.cartage-rate-setup .professional-card,
+.cartage-report .professional-card,
+.cartage-billing .el-card,
+.cartage-increment-page .professional-card,
+.cartage-history-page .professional-card,
+.transport-dashboard .glass-card,
+.transport-dashboard .stat-card {
+    border: 1px solid #dee2e6 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 .125rem .25rem rgba(0, 0, 0, .075) !important;
+    background: #ffffff !important;
+    overflow: visible !important;
+}
+
+.customer-management .el-card__header,
+.transporter-management .el-card__header,
+.vehicle-management .el-card__header,
+.vehicle-type-setup .el-card__header,
+.cartage-rate-setup .el-card__header,
+.cartage-report .el-card__header,
+.cartage-billing .el-card__header,
+.cartage-increment-page .el-card__header,
+.cartage-history-page .el-card__header,
+.transport-dashboard .el-card__header {
+    padding: .875rem 1rem !important;
+    background: #ffffff !important;
+    border-bottom: 1px solid #dee2e6 !important;
+    border-radius: 8px 8px 0 0 !important;
+}
+
+.customer-management .el-card__body,
+.transporter-management .el-card__body,
+.vehicle-management .el-card__body,
+.vehicle-type-setup .el-card__body,
+.cartage-rate-setup .el-card__body,
+.cartage-report .el-card__body,
+.cartage-billing .el-card__body,
+.cartage-increment-page .el-card__body,
+.cartage-history-page .el-card__body,
+.transport-dashboard .el-card__body {
+    padding: 1rem !important;
+}
+
+.cartage-rate-setup .filters-bar,
+.cartage-report .filter-section,
+.cartage-billing .main-form-row,
+.cartage-billing .filters-bar,
+.cartage-increment-page .filters-section,
+.cartage-history-page .professional-dialog .bg-light,
+.transport-dashboard .bg-light {
+    background: #ffffff !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 .125rem .25rem rgba(0, 0, 0, .04) !important;
+}
+
+.customer-management .el-form-item__label,
+.transporter-management .el-form-item__label,
+.vehicle-management .el-form-item__label,
+.vehicle-type-setup .el-form-item__label,
+.cartage-rate-setup .el-form-item__label,
+.cartage-report .el-form-item__label,
+.cartage-billing .el-form-item__label,
+.cartage-increment-page .form-label,
+.cartage-history-page .el-form-item__label,
+.customer-management label,
+.transporter-management label,
+.vehicle-management label {
+    color: #6c757d !important;
+    font-size: .875rem !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    margin-bottom: .35rem !important;
+}
+
+.customer-management .form-control,
+.customer-management .form-select,
+.transporter-management .form-control,
+.transporter-management .form-select,
+.vehicle-management .form-control,
+.vehicle-management .form-select,
+.cartage-billing .form-control,
+.cartage-billing .form-select,
+.customer-management .professional-dialog .form-control,
+.customer-management .professional-dialog .form-select,
+.transporter-management .professional-dialog .form-control,
+.transporter-management .professional-dialog .form-select,
+.vehicle-management .professional-dialog .form-control,
+.vehicle-management .professional-dialog .form-select {
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: .375rem .75rem !important;
+    border: 1px solid #ced4da !important;
+    border-radius: .375rem !important;
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    font-size: .95rem !important;
+    font-weight: 500 !important;
+    line-height: 1.5 !important;
+    box-shadow: none !important;
+}
+
+.customer-management textarea.form-control,
+.transporter-management textarea.form-control,
+.customer-management .professional-dialog textarea.form-control,
+.transporter-management .professional-dialog textarea.form-control {
+    height: auto !important;
+    min-height: 92px !important;
+    padding: .5rem .75rem !important;
+}
+
+.customer-management .form-control::placeholder,
+.transporter-management .form-control::placeholder,
+.vehicle-management .form-control::placeholder,
+.cartage-billing .form-control::placeholder {
+    color: #8a97a6 !important;
+    font-size: .95rem !important;
+    font-weight: 400 !important;
+    opacity: 1 !important;
+}
+
+.customer-management .form-control:focus,
+.customer-management .form-select:focus,
+.transporter-management .form-control:focus,
+.transporter-management .form-select:focus,
+.vehicle-management .form-control:focus,
+.vehicle-management .form-select:focus,
+.cartage-billing .form-control:focus,
+.cartage-billing .form-select:focus {
+    border-color: #86b7fe !important;
+    box-shadow: 0 0 0 .25rem rgba(13, 110, 253, .15) !important;
+}
+
+.vehicle-type-setup .professional-dialog .el-input__wrapper,
+.cartage-rate-setup .professional-dialog .el-input__wrapper,
+.cartage-rate-setup .professional-dialog .el-select__wrapper,
+.cartage-rate-setup .professional-dialog .el-input-number,
+.cartage-rate-setup .filters-bar .el-input__wrapper,
+.cartage-rate-setup .filters-bar .el-select__wrapper,
+.cartage-report .filter-section .el-input__wrapper,
+.cartage-report .filter-section .el-select__wrapper,
+.cartage-report .filter-section .el-date-editor.el-input__wrapper,
+.cartage-increment-page .filters-section .el-input__wrapper,
+.cartage-increment-page .filters-section .el-select__wrapper,
+.cartage-increment-page .filters-section .el-input-number,
+.cartage-increment-page .filters-section .el-date-editor.el-input__wrapper,
+.cartage-billing .main-form-row .el-input__wrapper,
+.cartage-billing .main-form-row .el-select__wrapper,
+.cartage-billing .entry-table .el-input__wrapper,
+.cartage-billing .entry-table .el-select__wrapper,
+.cartage-billing .filters-bar .el-input__wrapper {
+    height: 40px !important;
+    min-height: 40px !important;
+    border-radius: .375rem !important;
+    background: #ffffff !important;
+    box-shadow: 0 0 0 1px #ced4da inset !important;
+    padding: 0 .75rem !important;
+}
+
+.vehicle-type-setup .professional-dialog .el-input__inner,
+.cartage-rate-setup .professional-dialog .el-input__inner,
+.cartage-rate-setup .professional-dialog .el-select__selected-item,
+.cartage-rate-setup .professional-dialog .el-select__placeholder,
+.cartage-rate-setup .filters-bar .el-input__inner,
+.cartage-rate-setup .filters-bar .el-select__selected-item,
+.cartage-rate-setup .filters-bar .el-select__placeholder,
+.cartage-report .filter-section .el-input__inner,
+.cartage-report .filter-section .el-select__selected-item,
+.cartage-report .filter-section .el-select__placeholder,
+.cartage-increment-page .filters-section .el-input__inner,
+.cartage-increment-page .filters-section .el-select__selected-item,
+.cartage-increment-page .filters-section .el-select__placeholder,
+.cartage-billing .el-input__inner,
+.cartage-billing .el-select__selected-item,
+.cartage-billing .el-select__placeholder {
+    height: 38px !important;
+    line-height: 38px !important;
+    color: #212529 !important;
+    font-size: .95rem !important;
+    font-weight: 500 !important;
+}
+
+.customer-management .modern-table,
+.transporter-management .modern-table,
+.vehicle-management .modern-table,
+.vehicle-type-setup .modern-table,
+.cartage-rate-setup .modern-table,
+.cartage-report .modern-table,
+.cartage-billing .entry-table,
+.cartage-increment-page .modern-table,
+.cartage-history-page .modern-table,
+.transport-dashboard .professional-table {
+    border: 1px solid #dee2e6 !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+}
+
+.customer-management .modern-table th.el-table__cell,
+.transporter-management .modern-table th.el-table__cell,
+.vehicle-management .modern-table th.el-table__cell,
+.vehicle-type-setup .modern-table th.el-table__cell,
+.cartage-rate-setup .modern-table th.el-table__cell,
+.cartage-report .modern-table th.el-table__cell,
+.cartage-billing .entry-table th.el-table__cell,
+.cartage-increment-page .modern-table th.el-table__cell,
+.cartage-history-page .modern-table th.el-table__cell,
+.transport-dashboard .professional-table th.el-table__cell {
+    background: #f8f9fa !important;
+    color: #212529 !important;
+    border-bottom: 1px solid #dee2e6 !important;
+    font-size: .78rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0 !important;
+    padding: .65rem .5rem !important;
+}
+
+.customer-management .modern-table td.el-table__cell,
+.transporter-management .modern-table td.el-table__cell,
+.vehicle-management .modern-table td.el-table__cell,
+.vehicle-type-setup .modern-table td.el-table__cell,
+.cartage-rate-setup .modern-table td.el-table__cell,
+.cartage-report .modern-table td.el-table__cell,
+.cartage-billing .entry-table td.el-table__cell,
+.cartage-increment-page .modern-table td.el-table__cell,
+.cartage-history-page .modern-table td.el-table__cell,
+.transport-dashboard .professional-table td.el-table__cell {
+    color: #212529 !important;
+    background: #ffffff !important;
+    border-bottom: 1px solid #dee2e6 !important;
+    font-size: .875rem !important;
+    padding: .55rem .5rem !important;
+}
+
+.customer-management .modern-table .el-table__row:hover td.el-table__cell,
+.transporter-management .modern-table .el-table__row:hover td.el-table__cell,
+.vehicle-management .modern-table .el-table__row:hover td.el-table__cell,
+.vehicle-type-setup .modern-table .el-table__row:hover td.el-table__cell,
+.cartage-rate-setup .modern-table .el-table__row:hover td.el-table__cell,
+.cartage-report .modern-table .el-table__row:hover td.el-table__cell,
+.cartage-billing .entry-table .el-table__row:hover td.el-table__cell,
+.cartage-increment-page .modern-table .el-table__row:hover td.el-table__cell,
+.cartage-history-page .modern-table .el-table__row:hover td.el-table__cell {
+    background: #f8f9fa !important;
+}
+
+.customer-management .el-dialog.professional-dialog,
+.transporter-management .el-dialog.professional-dialog,
+.vehicle-management .el-dialog.professional-dialog,
+.vehicle-type-setup .el-dialog.professional-dialog,
+.cartage-rate-setup .el-dialog.professional-dialog,
+.cartage-billing .el-dialog.professional-dialog,
+.cartage-history-page .el-dialog.professional-dialog {
+    border-radius: 8px !important;
+}
+
+.professional-dialog .el-dialog__header {
+    padding: 1rem !important;
+    border-bottom: 1px solid #dee2e6 !important;
+}
+
+.professional-dialog .el-dialog__title {
+    font-size: 1.25rem !important;
+    font-weight: 700 !important;
+    color: #212529 !important;
+}
+
+.professional-dialog .el-dialog__body {
+    padding: 1rem !important;
+}
+
+.professional-dialog .el-dialog__footer {
+    padding: .75rem 1rem 1rem !important;
+    border-top: 1px solid #dee2e6 !important;
+}
+
+.customer-management .el-button,
+.transporter-management .el-button,
+.vehicle-management .el-button,
+.vehicle-type-setup .el-button,
+.cartage-rate-setup .el-button,
+.cartage-report .el-button,
+.cartage-billing .el-button,
+.cartage-increment-page .el-button,
+.cartage-history-page .el-button {
+    border-radius: .375rem !important;
+    font-weight: 600 !important;
+}
+
+[data-theme="dark"] .customer-management,
+[data-theme="dark"] .transporter-management,
+[data-theme="dark"] .vehicle-management,
+[data-theme="dark"] .vehicle-type-setup,
+[data-theme="dark"] .cartage-rate-setup,
+[data-theme="dark"] .cartage-report,
+[data-theme="dark"] .cartage-billing,
+[data-theme="dark"] .cartage-increment-page,
+[data-theme="dark"] .cartage-history-page,
+[data-theme="dark"] .transport-dashboard {
+    background: #0f172a !important;
+}
+
+[data-theme="dark"] .customer-management .professional-card,
+[data-theme="dark"] .transporter-management .professional-card,
+[data-theme="dark"] .vehicle-management .professional-card,
+[data-theme="dark"] .vehicle-type-setup .professional-card,
+[data-theme="dark"] .cartage-rate-setup .professional-card,
+[data-theme="dark"] .cartage-report .professional-card,
+[data-theme="dark"] .cartage-billing .el-card,
+[data-theme="dark"] .cartage-increment-page .professional-card,
+[data-theme="dark"] .cartage-history-page .professional-card,
+[data-theme="dark"] .transport-dashboard .glass-card,
+[data-theme="dark"] .transport-dashboard .stat-card,
+[data-theme="dark"] .cartage-rate-setup .filters-bar,
+[data-theme="dark"] .cartage-report .filter-section,
+[data-theme="dark"] .cartage-billing .main-form-row,
+[data-theme="dark"] .cartage-billing .filters-bar,
+[data-theme="dark"] .cartage-increment-page .filters-section,
+[data-theme="dark"] .cartage-history-page .professional-dialog .bg-light,
+[data-theme="dark"] .transport-dashboard .bg-light {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    box-shadow: none !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .customer-management .el-card__header,
+[data-theme="dark"] .transporter-management .el-card__header,
+[data-theme="dark"] .vehicle-management .el-card__header,
+[data-theme="dark"] .vehicle-type-setup .el-card__header,
+[data-theme="dark"] .cartage-rate-setup .el-card__header,
+[data-theme="dark"] .cartage-report .el-card__header,
+[data-theme="dark"] .cartage-billing .el-card__header,
+[data-theme="dark"] .cartage-increment-page .el-card__header,
+[data-theme="dark"] .cartage-history-page .el-card__header,
+[data-theme="dark"] .transport-dashboard .el-card__header,
+[data-theme="dark"] .professional-dialog .el-dialog__header,
+[data-theme="dark"] .professional-dialog .el-dialog__footer {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .professional-dialog .el-dialog,
+[data-theme="dark"] .professional-dialog .el-dialog__body {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .professional-dialog .el-dialog__title,
+[data-theme="dark"] .customer-management .fs-4,
+[data-theme="dark"] .transporter-management .fs-4,
+[data-theme="dark"] .vehicle-management .fs-4,
+[data-theme="dark"] .vehicle-type-setup .fs-4,
+[data-theme="dark"] .cartage-rate-setup .fs-4,
+[data-theme="dark"] .cartage-report .fs-4,
+[data-theme="dark"] .cartage-billing .fs-5,
+[data-theme="dark"] .cartage-increment-page .fs-4,
+[data-theme="dark"] .cartage-history-page .fs-4,
+[data-theme="dark"] .transport-dashboard h2,
+[data-theme="dark"] .transport-dashboard .stat-value {
+    color: #f8fafc !important;
+}
+
+[data-theme="dark"] .customer-management label,
+[data-theme="dark"] .transporter-management label,
+[data-theme="dark"] .vehicle-management label,
+[data-theme="dark"] .customer-management .el-form-item__label,
+[data-theme="dark"] .transporter-management .el-form-item__label,
+[data-theme="dark"] .vehicle-management .el-form-item__label,
+[data-theme="dark"] .vehicle-type-setup .el-form-item__label,
+[data-theme="dark"] .cartage-rate-setup .el-form-item__label,
+[data-theme="dark"] .cartage-report .el-form-item__label,
+[data-theme="dark"] .cartage-billing .el-form-item__label,
+[data-theme="dark"] .cartage-increment-page .form-label {
+    color: #aebed3 !important;
+}
+
+[data-theme="dark"] .customer-management .form-control,
+[data-theme="dark"] .customer-management .form-select,
+[data-theme="dark"] .transporter-management .form-control,
+[data-theme="dark"] .transporter-management .form-select,
+[data-theme="dark"] .vehicle-management .form-control,
+[data-theme="dark"] .vehicle-management .form-select,
+[data-theme="dark"] .cartage-billing .form-control,
+[data-theme="dark"] .cartage-billing .form-select,
+[data-theme="dark"] .vehicle-type-setup .professional-dialog .el-input__wrapper,
+[data-theme="dark"] .cartage-rate-setup .professional-dialog .el-input__wrapper,
+[data-theme="dark"] .cartage-rate-setup .professional-dialog .el-select__wrapper,
+[data-theme="dark"] .cartage-rate-setup .filters-bar .el-input__wrapper,
+[data-theme="dark"] .cartage-rate-setup .filters-bar .el-select__wrapper,
+[data-theme="dark"] .cartage-report .filter-section .el-input__wrapper,
+[data-theme="dark"] .cartage-report .filter-section .el-select__wrapper,
+[data-theme="dark"] .cartage-report .filter-section .el-date-editor.el-input__wrapper,
+[data-theme="dark"] .cartage-increment-page .filters-section .el-input__wrapper,
+[data-theme="dark"] .cartage-increment-page .filters-section .el-select__wrapper,
+[data-theme="dark"] .cartage-billing .main-form-row .el-input__wrapper,
+[data-theme="dark"] .cartage-billing .main-form-row .el-select__wrapper,
+[data-theme="dark"] .cartage-billing .entry-table .el-input__wrapper,
+[data-theme="dark"] .cartage-billing .entry-table .el-select__wrapper {
+    background: #1f2b3d !important;
+    border-color: #475569 !important;
+    box-shadow: 0 0 0 1px #475569 inset !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .vehicle-type-setup .professional-dialog .el-input__inner,
+[data-theme="dark"] .cartage-rate-setup .professional-dialog .el-input__inner,
+[data-theme="dark"] .cartage-rate-setup .professional-dialog .el-select__selected-item,
+[data-theme="dark"] .cartage-rate-setup .professional-dialog .el-select__placeholder,
+[data-theme="dark"] .cartage-rate-setup .filters-bar .el-input__inner,
+[data-theme="dark"] .cartage-rate-setup .filters-bar .el-select__selected-item,
+[data-theme="dark"] .cartage-rate-setup .filters-bar .el-select__placeholder,
+[data-theme="dark"] .cartage-report .filter-section .el-input__inner,
+[data-theme="dark"] .cartage-report .filter-section .el-select__selected-item,
+[data-theme="dark"] .cartage-report .filter-section .el-select__placeholder,
+[data-theme="dark"] .cartage-increment-page .filters-section .el-input__inner,
+[data-theme="dark"] .cartage-increment-page .filters-section .el-select__selected-item,
+[data-theme="dark"] .cartage-increment-page .filters-section .el-select__placeholder,
+[data-theme="dark"] .cartage-billing .el-input__inner,
+[data-theme="dark"] .cartage-billing .el-select__selected-item,
+[data-theme="dark"] .cartage-billing .el-select__placeholder {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .customer-management .form-control::placeholder,
+[data-theme="dark"] .transporter-management .form-control::placeholder,
+[data-theme="dark"] .vehicle-management .form-control::placeholder,
+[data-theme="dark"] .cartage-billing .form-control::placeholder {
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .customer-management .modern-table th.el-table__cell,
+[data-theme="dark"] .transporter-management .modern-table th.el-table__cell,
+[data-theme="dark"] .vehicle-management .modern-table th.el-table__cell,
+[data-theme="dark"] .vehicle-type-setup .modern-table th.el-table__cell,
+[data-theme="dark"] .cartage-rate-setup .modern-table th.el-table__cell,
+[data-theme="dark"] .cartage-report .modern-table th.el-table__cell,
+[data-theme="dark"] .cartage-billing .entry-table th.el-table__cell,
+[data-theme="dark"] .cartage-increment-page .modern-table th.el-table__cell,
+[data-theme="dark"] .cartage-history-page .modern-table th.el-table__cell,
+[data-theme="dark"] .transport-dashboard .professional-table th.el-table__cell {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .customer-management .modern-table td.el-table__cell,
+[data-theme="dark"] .transporter-management .modern-table td.el-table__cell,
+[data-theme="dark"] .vehicle-management .modern-table td.el-table__cell,
+[data-theme="dark"] .vehicle-type-setup .modern-table td.el-table__cell,
+[data-theme="dark"] .cartage-rate-setup .modern-table td.el-table__cell,
+[data-theme="dark"] .cartage-report .modern-table td.el-table__cell,
+[data-theme="dark"] .cartage-billing .entry-table td.el-table__cell,
+[data-theme="dark"] .cartage-increment-page .modern-table td.el-table__cell,
+[data-theme="dark"] .cartage-history-page .modern-table td.el-table__cell,
+[data-theme="dark"] .transport-dashboard .professional-table td.el-table__cell {
+    background: #0f172a !important;
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .customer-management .modern-table .el-table__row:hover td.el-table__cell,
+[data-theme="dark"] .transporter-management .modern-table .el-table__row:hover td.el-table__cell,
+[data-theme="dark"] .vehicle-management .modern-table .el-table__row:hover td.el-table__cell,
+[data-theme="dark"] .vehicle-type-setup .modern-table .el-table__row:hover td.el-table__cell,
+[data-theme="dark"] .cartage-rate-setup .modern-table .el-table__row:hover td.el-table__cell,
+[data-theme="dark"] .cartage-report .modern-table .el-table__row:hover td.el-table__cell,
+[data-theme="dark"] .cartage-billing .entry-table .el-table__row:hover td.el-table__cell,
+[data-theme="dark"] .cartage-increment-page .modern-table .el-table__row:hover td.el-table__cell,
+[data-theme="dark"] .cartage-history-page .modern-table .el-table__row:hover td.el-table__cell {
+    background: #1e293b !important;
+}
+
+/* Transport module dark headers: keep nested Bootstrap card headers aligned with Element Plus cards */
+[data-theme="dark"] .customer-management .professional-card > .el-card__header,
+[data-theme="dark"] .transporter-management .professional-card > .el-card__header,
+[data-theme="dark"] .vehicle-management .professional-card > .el-card__header,
+[data-theme="dark"] .vehicle-type-setup .professional-card > .el-card__header,
+[data-theme="dark"] .cartage-rate-setup .professional-card > .el-card__header,
+[data-theme="dark"] .cartage-report .professional-card > .el-card__header,
+[data-theme="dark"] .cartage-billing .professional-card > .el-card__header,
+[data-theme="dark"] .cartage-increment-page .professional-card > .el-card__header,
+[data-theme="dark"] .cartage-history-page .professional-card > .el-card__header,
+[data-theme="dark"] .transport-dashboard .professional-card > .el-card__header,
+[data-theme="dark"] .transport-dashboard .glass-card > .el-card__header,
+[data-theme="dark"] .transport-dashboard .stat-card > .el-card__header {
+    background: #172033 !important;
+    border-color: #334155 !important;
+    color: #f8fafc !important;
+}
+
+[data-theme="dark"] .customer-management .el-card.box-card.professional-card > .el-card__header,
+[data-theme="dark"] .transporter-management .el-card.box-card.professional-card > .el-card__header,
+[data-theme="dark"] .vehicle-management .el-card.box-card.professional-card > .el-card__header,
+[data-theme="dark"] .vehicle-type-setup .el-card.box-card.professional-card > .el-card__header,
+[data-theme="dark"] .cartage-rate-setup .el-card.box-card.professional-card > .el-card__header,
+[data-theme="dark"] .cartage-report .el-card.box-card.professional-card > .el-card__header,
+[data-theme="dark"] .cartage-billing .el-card.box-card.professional-card > .el-card__header,
+[data-theme="dark"] .cartage-increment-page .el-card.box-card.professional-card > .el-card__header,
+[data-theme="dark"] .cartage-history-page .el-card.box-card.professional-card > .el-card__header {
+    background: #172033 !important;
+    border-bottom-color: #334155 !important;
+    color: #f8fafc !important;
+}
+
+[data-theme="dark"] .customer-management .card-header,
+[data-theme="dark"] .transporter-management .card-header,
+[data-theme="dark"] .vehicle-management .card-header,
+[data-theme="dark"] .vehicle-type-setup .card-header,
+[data-theme="dark"] .cartage-rate-setup .card-header,
+[data-theme="dark"] .cartage-report .card-header,
+[data-theme="dark"] .cartage-billing .card-header,
+[data-theme="dark"] .cartage-increment-page .card-header,
+[data-theme="dark"] .cartage-history-page .card-header,
+[data-theme="dark"] .transport-dashboard .card-header,
+[data-theme="dark"] .customer-management .el-card__header .card-header,
+[data-theme="dark"] .transporter-management .el-card__header .card-header,
+[data-theme="dark"] .vehicle-management .el-card__header .card-header,
+[data-theme="dark"] .vehicle-type-setup .el-card__header .card-header,
+[data-theme="dark"] .cartage-rate-setup .el-card__header .card-header,
+[data-theme="dark"] .cartage-report .el-card__header .card-header,
+[data-theme="dark"] .cartage-billing .el-card__header .card-header,
+[data-theme="dark"] .cartage-increment-page .el-card__header .card-header,
+[data-theme="dark"] .cartage-history-page .el-card__header .card-header,
+[data-theme="dark"] .transport-dashboard .el-card__header .card-header {
+    background: #172033 !important;
+    border: 0 !important;
+    color: #f8fafc !important;
+}
+
+[data-theme="dark"] .customer-management .el-card.box-card.professional-card > .el-card__header > .card-header,
+[data-theme="dark"] .transporter-management .el-card.box-card.professional-card > .el-card__header > .card-header,
+[data-theme="dark"] .vehicle-management .el-card.box-card.professional-card > .el-card__header > .card-header,
+[data-theme="dark"] .vehicle-type-setup .el-card.box-card.professional-card > .el-card__header > .card-header,
+[data-theme="dark"] .cartage-rate-setup .el-card.box-card.professional-card > .el-card__header > .card-header,
+[data-theme="dark"] .cartage-report .el-card.box-card.professional-card > .el-card__header > .card-header,
+[data-theme="dark"] .cartage-billing .el-card.box-card.professional-card > .el-card__header > .card-header,
+[data-theme="dark"] .cartage-increment-page .el-card.box-card.professional-card > .el-card__header > .card-header,
+[data-theme="dark"] .cartage-history-page .el-card.box-card.professional-card > .el-card__header > .card-header {
+    background: #172033 !important;
+    border-color: #334155 !important;
+    color: #f8fafc !important;
+}
+
+[data-theme="dark"] .customer-management .el-card__header .header-title .fs-4,
+[data-theme="dark"] .transporter-management .el-card__header .header-title .fs-4,
+[data-theme="dark"] .vehicle-management .el-card__header .header-title .fs-4,
+[data-theme="dark"] .vehicle-type-setup .el-card__header .header-title .fs-4,
+[data-theme="dark"] .cartage-rate-setup .el-card__header .header-title .fs-4,
+[data-theme="dark"] .cartage-report .el-card__header .header-title .fs-4,
+[data-theme="dark"] .cartage-billing .el-card__header .header-title .fs-5,
+[data-theme="dark"] .cartage-increment-page .el-card__header .header-title .fs-4,
+[data-theme="dark"] .cartage-history-page .el-card__header .header-title .fs-4,
+[data-theme="dark"] .transport-dashboard .el-card__header .header-title .fs-4,
+[data-theme="dark"] .customer-management .el-card__header .text-slate-800,
+[data-theme="dark"] .transporter-management .el-card__header .text-slate-800,
+[data-theme="dark"] .vehicle-management .el-card__header .text-slate-800,
+[data-theme="dark"] .vehicle-type-setup .el-card__header .text-slate-800,
+[data-theme="dark"] .cartage-rate-setup .el-card__header .text-slate-800,
+[data-theme="dark"] .cartage-report .el-card__header .text-slate-800,
+[data-theme="dark"] .cartage-billing .el-card__header .text-slate-800,
+[data-theme="dark"] .cartage-increment-page .el-card__header .text-slate-800,
+[data-theme="dark"] .cartage-history-page .el-card__header .text-slate-800 {
+    color: #f8fafc !important;
+    text-shadow: none !important;
+}
+
+[data-theme="dark"] .customer-management .el-card__header .header-title p,
+[data-theme="dark"] .transporter-management .el-card__header .header-title p,
+[data-theme="dark"] .vehicle-management .el-card__header .header-title p,
+[data-theme="dark"] .vehicle-type-setup .el-card__header .header-title p,
+[data-theme="dark"] .cartage-rate-setup .el-card__header .header-title p,
+[data-theme="dark"] .cartage-report .el-card__header .header-title p,
+[data-theme="dark"] .cartage-billing .el-card__header .header-title p,
+[data-theme="dark"] .cartage-increment-page .el-card__header .header-title p,
+[data-theme="dark"] .cartage-history-page .el-card__header .header-title p,
+[data-theme="dark"] .transport-dashboard .el-card__header .header-title p,
+[data-theme="dark"] .customer-management .el-card__header .text-muted,
+[data-theme="dark"] .transporter-management .el-card__header .text-muted,
+[data-theme="dark"] .vehicle-management .el-card__header .text-muted,
+[data-theme="dark"] .vehicle-type-setup .el-card__header .text-muted,
+[data-theme="dark"] .cartage-rate-setup .el-card__header .text-muted,
+[data-theme="dark"] .cartage-report .el-card__header .text-muted,
+[data-theme="dark"] .cartage-billing .el-card__header .text-muted,
+[data-theme="dark"] .cartage-increment-page .el-card__header .text-muted,
+[data-theme="dark"] .cartage-history-page .el-card__header .text-muted {
+    color: #b6c5d8 !important;
+    opacity: 1 !important;
+}
+
+[data-theme="dark"] .customer-management .el-card__header .text-primary,
+[data-theme="dark"] .transporter-management .el-card__header .text-primary,
+[data-theme="dark"] .vehicle-management .el-card__header .text-primary,
+[data-theme="dark"] .vehicle-type-setup .el-card__header .text-primary,
+[data-theme="dark"] .cartage-rate-setup .el-card__header .text-primary,
+[data-theme="dark"] .cartage-report .el-card__header .text-primary,
+[data-theme="dark"] .cartage-billing .el-card__header .text-primary,
+[data-theme="dark"] .cartage-increment-page .el-card__header .text-primary,
+[data-theme="dark"] .cartage-history-page .el-card__header .text-primary {
+    color: #7aa2ff !important;
+}
+
+[data-theme="dark"] .el-dialog.professional-dialog,
+[data-theme="dark"] .el-dialog.professional-dialog .el-dialog__header,
+[data-theme="dark"] .el-dialog.professional-dialog .el-dialog__footer {
+    background: #172033 !important;
+    border-color: #334155 !important;
+    color: #f8fafc !important;
+}
+
+[data-theme="dark"] .el-dialog.professional-dialog .el-dialog__body {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .el-dialog.professional-dialog .el-dialog__title {
+    color: #f8fafc !important;
+}
+
+[data-theme="dark"] .el-dialog.professional-dialog .el-dialog__close {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .el-dialog.professional-dialog .el-dialog__close:hover {
+    color: #ffffff !important;
 }

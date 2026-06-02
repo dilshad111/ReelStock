@@ -452,4 +452,19 @@ export default {
 .fw-900 {
   font-weight: 900 !important;
 }
+
+[data-theme="dark"] .month-header {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+
+[data-theme="dark"] .month-title,
+[data-theme="dark"] .month-summary {
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .closing-table .bg-light {
+  background-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
 </style>

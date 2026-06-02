@@ -16,14 +16,14 @@
     </div>
     <div class="card shadow-sm border-0 mb-3" style="overflow: visible !important; position: relative; z-index: 1070;">
       <div class="card-body p-2" style="overflow: visible !important;">
-        <div class="row g-2 align-items-end">
+        <div class="row g-2 align-items-end reel-filter-bar">
           <div class="col-md-2">
             <label class="small text-muted mb-1 ps-1">Quality</label>
             <div class="searchable-select-container">
               <input 
                 v-model="qualitySearch" 
                 type="text" 
-                class="form-control form-control-sm" 
+                class="form-control form-control-sm filter-control" 
                 placeholder="Search Quality..."
                 @focus="showQualityDrop = true"
                 @blur="handleBlur('quality')"
@@ -43,7 +43,7 @@
               <input 
                 v-model="supplierSearch" 
                 type="text" 
-                class="form-control form-control-sm" 
+                class="form-control form-control-sm filter-control" 
                 placeholder="Search Supplier..."
                 @focus="showSupplierDrop = true"
                 @blur="handleBlur('supplier')"
@@ -59,7 +59,7 @@
           </div>
           <div class="col-md-2">
             <label class="small text-muted mb-1 ps-1">Status</label>
-            <select v-model="selectedStatus" @change="handleStatusChange" class="form-select form-select-sm">
+            <select v-model="selectedStatus" @change="handleStatusChange" class="form-select form-select-sm filter-control">
               <option value="">In Stock (All)</option>
               <option value="in_stock">In Stock (Fresh)</option>
               <option value="partially_used">Partially Used</option>
@@ -68,22 +68,22 @@
           </div>
           <div class="col-md-1">
             <label class="small text-muted mb-1 ps-1">Size</label>
-            <select v-model="selectedSize" @change="handleSizeChange" class="form-select form-select-sm">
+            <select v-model="selectedSize" @change="handleSizeChange" class="form-select form-select-sm filter-control">
               <option value="">All</option>
               <option v-for="size in sizes" :key="size" :value="size">{{ size }}"</option>
             </select>
           </div>
           <div class="col-md-1">
             <label class="small text-muted mb-1 ps-1">Min Wt</label>
-            <input v-model="balanceMin" type="number" step="0.01" class="form-control form-control-sm" placeholder="Min">
+            <input v-model="balanceMin" type="number" step="0.01" class="form-control form-control-sm filter-control" placeholder="Min">
           </div>
           <div class="col-md-1">
             <label class="small text-muted mb-1 ps-1">Max Wt</label>
-            <input v-model="balanceMax" type="number" step="0.01" class="form-control form-control-sm" placeholder="Max">
+            <input v-model="balanceMax" type="number" step="0.01" class="form-control form-control-sm filter-control" placeholder="Max">
           </div>
           <div class="col-md-3 d-flex gap-1 justify-content-end">
-            <button @click="fetchReport" class="btn btn-primary btn-sm px-3">Apply</button>
-            <button @click="clearAllFilters" class="btn btn-clear-filters btn-sm">Clear</button>
+            <button @click="fetchReport" class="btn btn-primary btn-sm px-3 filter-btn">Apply</button>
+            <button @click="clearAllFilters" class="btn btn-clear-filters btn-sm filter-btn reel-clear-btn">Clear</button>
           </div>
         </div>
       </div>
@@ -899,5 +899,32 @@ h2 {
 .status-cell {
   font-weight: 700 !important;
   font-size: 12px !important;
+}
+
+.reel-filter-bar .filter-control,
+.reel-filter-bar .filter-btn {
+  height: 40px !important;
+  min-height: 40px !important;
+}
+
+.reel-filter-bar .filter-btn {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+:global([data-theme="dark"] .reel-clear-btn),
+:global([data-theme="dark"] .reel-clear-btn:hover),
+:global([data-theme="dark"] .reel-clear-btn:focus),
+:global([data-theme="dark"] .reel-clear-btn:active) {
+  background: linear-gradient(135deg, #fde047 0%, #f59e0b 100%) !important;
+  border: 1px solid #facc15 !important;
+  color: #0f172a !important;
+  font-weight: 800 !important;
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.35) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 </style>

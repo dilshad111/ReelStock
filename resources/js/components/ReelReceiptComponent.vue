@@ -250,7 +250,7 @@
         <input v-model="filters.date_to" type="date" class="form-control form-control-sm" @change="fetchReceipts">
       </div>
       <div class="col-md-2">
-        <button @click="clearFilters" class="btn btn-sm btn-clear-filters w-100">Clear</button>
+        <button @click="clearFilters" class="btn btn-sm btn-clear-filters w-100 receipt-clear-btn">Clear</button>
       </div>
     </div>
     <table class="table table-striped table-sticky-header table-sm text-nowrap small">
@@ -1370,5 +1370,17 @@ export default {
 
 .table-sticky-header tbody td:not(.text-start):not(.text-center):not(.text-end) {
   text-align: center;
+}
+
+:global([data-theme="dark"] .receipt-clear-btn),
+:global([data-theme="dark"] .receipt-clear-btn:hover),
+:global([data-theme="dark"] .receipt-clear-btn:focus),
+:global([data-theme="dark"] .receipt-clear-btn:active) {
+  background: linear-gradient(135deg, #fde047 0%, #f59e0b 100%) !important;
+  border: 1px solid #facc15 !important;
+  color: #0f172a !important;
+  font-weight: 800 !important;
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.35) !important;
+  opacity: 1 !important;
 }
 </style>

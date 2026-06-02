@@ -37,7 +37,7 @@
                     <template #default="scope">
                         <div class="location-badges">
                             <el-tag v-for="addr in scope.row.shipping_addresses" :key="addr.id" size="small" class="custom-tag" effect="plain" round>
-                                {{ addr.address_name }}
+                                {{ addr.address_name }}<span v-if="addr.round_trip_distance_km"> - {{ Number(addr.round_trip_distance_km).toFixed(2) }} KM</span>
                             </el-tag>
                             <span v-if="!scope.row.shipping_addresses.length" class="text-muted x-small italic location-muted">No addresses defined</span>
                         </div>
@@ -64,24 +64,24 @@
                 <div class="row">
                     <div class="col-md-6">
                         <el-form-item label="Customer Name" prop="name">
-                            <el-input v-model="customerForm.name" placeholder="Enter name" />
+                            <input v-model="customerForm.name" type="text" class="form-control customer-manual-input" placeholder="Enter name" />
                         </el-form-item>
                     </div>
                     <div class="col-md-6">
                         <el-form-item label="Email Address" prop="email">
-                            <el-input v-model="customerForm.email" placeholder="email@example.com" />
+                            <input v-model="customerForm.email" type="email" class="form-control customer-manual-input" placeholder="email@example.com" />
                         </el-form-item>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-12">
                         <el-form-item label="Phone Number" prop="phone">
-                            <el-input v-model="customerForm.phone" placeholder="Contact number" />
+                            <input v-model="customerForm.phone" type="text" class="form-control customer-manual-input" placeholder="Contact number" />
                         </el-form-item>
                     </div>
                 </div>
                 <el-form-item label="Main Office Address" prop="address">
-                    <el-input type="textarea" :rows="2" v-model="customerForm.address" placeholder="Enter main office address" />
+                    <textarea v-model="customerForm.address" rows="3" class="form-control customer-manual-textarea" placeholder="Enter main office address"></textarea>
                 </el-form-item>
 
                 <el-divider content-position="left">
@@ -90,8 +90,9 @@
 
                 <div v-for="(addr, index) in customerForm.shipping_addresses" :key="index" class="address-row animate__animated animate__fadeIn">
                     <div class="d-flex gap-2 align-items-center">
-                        <el-input v-model="addr.address_name" placeholder="Name" size="small" style="flex: 0 0 150px" />
-                        <el-input v-model="addr.full_address" placeholder="Complete physical address" size="small" style="flex: 1" />
+                        <input v-model="addr.address_name" type="text" class="form-control customer-manual-input" placeholder="Name" style="flex: 0 0 170px" />
+                        <input v-model="addr.full_address" type="text" class="form-control customer-manual-input" placeholder="Complete physical address" style="flex: 1" />
+                        <input v-model.number="addr.round_trip_distance_km" type="number" min="0" step="0.01" class="form-control customer-manual-input" placeholder="Round trip KM" style="flex: 0 0 150px" />
                         <el-button type="danger" circle size="small" @click="removeAddressField(index)" v-if="customerForm.shipping_addresses.length > 1" class="remove-addr-btn">
                             <i class="bi bi-trash"></i>
                         </el-button>
@@ -157,7 +158,7 @@ const openCustomerDialog = (customer = null) => {
         // Clone and ensure shipping_addresses is an array
         customerForm.value = JSON.parse(JSON.stringify(customer));
         if (!customerForm.value.shipping_addresses || customerForm.value.shipping_addresses.length === 0) {
-            customerForm.value.shipping_addresses = [{ address_name: '', full_address: '' }];
+            customerForm.value.shipping_addresses = [{ address_name: '', full_address: '', round_trip_distance_km: null }];
         }
     } else {
         customerForm.value = {
@@ -166,14 +167,14 @@ const openCustomerDialog = (customer = null) => {
             email: '',
             phone: '',
             address: '',
-            shipping_addresses: [{ address_name: '', full_address: '' }]
+            shipping_addresses: [{ address_name: '', full_address: '', round_trip_distance_km: null }]
         };
     }
     customerDialogVisible.value = true;
 };
 
 const addAddressField = () => {
-    customerForm.value.shipping_addresses.push({ address_name: '', full_address: '' });
+    customerForm.value.shipping_addresses.push({ address_name: '', full_address: '', round_trip_distance_km: null });
 };
 
 const removeAddressField = (index) => {
@@ -190,6 +191,11 @@ const saveCustomer = async () => {
         const invalidAddr = customerForm.value.shipping_addresses.some(a => !a.address_name || !a.full_address);
         if (invalidAddr) {
             ElMessage.warning('Please complete all shipping address fields or remove empty ones.');
+            return;
+        }
+        const invalidDistance = customerForm.value.shipping_addresses.some(a => a.round_trip_distance_km !== null && a.round_trip_distance_km !== '' && Number(a.round_trip_distance_km) < 0);
+        if (invalidDistance) {
+            ElMessage.warning('Round trip distance cannot be negative.');
             return;
         }
 
@@ -241,6 +247,19 @@ onMounted(fetchCustomers);
     border: none;
     border-radius: 16px;
     overflow: hidden;
+}
+
+/* Light-mode professional header treatment */
+.professional-card :deep(.el-card__header) {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 0 !important;
+}
+
+.professional-card :deep(.el-card__header .card-header) {
+    background: #ffffff !important;
+    border-bottom: 0 !important;
+    padding: 22px 28px !important;
 }
 
 .fw-800 { font-weight: 800; }
@@ -371,6 +390,113 @@ onMounted(fetchCustomers);
     margin-bottom: 8px;
 }
 
+.professional-dialog :deep(.el-form-item) {
+    margin-bottom: 20px;
+}
+
+.professional-dialog :deep(.el-input__wrapper),
+.professional-dialog :deep(.el-select__wrapper) {
+    min-height: 50px;
+    border-radius: 12px;
+}
+
+.customer-manual-input {
+    height: 52px !important;
+    min-height: 52px !important;
+    border-radius: 10px !important;
+    font-size: 1.1rem !important;
+    padding: 0 16px !important;
+}
+
+.customer-manual-textarea {
+    min-height: 110px !important;
+    border-radius: 10px !important;
+    font-size: 1.1rem !important;
+    line-height: 1.45 !important;
+    padding: 14px 16px !important;
+    resize: vertical;
+}
+
+.professional-dialog :deep(.el-input__inner),
+.professional-dialog :deep(.el-textarea__inner),
+.customer-manual-input {
+    font-size: 1.05rem !important;
+}
+
+.customer-management .professional-dialog .customer-manual-input::placeholder,
+.customer-management .professional-dialog :deep(.el-input__inner::placeholder),
+.customer-management .professional-dialog :deep(.el-textarea__inner::placeholder) {
+    color: #8fa1bd !important;
+    opacity: 1 !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+}
+
+/* Force exact placeholder parity for Main Office Address + Shipping rows */
+.customer-management .professional-dialog :deep(textarea.el-textarea__inner::placeholder),
+.customer-management .professional-dialog .address-row :deep(.el-input__inner::placeholder) {
+    color: #8fa1bd !important;
+    opacity: 1 !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+}
+
+.customer-management .professional-dialog .customer-manual-textarea::placeholder {
+    color: #8fa1bd !important;
+    opacity: 1 !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+}
+
+[data-theme="dark"] .customer-manual-input {
+    background-color: #1e293b !important;
+    border-color: #475569 !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .customer-manual-textarea {
+    background-color: #1e293b !important;
+    border-color: #475569 !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .customer-manual-input::placeholder {
+    color: #8fa1bd !important;
+    opacity: 1 !important;
+}
+
+[data-theme="dark"] .customer-manual-textarea::placeholder {
+    color: #8fa1bd !important;
+    opacity: 1 !important;
+}
+
+[data-theme="dark"] .customer-management .professional-dialog :deep(.el-input__inner::placeholder),
+[data-theme="dark"] .customer-management .professional-dialog :deep(.el-textarea__inner::placeholder),
+[data-theme="dark"] .customer-management .professional-dialog .customer-manual-input::placeholder {
+    color: #8fa1bd !important;
+    opacity: 1 !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+}
+
+[data-theme="dark"] .customer-management .professional-dialog :deep(textarea.el-textarea__inner::placeholder),
+[data-theme="dark"] .customer-management .professional-dialog .address-row :deep(.el-input__inner::placeholder) {
+    color: #8fa1bd !important;
+    opacity: 1 !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+}
+
+.professional-dialog :deep(.el-textarea__inner) {
+    min-height: 130px !important;
+    border-radius: 12px;
+    font-size: 1rem;
+}
+
+.address-row :deep(.el-input__wrapper) {
+    min-height: 50px;
+}
+
 .save-btn {
     border-radius: 8px;
     font-weight: 700;
@@ -385,6 +511,12 @@ onMounted(fetchCustomers);
    ========================================== */
 [data-theme="dark"] .customer-management {
     background-color: #0f172a !important;
+}
+
+[data-theme="dark"] .professional-card :deep(.el-card__header),
+[data-theme="dark"] .professional-card :deep(.el-card__header .card-header) {
+    background: #1e293b !important;
+    border-bottom: 1px solid #334155 !important;
 }
 
 [data-theme="dark"] .text-slate-800 {

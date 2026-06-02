@@ -435,7 +435,7 @@ onUnmounted(() => {
 /* Glass Cards */
 .glass-card {
     border: none;
-    border-radius: 24px;
+    border-radius: 12px;
 }
 
 .chart-container {
@@ -466,5 +466,51 @@ onUnmounted(() => {
 :deep(.el-card__header) {
     padding: 20px 24px;
     border-bottom: 1px solid #f1f5f9;
+}
+
+[data-theme="dark"] .transport-dashboard {
+    background-color: #0f172a !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .transport-dashboard .text-slate-800,
+[data-theme="dark"] .transport-dashboard .text-slate-700,
+[data-theme="dark"] .transport-dashboard .text-muted {
+    color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .transport-dashboard .stat-card,
+[data-theme="dark"] .transport-dashboard :deep(.el-card) {
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .transport-dashboard .stat-value {
+    color: #f8fafc !important;
+}
+
+[data-theme="dark"] .transport-dashboard .stat-label {
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .transport-dashboard :deep(.el-card__header) {
+    background: #1e293b !important;
+    border-bottom-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .transport-dashboard .professional-table :deep(.el-table),
+[data-theme="dark"] .transport-dashboard .professional-table :deep(.el-table__inner-wrapper),
+[data-theme="dark"] .transport-dashboard .professional-table :deep(th.el-table__cell),
+[data-theme="dark"] .transport-dashboard .professional-table :deep(td.el-table__cell),
+[data-theme="dark"] .transport-dashboard .professional-table :deep(tr) {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .transport-dashboard .professional-table :deep(.el-table__row:hover > td.el-table__cell) {
+    background: #26364f !important;
 }
 </style>

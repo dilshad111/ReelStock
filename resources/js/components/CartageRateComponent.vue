@@ -346,9 +346,59 @@ onMounted(() => {
     color: #475569;
     padding-bottom: 8px !important;
 }
+.professional-dialog :deep(.el-form-item) {
+    margin-bottom: 20px;
+}
+.professional-dialog :deep(.el-input__wrapper),
+.professional-dialog :deep(.el-select__wrapper),
+.professional-dialog :deep(.el-input-number) {
+    min-height: 52px;
+    height: 52px;
+    border-radius: 10px;
+}
+.filters-bar :deep(.el-input__wrapper),
+.filters-bar :deep(.el-select__wrapper) {
+    min-height: 52px;
+    height: 52px;
+    border-radius: 10px;
+}
 
 .filters-bar {
     border-radius: 12px;
+}
+
+[data-theme="dark"] .cartage-rate-setup {
+    background-color: #0f172a !important;
+}
+
+[data-theme="dark"] .cartage-rate-setup .professional-card,
+[data-theme="dark"] .cartage-rate-setup :deep(.el-card__header),
+[data-theme="dark"] .cartage-rate-setup :deep(.el-card__body) {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .cartage-rate-setup .filters-bar {
+    background: #334155 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .cartage-rate-setup .text-slate-800,
+[data-theme="dark"] .cartage-rate-setup .text-slate-700,
+[data-theme="dark"] .cartage-rate-setup .text-muted {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .cartage-rate-setup .modern-table :deep(.el-table th),
+[data-theme="dark"] .cartage-rate-setup .modern-table :deep(.el-table td) {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .cartage-rate-setup .modern-table :deep(.el-table__row:hover) {
+    background-color: #334155 !important;
 }
 
 .print-only {

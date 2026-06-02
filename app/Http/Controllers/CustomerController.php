@@ -24,6 +24,7 @@ class CustomerController extends Controller
             'shipping_addresses' => 'nullable|array',
             'shipping_addresses.*.address_name' => 'required|string',
             'shipping_addresses.*.full_address' => 'required|string',
+            'shipping_addresses.*.round_trip_distance_km' => 'nullable|numeric|min:0',
         ]);
 
         return DB::transaction(function () use ($request) {
@@ -46,6 +47,9 @@ class CustomerController extends Controller
         $request->validate([
             'name' => 'required|string',
             'shipping_addresses' => 'nullable|array',
+            'shipping_addresses.*.address_name' => 'required|string',
+            'shipping_addresses.*.full_address' => 'required|string',
+            'shipping_addresses.*.round_trip_distance_km' => 'nullable|numeric|min:0',
         ]);
 
         return DB::transaction(function () use ($request, $customer) {

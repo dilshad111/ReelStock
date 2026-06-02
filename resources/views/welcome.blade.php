@@ -1752,7 +1752,7 @@
             color: #e2e8f0 !important;
         }
     </style>
-    @vite(['resources/js/app.js'])
+    @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 </head>
 <body>
     <div id="app">
@@ -1843,7 +1843,7 @@
                         </el-sub-menu>
                     </el-sub-menu>
 
-                    <el-sub-menu index="transport" v-if="canView('customers') || canView('transporters') || canView('vehicles') || canView('vehicle-types') || canView('cartage-rates') || canView('cartage') || canView('cartage-list') || canView('cartage-report') || canView('cartage-increment') || canView('cartage-increment-history')">
+                    <el-sub-menu index="transport" v-if="canView('customers') || canView('transporters') || canView('vehicles') || canView('vehicle-types') || canView('cartage-rates') || canView('cartage') || canView('cartage-list') || canView('cartage-report') || canView('fuel-cost-report') || canView('cartage-increment') || canView('cartage-increment-history')">
                         <template #title>
                             <i class="bi bi-truck-flatbed me-2 icon-transport"></i>
                             <span>Transport</span>
@@ -1856,6 +1856,7 @@
                         <el-menu-item index="cartage" v-if="canView('cartage')">Cartage Billing</el-menu-item>
                         <el-menu-item index="cartage-list" v-if="canView('cartage-list')">Cartage Bill List</el-menu-item>
                         <el-menu-item index="cartage-report" v-if="canView('cartage-report')">Cartage Report</el-menu-item>
+                        <el-menu-item index="fuel-cost-report" v-if="canView('fuel-cost-report')">Fuel Cost Report</el-menu-item>
                         <el-menu-item index="cartage-increment" v-if="canView('cartage-increment')">Cartage Rate Increment</el-menu-item>
                         <el-menu-item index="cartage-increment-history" v-if="canView('cartage-increment-history')">Increment History</el-menu-item>
                     </el-sub-menu>
@@ -2011,6 +2012,7 @@
                 <cartage-billing-component v-else-if="currentView === 'cartage'" :user="user" @update-pending-count="fetchPendingCartageCount"></cartage-billing-component>
                 <cartage-billing-component v-else-if="currentView === 'cartage-list'" :user="user" :initial-history="true" @update-pending-count="fetchPendingCartageCount"></cartage-billing-component>
                 <cartage-report-component v-else-if="currentView === 'cartage-report'" :user="user"></cartage-report-component>
+                <fuel-cost-report-component v-else-if="currentView === 'fuel-cost-report'" :user="user"></fuel-cost-report-component>
                 <fg-dashboard-component v-else-if="currentView === 'fg-dashboard'" :user="user"></fg-dashboard-component>
                 <product-component v-else-if="currentView === 'fg-products'" :user="user"></product-component>
                 <fg-receipt-component v-else-if="currentView === 'fg-receipts'" :user="user"></fg-receipt-component>

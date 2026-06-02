@@ -30,6 +30,11 @@
                         <el-tag :type="getTagType(scope.row.vehicle_type)" effect="light" round class="fw-bold">{{ scope.row.vehicle_type }}</el-tag>
                     </template>
                 </el-table-column>
+                <el-table-column prop="mileage" label="Mileage (KM/L)" width="160" align="right">
+                    <template #default="scope">
+                        <span class="fw-bold text-slate-700">{{ scope.row.mileage ? Number(scope.row.mileage).toFixed(2) : '-' }}</span>
+                    </template>
+                </el-table-column>
                 <el-table-column prop="transporter.name" label="Transporter" sortable min-width="200">
                     <template #default="scope">
                         <div class="small"><i class="bi bi-truck me-2 opacity-50"></i>{{ scope.row.transporter?.name || 'Unassigned' }}</div>
@@ -49,21 +54,26 @@
         <el-dialog v-model="dialogVisible" :title="form.id ? 'Edit Vehicle' : 'Add Vehicle'" width="500px" class="professional-dialog">
             <el-form :model="form" label-position="top" :rules="rules" ref="formRef">
                 <el-form-item label="Vehicle Registration Number" prop="vehicle_number">
-                    <el-input v-model="form.vehicle_number" placeholder="e.g. LS-5432" />
+                    <input v-model="form.vehicle_number" type="text" class="form-control fg-like-input" placeholder="e.g. LS-5432" />
                 </el-form-item>
                 <el-form-item label="Vehicle Classification" prop="vehicle_type">
-                    <el-select v-model="form.vehicle_type" placeholder="Select classification" class="w-100">
-                        <el-option label="Suzuki" value="Suzuki" />
-                        <el-option label="Shehzore" value="Shehzore" />
-                        <el-option label="Mazda" value="Mazda" />
-                        <el-option label="1x17 Container" value="1x17 Container" />
-                        <el-option label="1x20 Container" value="1x20 Container" />
-                    </el-select>
+                    <select v-model="form.vehicle_type" class="form-select fg-like-input">
+                        <option value="">Select classification</option>
+                        <option value="Suzuki">Suzuki</option>
+                        <option value="Shehzore">Shehzore</option>
+                        <option value="Mazda">Mazda</option>
+                        <option value="1x17 Container">1x17 Container</option>
+                        <option value="1x20 Container">1x20 Container</option>
+                    </select>
+                </el-form-item>
+                <el-form-item label="Mileage (KM/L)" prop="mileage">
+                    <input v-model.number="form.mileage" type="number" min="0.01" step="0.01" class="form-control fg-like-input" placeholder="Fuel efficiency in KM/L" />
                 </el-form-item>
                 <el-form-item label="Transporter Assignment" prop="transporter_id">
-                    <el-select v-model="form.transporter_id" placeholder="Assign to transporter" class="w-100" filterable>
-                        <el-option v-for="t in transporters" :key="t.id" :label="t.name" :value="t.id" />
-                    </el-select>
+                    <select v-model="form.transporter_id" class="form-select fg-like-input">
+                        <option value="">Assign to transporter</option>
+                        <option v-for="t in transporters" :key="t.id" :value="t.id">{{ t.name }}</option>
+                    </select>
                 </el-form-item>
             </el-form>
             <template #footer>
@@ -93,13 +103,15 @@ const form = ref({
     id: null,
     vehicle_number: '',
     vehicle_type: '',
+    mileage: null,
     transporter_id: null
 });
 
 const rules = {
     vehicle_number: [{ required: true, message: 'Vehicle number is required', trigger: 'blur' }],
     vehicle_type: [{ required: true, message: 'Type is required', trigger: 'change' }],
-    transporter_id: [{ required: true, message: 'Transporter is required', trigger: 'change' }]
+    transporter_id: [{ required: true, message: 'Transporter is required', trigger: 'change' }],
+    mileage: [{ type: 'number', min: 0.01, message: 'Mileage must be greater than zero', trigger: 'blur' }]
 };
 
 const fetchVehicles = async () => {
@@ -121,7 +133,7 @@ const openDialog = (vehicle = null) => {
     if (vehicle) {
         form.value = { ...vehicle };
     } else {
-        form.value = { id: null, vehicle_number: '', vehicle_type: '', transporter_id: null };
+        form.value = { id: null, vehicle_number: '', vehicle_type: '', mileage: null, transporter_id: null };
     }
     dialogVisible.value = true;
 };
@@ -213,5 +225,30 @@ onMounted(() => {
     font-weight: 700;
     color: #475569;
     padding-bottom: 8px !important;
+}
+.professional-dialog :deep(.el-form-item) {
+    margin-bottom: 22px;
+}
+.professional-dialog :deep(.el-input__wrapper),
+.professional-dialog :deep(.el-select__wrapper) {
+    min-height: 44px;
+    border-radius: 12px;
+}
+.professional-dialog :deep(.el-input__inner) {
+    font-size: 1rem;
+}
+
+.fg-like-input {
+    height: 52px !important;
+    min-height: 52px !important;
+    border-radius: 10px !important;
+    font-size: 1.1rem !important;
+    padding: 0 16px !important;
+}
+
+.fg-like-input::placeholder {
+    font-size: 1rem !important;
+    color: #8fa1bd !important;
+    opacity: 1 !important;
 }
 </style>

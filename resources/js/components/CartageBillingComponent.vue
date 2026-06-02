@@ -46,7 +46,7 @@
                         </el-table-column>
                         <el-table-column label="Date" width="160">
                             <template #default="scope">
-                                <input v-model="scope.row.entry_date" type="date" class="form-control form-control-sm w-100" required />
+                                <input v-model="scope.row.entry_date" type="date" class="form-control w-100" required />
                             </template>
                         </el-table-column>
                         <el-table-column label="Customer" min-width="180">
@@ -1017,13 +1017,14 @@ const printHistory = () => {
 <style scoped>
 /* Compact styling for inputs in entry table */
 .entry-table :deep(.el-input__wrapper) {
-    height: 28px !important;
-    padding: 0 8px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 10px !important;
 }
 .entry-table :deep(.el-input__inner) {
-    font-size: 13px !important;
-    height: 28px !important;
-    line-height: 28px !important;
+    font-size: 14px !important;
+    height: 44px !important;
+    line-height: 44px !important;
 }
 
 /* Vertically center all elements in the table rows */
@@ -1049,8 +1050,8 @@ input[type="date"]:focus {
 
 /* Height and spacing for native date picker in table row */
 .entry-table input[type="date"] {
-    height: 28px !important;
-    line-height: 28px !important;
+    height: 44px !important;
+    line-height: 44px !important;
 }
 
 /* Form Header Row Styling */
@@ -1059,15 +1060,15 @@ input[type="date"]:focus {
     border: 1px solid #e2e8f0 !important;
 }
 
-/* Header row elements unified height of 36px */
+/* Header row elements unified height */
 .main-form-row :deep(.el-input__wrapper) {
-    height: 36px !important;
+    height: 44px !important;
 }
 .main-form-row input[type="date"] {
-    height: 36px !important;
+    height: 44px !important;
     padding: 0 12px !important;
     font-size: 14px !important;
-    line-height: 36px !important;
+    line-height: 44px !important;
 }
 
 /* Dark Mode specific overrides for native date element (which has scoped attributes) */
@@ -1116,9 +1117,9 @@ input[type="date"]:focus {
     border-bottom: 2px solid #e2e8f0 !important;
 }
 .entry-table :deep(.el-table__row) td {
-    padding: 6px 0 !important;
+    padding: 10px 0 !important;
     color: #1e293b !important;
-    font-size: 13px !important;
+    font-size: 14px !important;
 }
 .entry-table :deep(.el-table__cell) {
     white-space: nowrap !important;
@@ -1443,6 +1444,23 @@ input[type="date"]:focus {
 }
 
 [data-theme="dark"] .cartage-billing .el-form-item__label {
+    color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .cartage-billing .bg-white,
+[data-theme="dark"] .cartage-billing .bg-light {
+    background-color: #334155 !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .cartage-billing .text-dark {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .cartage-billing .filters-bar,
+[data-theme="dark"] .cartage-billing .entry-table .el-table__header-wrapper th {
+    background: #1e293b !important;
     color: #cbd5e1 !important;
 }
 </style>

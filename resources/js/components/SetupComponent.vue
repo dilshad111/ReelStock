@@ -296,5 +296,26 @@ export default {
 </script>
 
 <style scoped>
-/* Add any custom styles if needed */
+.container {
+  padding-top: 1rem;
+}
+
+[data-theme="dark"] .card,
+[data-theme="dark"] .card-header,
+[data-theme="dark"] .card-body {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+[data-theme="dark"] .form-text.text-muted,
+[data-theme="dark"] .text-muted {
+  color: #9fb0c6 !important;
+}
+
+[data-theme="dark"] .alert-danger {
+  background: #3b1d23 !important;
+  border-color: #7f1d1d !important;
+  color: #fecaca !important;
+}
 </style>

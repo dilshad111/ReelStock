@@ -20,7 +20,7 @@
                 style="width: 100%" 
                 v-loading="loading"
                 class="modern-table"
-                :header-cell-style="{backgroundColor: '#f8fafc', color: '#475569', fontWeight: '800', fontSize: '13px', textTransform: 'uppercase'}"
+                :header-cell-style="tableHeaderStyle"
             >
                 <el-table-column prop="id" label="ID" width="80" align="center" />
                 <el-table-column prop="name" label="Classification Name" sortable>
@@ -60,7 +60,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { ElMessage, ElMessageBox } from 'element-plus';
 
@@ -79,6 +79,17 @@ const form = ref({
 const rules = {
     name: [{ required: true, message: 'Name is required', trigger: 'blur' }]
 };
+
+const tableHeaderStyle = computed(() => {
+    const dark = document?.documentElement?.getAttribute('data-theme') === 'dark';
+    return {
+        backgroundColor: dark ? '#1e2a44' : '#f8fafc',
+        color: dark ? '#dbe7ff' : '#475569',
+        fontWeight: '800',
+        fontSize: '13px',
+        textTransform: 'uppercase'
+    };
+});
 
 const fetchTypes = async () => {
     loading.value = true;
@@ -142,19 +153,76 @@ onMounted(() => {
 <style scoped>
 .vehicle-type-setup {
     padding: 30px;
-    background-color: #f1f5f9;
+    background: var(--surface-page, #f1f5f9);
     min-height: calc(100vh - 120px);
 }
 .professional-card {
     border: none;
     border-radius: 16px;
     overflow: hidden;
+    background: var(--surface-card, #ffffff);
 }
 .fw-800 { font-weight: 800; }
 .text-slate-800 { color: #1e293b; }
 .text-slate-700 { color: #334155; }
 
 .modern-table :deep(td) {
-    padding: 12px 0;
+    padding: 15px 0;
+}
+
+.professional-dialog :deep(.el-form-item) {
+    margin-bottom: 22px;
+}
+
+.professional-dialog :deep(.el-input__wrapper) {
+    min-height: 52px;
+    height: 52px;
+    border-radius: 10px;
+}
+
+.professional-dialog :deep(.el-input__inner) {
+    height: 50px;
+    line-height: 50px;
+    font-size: 1.05rem;
+}
+
+[data-theme="dark"] .vehicle-type-setup {
+    --surface-page: #0f1a2f;
+    --surface-card: #182540;
+}
+
+[data-theme="dark"] .vehicle-type-setup :deep(.el-card) {
+    background: #182540;
+    border: 1px solid #2b3f67;
+}
+
+[data-theme="dark"] .vehicle-type-setup :deep(.el-card__header) {
+    background: #13203a;
+    border-bottom: 1px solid #2b3f67;
+}
+
+[data-theme="dark"] .vehicle-type-setup :deep(.el-table),
+[data-theme="dark"] .vehicle-type-setup :deep(.el-table__inner-wrapper),
+[data-theme="dark"] .vehicle-type-setup :deep(.el-table tr),
+[data-theme="dark"] .vehicle-type-setup :deep(.el-table th.el-table__cell),
+[data-theme="dark"] .vehicle-type-setup :deep(.el-table td.el-table__cell) {
+    background: #182540 !important;
+    color: #dbe7ff !important;
+    border-color: #2b3f67 !important;
+}
+
+[data-theme="dark"] .vehicle-type-setup :deep(.el-table__row:hover > td.el-table__cell) {
+    background: #22365a !important;
+}
+
+[data-theme="dark"] .vehicle-type-setup :deep(.el-dialog) {
+    background: #182540;
+    border: 1px solid #2b3f67;
+}
+
+[data-theme="dark"] .vehicle-type-setup :deep(.el-dialog__title),
+[data-theme="dark"] .vehicle-type-setup :deep(.el-form-item__label),
+[data-theme="dark"] .vehicle-type-setup :deep(.el-input__inner) {
+    color: #dbe7ff !important;
 }
 </style>

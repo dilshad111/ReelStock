@@ -761,4 +761,41 @@ export default {
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 .form-control:focus, .form-select:focus { box-shadow: 0 0 0 0.25rem rgba(112, 72, 232, 0.15); border-color: #7048e8; }
+
+[data-theme="dark"] .page-title {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .dispatch-header {
+  background: #334155 !important;
+}
+
+[data-theme="dark"] .btn-white {
+  background: #1e293b !important;
+  border-color: #475569 !important;
+}
+
+[data-theme="dark"] .btn-white:hover {
+  background: #334155 !important;
+}
+
+[data-theme="dark"] .bg-cyan-light,
+[data-theme="dark"] .balance-display,
+[data-theme="dark"] .custom-history-table thead th,
+[data-theme="dark"] .card-footer .bg-white {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .custom-main-table td,
+[data-theme="dark"] .custom-main-table th,
+[data-theme="dark"] .custom-history-table td,
+[data-theme="dark"] .custom-history-table th {
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+[data-theme="dark"] .text-muted {
+  color: #9fb0c6 !important;
+}
 </style>

@@ -315,9 +315,52 @@ onMounted(() => {
     background: #ffffff !important;
 }
 
+[data-theme="dark"] .cartage-report {
+    background-color: #0f172a !important;
+}
+
+[data-theme="dark"] .cartage-report .professional-card,
+[data-theme="dark"] .cartage-report :deep(.el-card__header),
+[data-theme="dark"] .cartage-report :deep(.el-card__body) {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .cartage-report .text-slate-800,
+[data-theme="dark"] .cartage-report .fw-800,
+[data-theme="dark"] .cartage-report .text-muted {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .cartage-report .filter-section {
+    background: #334155 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .cartage-report :deep(.el-table),
+[data-theme="dark"] .cartage-report :deep(.el-table th),
+[data-theme="dark"] .cartage-report :deep(.el-table td) {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .cartage-report .modern-table :deep(.el-table__row:hover) {
+    background-color: #334155 !important;
+}
+
 :deep(.el-form-item__label) {
     font-weight: 700;
     color: #475569;
+}
+
+.filter-section :deep(.el-input__wrapper),
+.filter-section :deep(.el-select__wrapper),
+.filter-section :deep(.el-date-editor.el-input__wrapper) {
+    min-height: 52px;
+    height: 52px;
+    border-radius: 10px;
 }
 
 /* Report Table */
@@ -328,7 +371,7 @@ onMounted(() => {
     background-color: #f8fafc !important;
 }
 .modern-table :deep(td) {
-    padding: 12px 0;
+    padding: 14px 0;
 }
 
 /* Summary Row Styling */

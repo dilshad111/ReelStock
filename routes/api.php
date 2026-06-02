@@ -164,6 +164,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('reports/cartage', [CartageReportController::class, 'index']);
     Route::get('reports/cartage/filters', [CartageReportController::class, 'getFilters']);
+    Route::get('reports/cartage/fuel-cost', [CartageReportController::class, 'fuelCost']);
 
     Route::get('cartage-bills/pending-count', [CartageBillController::class, 'getPendingCount']);
     Route::get('cartage-bills/next-id', [CartageBillController::class, 'getNextId']);

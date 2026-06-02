@@ -707,6 +707,9 @@ onMounted(async () => {
 .opening-balance-box {
     border: 1px solid #e2e8f0;
 }
+.rm-reports :deep(.el-card__header) {
+    border-bottom: 1px solid #e5e7eb;
+}
 .report-filter-grid {
     align-items: end;
     display: grid;
@@ -728,5 +731,31 @@ onMounted(async () => {
     .date-filter {
         grid-column: span 1;
     }
+}
+
+[data-theme="dark"] .rm-reports :deep(.el-card),
+[data-theme="dark"] .rm-reports :deep(.el-card__header),
+[data-theme="dark"] .rm-reports :deep(.el-card__body) {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .rm-reports .opening-balance-box {
+    background: #334155 !important;
+    border-color: #475569 !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .rm-reports :deep(.el-table),
+[data-theme="dark"] .rm-reports :deep(.el-table th),
+[data-theme="dark"] .rm-reports :deep(.el-table td) {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .rm-reports :deep(.el-table__row:hover td) {
+    background: #334155 !important;
 }
 </style>

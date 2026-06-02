@@ -340,4 +340,24 @@ export default {
 .card-header h5 {
     color: #475569;
 }
+
+[data-theme="dark"] .container-fluid .card,
+[data-theme="dark"] .container-fluid .card-header,
+[data-theme="dark"] .container-fluid .card-body {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+[data-theme="dark"] .container-fluid .card-header.bg-white {
+  background: #1e293b !important;
+}
+
+[data-theme="dark"] .container-fluid .table-light th,
+[data-theme="dark"] .container-fluid .table th,
+[data-theme="dark"] .container-fluid .table td {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
 </style>

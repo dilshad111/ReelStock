@@ -1,7 +1,7 @@
 <template>
-    <div class="job-card-management p-4">
+    <div class="job-card-management p-3">
         <!-- Dashboard Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4 p-3 glass-header rounded shadow-sm">
+        <div class="d-flex justify-content-between align-items-center mb-3 p-3 glass-header rounded shadow-sm">
             <div>
                 <h2 class="h4 mb-1 fw-bold text-dark">
                     <i class="bi bi-file-earmark-ruled-fill text-indigo me-2"></i>{{ isCreating ? 'New Job Card' : 'Manufacturing Specifications & Job Cards' }}
@@ -22,9 +22,9 @@
         </div>
 
         <!-- Main Glassmorphic Listing Panel -->
-        <div v-if="!isCreating" class="glass-card shadow-sm p-4 mb-4">
+        <div v-if="!isCreating" class="glass-card shadow-sm p-3 mb-3">
             <!-- Filter Bar -->
-            <div class="row g-3 mb-4 filter-container p-3 rounded border bg-light-soft">
+            <div class="row g-3 mb-3 filter-container p-3 rounded border bg-light-soft">
                 <div class="col-md-4">
                     <label class="small text-muted fw-bold mb-1">Search Job Card</label>
                     <el-input v-model="filters.search" placeholder="JC-XXXX-XXXX..." clearable @input="fetchJobCards" />
@@ -312,7 +312,7 @@
 
                         <el-tabs v-else v-model="activePieceTab" class="component-tabs" type="border-card">
                             <el-tab-pane v-for="(piece, pieceIndex) in createForm.pieces" :key="piece.local_id" :label="piece.piece_name || `Component ${pieceIndex + 1}`" :name="`piece_${pieceIndex}`">
-                                <div class="form-grid four-col">
+                                <div class="form-grid four-col component-fields-grid">
                                     <el-form-item label="Component Designation">
                                         <el-input v-model="piece.piece_name" />
                                     </el-form-item>
@@ -341,28 +341,17 @@
                                             <el-option label="7-Ply" :value="7" />
                                         </el-select>
                                     </el-form-item>
-                                    <el-form-item label="Corrugation Machine">
-                                        <el-select v-model="piece.corrugation_machine_id" class="w-100" filterable @change="fetchPieceSpeed(piece, 'corrugation')">
-                                            <el-option v-for="machine in corrugationMachines" :key="machine.id" :label="machineLabel(machine)" :value="machine.id" />
-                                        </el-select>
-                                        <div v-if="piece.corrugation_speed" class="target-speed">Target: {{ piece.corrugation_speed }} m/min</div>
-                                    </el-form-item>
                                     <el-form-item label="Print Colors">
                                         <el-select v-model="piece.print_colors" class="w-100" @change="onPieceColorsChange(piece)">
                                             <el-option label="Un-Printed" :value="0" />
                                             <el-option v-for="n in 6" :key="n" :label="`${n} Color Printing`" :value="n" />
                                         </el-select>
                                     </el-form-item>
-                                    <el-form-item label="Printing Machine">
-                                        <el-select v-model="piece.printing_machine_id" class="w-100" filterable @change="fetchPieceSpeed(piece, 'printing')">
-                                            <el-option v-for="machine in printingMachines" :key="machine.id" :label="machineLabel(machine)" :value="machine.id" />
-                                        </el-select>
-                                        <div v-if="piece.printing_speed" class="target-speed">Target: {{ piece.printing_speed }} sh/min</div>
-                                    </el-form-item>
                                     <el-form-item label="Finishing">
                                         <el-select v-model="piece.finishing_protocol" class="w-100">
                                             <el-option label="Rotary Slotter" value="Rotary Slotter" />
                                             <el-option label="Flatbed Die-Cut" value="Die Cutting" />
+                                            <el-option label="Rotary Slotter + Flatbed Die-cut" value="Rotary Slotter + Flatbed Die-cut" />
                                         </el-select>
                                     </el-form-item>
                                 </div>
@@ -373,21 +362,6 @@
                                             <span class="ink-option"><span class="ink-swatch" :style="{ backgroundColor: ink.ink_code }"></span>{{ inkLabel(ink) }}</span>
                                         </el-option>
                                     </el-select>
-                                </div>
-
-                                <div v-if="piece.finishing_protocol === 'Die Cutting'" class="form-grid two-col">
-                                    <el-form-item label="Die Cutting Machine">
-                                        <el-select v-model="piece.die_cutting_machine_id" class="w-100" filterable @change="fetchPieceSpeed(piece, 'die')">
-                                            <el-option v-for="machine in dieCuttingMachines" :key="machine.id" :label="machineLabel(machine)" :value="machine.id" />
-                                        </el-select>
-                                        <div v-if="piece.die_cutting_speed" class="target-speed">Target: {{ piece.die_cutting_speed }} sh/min</div>
-                                    </el-form-item>
-                                    <el-form-item label="Die Cutting Scope / Method">
-                                        <el-select v-model="piece.die_cutting_scope" class="w-100">
-                                            <el-option label="Complete Sheet (Whole)" value="sheet_wise" />
-                                            <el-option label="Single Piece Carton (Individual)" value="carton_wise" />
-                                        </el-select>
-                                    </el-form-item>
                                 </div>
 
                                 <div class="table-wrap">
@@ -1371,9 +1345,9 @@ const piecePayload = (piece, index) => {
         printing_machine_id: piece.printing_machine_id,
         printing_speed: piece.printing_speed,
         finishing_protocol: piece.finishing_protocol,
-        die_cutting_machine_id: piece.die_cutting_machine_id,
-        die_cutting_speed: piece.die_cutting_speed,
-        die_cutting_scope: piece.die_cutting_scope,
+        die_cutting_machine_id: null,
+        die_cutting_speed: null,
+        die_cutting_scope: null,
         layers: piece.layers.map(layerPayload)
     };
 };
@@ -1384,9 +1358,9 @@ const validateCreateForm = async () => {
     if (!valid) return false;
 
     if (createForm.pieces_count > 1) {
-        const missingPiece = createForm.pieces.find(piece => !piece.piece_name || !piece.corrugation_machine_id || !piece.ply_type);
+        const missingPiece = createForm.pieces.find(piece => !piece.piece_name || !piece.ply_type);
         if (missingPiece) {
-            ElMessage.error('Complete component designation, corrugation machine, and ply type for every component.');
+            ElMessage.error('Complete component designation and ply type for every component.');
             return false;
         }
     }
@@ -1649,6 +1623,47 @@ onMounted(() => {
     display: flex;
     align-items: center;
     gap: 10px;
+}
+.job-card-management > .glass-header {
+    min-height: 86px;
+    padding: 14px 24px !important;
+}
+.job-card-management > .glass-header h2 {
+    font-size: 1.55rem !important;
+    line-height: 1.15;
+    margin-bottom: 5px !important;
+}
+.job-card-management > .glass-header h2 .bi {
+    font-size: 1.35rem;
+    vertical-align: -0.03em;
+}
+.job-card-management > .glass-header p {
+    font-size: 0.82rem !important;
+    line-height: 1.25;
+}
+.job-card-management > .glass-header :deep(.el-button) {
+    border-radius: 8px;
+    font-size: 0.92rem;
+    font-weight: 800;
+    height: 40px;
+    padding: 0 18px;
+}
+.job-card-management > .glass-card {
+    border-radius: 9px;
+}
+.filter-container {
+    align-items: end;
+    padding: 14px 20px !important;
+}
+.filter-container label {
+    font-size: 0.78rem !important;
+    line-height: 1.2;
+    margin-bottom: 6px !important;
+}
+.filter-container .col-md-2,
+.filter-container .col-md-3,
+.filter-container .col-md-4 {
+    min-width: 0;
 }
 .job-create-workspace {
     --jc-create-card: #ffffff;
@@ -1982,6 +1997,115 @@ onMounted(() => {
     border-radius: 8px;
     overflow: hidden;
 }
+.component-tabs :deep(.el-tabs__content) {
+    padding: 16px;
+}
+.component-fields-grid {
+    align-items: start;
+    gap: 10px 12px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+.component-secondary-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    margin-bottom: 12px;
+}
+.component-tabs :deep(.el-form-item) {
+    margin-bottom: 8px;
+}
+.component-tabs :deep(.el-form-item__label) {
+    font-size: 0.72rem;
+    margin-bottom: 4px;
+}
+.component-tabs :deep(.el-input),
+.component-tabs :deep(.el-select),
+.component-tabs :deep(.el-input-number) {
+    min-height: 36px;
+}
+.component-tabs :deep(.el-input__wrapper),
+.component-tabs :deep(.el-select__wrapper),
+.component-tabs :deep(.el-input-number .el-input__wrapper) {
+    border-radius: 7px;
+    min-height: 36px;
+    padding: 0 10px;
+}
+.component-tabs :deep(.el-input__inner),
+.component-tabs :deep(.el-select__selected-item),
+.component-tabs :deep(.el-select__placeholder) {
+    font-size: 0.82rem;
+    font-weight: 650;
+    line-height: 34px;
+    min-height: 34px;
+}
+.component-tabs :deep(.el-select__caret) {
+    font-size: 0.82rem;
+}
+.component-tabs .target-speed {
+    font-size: 0.68rem;
+    margin-top: 3px;
+}
+.component-tabs .ink-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    margin: 8px 0 12px;
+    padding: 10px;
+}
+.component-tabs .table-wrap {
+    margin-top: 12px;
+}
+.component-tabs .construction-table th {
+    font-size: 0.68rem;
+    padding: 7px 8px;
+}
+.component-tabs .construction-table td {
+    padding: 6px;
+}
+.component-tabs .construction-table :deep(.el-input),
+.component-tabs .construction-table :deep(.el-select),
+.component-tabs .construction-table :deep(.el-input-number) {
+    min-height: 34px;
+}
+.component-tabs .construction-table :deep(.el-input__wrapper),
+.component-tabs .construction-table :deep(.el-select__wrapper),
+.component-tabs .construction-table :deep(.el-input-number .el-input__wrapper) {
+    min-height: 34px;
+}
+.component-tabs .construction-table :deep(.el-input__inner),
+.component-tabs .construction-table :deep(.el-select__selected-item),
+.component-tabs .construction-table :deep(.el-select__placeholder) {
+    line-height: 32px;
+    min-height: 32px;
+}
+.filter-container :deep(.el-input),
+.filter-container :deep(.el-select),
+.filter-container :deep(.el-input__wrapper),
+.filter-container :deep(.el-select__wrapper) {
+    height: 44px;
+    min-height: 44px;
+}
+.filter-container :deep(.el-input__wrapper),
+.filter-container :deep(.el-select__wrapper) {
+    border-radius: 8px;
+    padding: 0 16px;
+}
+.filter-container :deep(.el-input__inner),
+.filter-container :deep(.el-select__selected-item),
+.filter-container :deep(.el-select__placeholder) {
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 42px;
+    min-height: 42px;
+}
+.filter-container :deep(.el-select__caret) {
+    font-size: 0.95rem;
+}
+.filter-container :deep(.el-button),
+.filter-container .btn-clear-filters {
+    border-radius: 8px;
+    font-size: 0.92rem;
+    font-weight: 800;
+    height: 44px;
+    min-height: 44px;
+    padding: 0 18px;
+}
 .ink-grid {
     display: grid;
     gap: 10px;
@@ -2208,6 +2332,9 @@ onMounted(() => {
 @media (min-width: 1101px) and (max-width: 1360px) {
     .four-col {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .component-fields-grid {
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
     }
     .dimension-input-row {
         grid-template-columns: 1.05fr 0.9fr 1fr 1fr 1fr;

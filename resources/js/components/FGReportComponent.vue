@@ -315,7 +315,7 @@ export default {
         });
     },
     typeBadge(type) {
-      const map = { opening: 'bg-info', receipt: 'bg-success', dispatch: 'bg-danger', adjustment: 'bg-warning text-dark' };
+      const map = { opening: 'bg-info', receipt: 'bg-success', dispatch: 'bg-danger', adjustment: 'bg-warning' };
       return map[type] || 'bg-secondary';
     },
     formatDate(d) { if (!d) return '-'; return new Date(d).toLocaleDateString('en-GB'); },
@@ -493,4 +493,32 @@ export default {
 <style scoped>
 .custom-dashboard-tabs :deep(.el-tabs__item) { font-weight: 600; font-size: 1rem; height: 50px; }
 .custom-dashboard-tabs :deep(.el-tabs__active-bar) { background-color: #6366f1; height: 3px; }
+
+[data-theme="dark"] .fg-report-wrapper .card-header {
+  background: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .fg-report-wrapper .table,
+[data-theme="dark"] .fg-report-wrapper .table th,
+[data-theme="dark"] .fg-report-wrapper .table td {
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+[data-theme="dark"] .fg-report-wrapper .table-secondary,
+[data-theme="dark"] .fg-report-wrapper .table-secondary td {
+  background: #334155 !important;
+}
+
+[data-theme="dark"] .fg-report-wrapper .form-control,
+[data-theme="dark"] .fg-report-wrapper .form-select {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+[data-theme="dark"] .fg-report-wrapper .text-muted {
+  color: #aebed3 !important;
+}
 </style>

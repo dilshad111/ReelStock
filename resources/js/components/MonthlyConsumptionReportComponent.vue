@@ -17,11 +17,13 @@
     <div class="row mb-3">
       <div class="col-md-3">
         <label>From Date</label>
-        <input v-model="dateFrom" type="date" class="form-control">
+        <input ref="fromDateInput" v-model="dateFrom" type="date" class="form-control" :max="todayIso" @blur="validateDateFilters(false)">
+        <small v-if="errors.dateFrom" class="text-danger">{{ errors.dateFrom }}</small>
       </div>
       <div class="col-md-3">
         <label>To Date</label>
-        <input v-model="dateTo" type="date" class="form-control">
+        <input ref="toDateInput" v-model="dateTo" type="date" class="form-control" :max="todayIso" @blur="validateDateFilters(false)">
+        <small v-if="errors.dateTo" class="text-danger">{{ errors.dateTo }}</small>
       </div>
       <div class="col-md-3">
         <label>Quality Filter</label>
@@ -84,6 +86,8 @@ export default {
       dateTo: '',
       qualityFilter: '',
       report: [],
+      errors: { dateFrom: '', dateTo: '' },
+      todayIso: new Date().toISOString().split('T')[0],
       companyName: 'QUALITY CARTONS (PVT.) LTD.',
       companyAddress: 'Plot# 46, Sector 24, Korangi Industrial Area Karachi',
       companyLogo: window.location.origin + '/images/quality-cartons-logo.svg'
@@ -102,7 +106,98 @@ export default {
     this.fetchCompanySettings();
   },
   methods: {
+    parseIsoDateStrict(value) {
+      if (!value || typeof value !== 'string') return null;
+      const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!match) return null;
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
+      const date = new Date(Date.UTC(year, month - 1, day));
+      if (
+        date.getUTCFullYear() !== year ||
+        date.getUTCMonth() + 1 !== month ||
+        date.getUTCDate() !== day
+      ) {
+        return null;
+      }
+      return date;
+    },
+    validateDateFilters(showAlert = true) {
+      this.errors = { dateFrom: '', dateTo: '' };
+
+      const raise = (field, message) => {
+        this.errors[field] = message;
+        if (showAlert) alert(message);
+        this.$nextTick(() => {
+          if (field === 'dateFrom' && this.$refs.fromDateInput) this.$refs.fromDateInput.focus();
+          if (field === 'dateTo' && this.$refs.toDateInput) this.$refs.toDateInput.focus();
+        });
+      };
+
+      if (!this.dateFrom && !this.dateTo) {
+        raise('dateFrom', 'Please select both From Date and To Date.');
+        return false;
+      }
+      if (!this.dateFrom) {
+        raise('dateFrom', 'From Date is required.');
+        return false;
+      }
+      if (!this.dateTo) {
+        raise('dateTo', 'To Date is required.');
+        return false;
+      }
+
+      if (this.dateFrom) {
+        const parsedFrom = this.parseIsoDateStrict(this.dateFrom);
+        if (!parsedFrom) {
+          raise('dateFrom', 'Invalid date selected. Please choose a valid calendar date.');
+          return false;
+        }
+      }
+
+      if (this.dateTo) {
+        const parsedTo = this.parseIsoDateStrict(this.dateTo);
+        if (!parsedTo) {
+          raise('dateTo', 'Invalid date selected. Please choose a valid calendar date.');
+          return false;
+        }
+      }
+
+      const parsedFrom = this.parseIsoDateStrict(this.dateFrom);
+      const parsedTo = this.parseIsoDateStrict(this.dateTo);
+      const parsedToday = this.parseIsoDateStrict(this.todayIso);
+
+      if (parsedFrom && parsedToday && parsedFrom.getTime() > parsedToday.getTime()) {
+        raise('dateFrom', 'Future dates are not allowed.');
+        return false;
+      }
+
+      if (parsedTo && parsedToday && parsedTo.getTime() > parsedToday.getTime()) {
+        raise('dateTo', 'Future dates are not allowed.');
+        return false;
+      }
+
+      if (this.dateFrom && this.dateTo) {
+        if (parsedFrom && parsedTo && parsedFrom.getTime() > parsedTo.getTime()) {
+          raise('dateTo', 'From Date cannot be greater than To Date.');
+          return false;
+        }
+
+        const rangeDays = Math.floor((parsedTo.getTime() - parsedFrom.getTime()) / (24 * 60 * 60 * 1000));
+        if (rangeDays > 365) {
+          raise('dateTo', 'Date range cannot exceed 365 days.');
+          return false;
+        }
+      }
+
+      return true;
+    },
     fetchReport() {
+      if (!this.validateDateFilters()) {
+        return;
+      }
+
       let url = '/api/reports/monthly-consumption';
       const params = [];
       
@@ -289,6 +384,7 @@ export default {
     formatDate(dateString) {
       if (!dateString) return null;
       const date = new Date(dateString);
+      if (Number.isNaN(date.getTime())) return null;
       const day = String(date.getDate()).padStart(2, '0');
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const year = date.getFullYear();

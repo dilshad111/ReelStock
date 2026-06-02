@@ -37,6 +37,7 @@ const PERMISSION_KEY_MAP = {
     'cartage-increment': 'cartage-increment',
     'cartage-increment-history': 'cartage-increment-history',
     'cartage-report': 'cartage-report',
+    'fuel-cost-report': 'cartage-report',
     'setup': 'setup',
     'transport-dashboard': 'transport-dashboard',
     'fg-products': 'fg-products',
@@ -85,6 +86,7 @@ const PERMISSION_KEYS = [
     'cartage-increment',
     'cartage-increment-history',
     'cartage-report',
+    'fuel-cost-report',
     'approve_cartage',
     'setup',
     'users',
@@ -144,6 +146,7 @@ const VIEW_ORDER = [
     'cartage',
     'cartage-list',
     'cartage-report',
+    'fuel-cost-report',
     'fg-dashboard',
     'fg-products',
     'fg-receipts',
@@ -200,6 +203,7 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     'cartage-increment-history': 'cartage-increment-history',
     'cartage': 'cartage',
     'cartage-list': 'cartage-list',
+    'fuel-cost-report': 'fuel-cost-report',
     'fg-dashboard': 'fg-dashboard',
     'fg-products': 'fg-products',
     'fg-receipts': 'fg-receipts',
@@ -675,6 +679,7 @@ import CartageRateIncrementComponent from './components/CartageRateIncrementComp
 import CartageIncrementHistoryComponent from './components/CartageIncrementHistoryComponent.vue';
 import CartageBillingComponent from './components/CartageBillingComponent.vue';
 import CartageReportComponent from './components/CartageReportComponent.vue';
+import FuelCostReportComponent from './components/FuelCostReportComponent.vue';
 
 import TransportDashboardComponent from './components/TransportDashboardComponent.vue';
 
@@ -734,6 +739,7 @@ app.component('cartage-rate-increment-component', CartageRateIncrementComponent)
 app.component('cartage-increment-history-component', CartageIncrementHistoryComponent);
 app.component('cartage-billing-component', CartageBillingComponent);
 app.component('cartage-report-component', CartageReportComponent);
+app.component('fuel-cost-report-component', FuelCostReportComponent);
 app.component('product-component', ProductComponent);
 app.component('fg-receipt-component', FGReceiptComponent);
 app.component('fg-dispatch-component', FGDispatchComponent);

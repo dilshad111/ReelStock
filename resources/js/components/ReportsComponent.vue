@@ -53,4 +53,16 @@ export default {
 .card {
   margin-bottom: 1rem;
 }
+
+[data-theme="dark"] .card,
+[data-theme="dark"] .card-body {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+[data-theme="dark"] .card-text,
+[data-theme="dark"] p {
+  color: #b9c7d8 !important;
+}
 </style>

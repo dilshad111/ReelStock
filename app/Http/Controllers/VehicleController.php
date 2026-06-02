@@ -17,6 +17,7 @@ class VehicleController extends Controller
         $request->validate([
             'vehicle_number' => 'required|string|unique:vehicles',
             'vehicle_type' => 'required|string',
+            'mileage' => 'nullable|numeric|min:0.01',
             'transporter_id' => 'required|exists:transporters,id',
         ]);
 
@@ -27,6 +28,13 @@ class VehicleController extends Controller
     public function update(Request $request, $id)
     {
         $vehicle = Vehicle::findOrFail($id);
+        $request->validate([
+            'vehicle_number' => 'required|string|unique:vehicles,vehicle_number,' . $vehicle->id,
+            'vehicle_type' => 'required|string',
+            'mileage' => 'nullable|numeric|min:0.01',
+            'transporter_id' => 'required|exists:transporters,id',
+        ]);
+
         $vehicle->update($request->all());
         return response()->json($vehicle->load('transporter'));
     }

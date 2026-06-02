@@ -8,7 +8,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "RM Module Updates"
+git commit -m "Transport Milage Updated"
 
 echo.
 echo Pushing to origin main...

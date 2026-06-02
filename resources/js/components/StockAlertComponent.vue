@@ -294,4 +294,27 @@ export default {
 .animate__animated {
   animation-duration: 0.5s;
 }
+
+[data-theme="dark"] .container-fluid .card,
+[data-theme="dark"] .container-fluid .card-header,
+[data-theme="dark"] .container-fluid .card-body {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+[data-theme="dark"] .container-fluid table th,
+[data-theme="dark"] .container-fluid table td {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+[data-theme="dark"] .container-fluid .bg-light {
+  background: #334155 !important;
+}
+
+[data-theme="dark"] .container-fluid .badge.bg-warning {
+  color: #0f172a !important;
+}
 </style>

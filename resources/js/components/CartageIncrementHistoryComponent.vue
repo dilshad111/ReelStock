@@ -414,6 +414,31 @@ onMounted(() => {
     color: black !important;
 }
 
+[data-theme="dark"] .cartage-history-page {
+    background-color: #0f172a !important;
+}
+
+[data-theme="dark"] .cartage-history-page .professional-card,
+[data-theme="dark"] .cartage-history-page :deep(.el-card__header),
+[data-theme="dark"] .cartage-history-page :deep(.el-card__body),
+[data-theme="dark"] .cartage-history-page :deep(.el-dialog__body) {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .cartage-history-page .text-slate-800,
+[data-theme="dark"] .cartage-history-page .text-muted {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .cartage-history-page :deep(.el-table th),
+[data-theme="dark"] .cartage-history-page :deep(.el-table td) {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+
 @media print {
     /* Hide everything by default */
     body * {
