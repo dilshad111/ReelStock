@@ -92,6 +92,25 @@
                 />
             </el-tab-pane>
 
+            <el-tab-pane label="Flute Factor Settings" name="flute-factors">
+                <master-panel
+                    title="Flute Factor Settings"
+                    subtitle="Central flute take-up factors used for estimated paper consumption and costing."
+                    :columns="masterTabs.fluteFactors.columns"
+                    :rows="fluteFactors.rows"
+                    :pagination="fluteFactors.pagination"
+                    :filters="fluteFactors.filters"
+                    :loading="fluteFactors.loading"
+                    :empty-text="'No flute factor settings found.'"
+                    @search="fetchFluteFactors"
+                    @sort="payload => handleSort(fluteFactors, payload, fetchFluteFactors)"
+                    @page="page => handlePage(fluteFactors, page, fetchFluteFactors)"
+                    @create="openMasterForm('fluteFactors')"
+                    @edit="row => openMasterForm('fluteFactors', row)"
+                    @delete="row => deleteRecord('fluteFactors', row)"
+                />
+            </el-tab-pane>
+
             <el-tab-pane label="Machine Optimization Rules" name="optimization-rules">
                 <div class="rules-layout">
                     <section class="logic-form-panel">
@@ -260,6 +279,26 @@
                         </el-select>
                     </el-form-item>
                 </template>
+
+                <template v-if="masterDialog.type === 'fluteFactors'">
+                    <div class="form-grid-2">
+                        <el-form-item label="Flute Type" prop="flute_type">
+                            <el-input v-model="masterForm.flute_type" placeholder="e.g. B, C, E" />
+                        </el-form-item>
+                        <el-form-item label="Flute Factor" prop="factor">
+                            <el-input-number v-model="masterForm.factor" :min="0.01" :step="0.05" :controls="false" class="w-100" />
+                        </el-form-item>
+                    </div>
+                    <el-form-item label="Description">
+                        <el-input v-model="masterForm.description" placeholder="e.g. B flute take-up factor" />
+                    </el-form-item>
+                    <el-form-item label="Status">
+                        <div class="rule-status-toggle">
+                            <el-switch v-model="masterForm.is_active" />
+                            <span>{{ masterForm.is_active ? 'Active' : 'Inactive' }}</span>
+                        </div>
+                    </el-form-item>
+                </template>
             </el-form>
 
             <template #footer>
@@ -303,12 +342,14 @@ const printingColors = createStore();
 const departments = createStore();
 const machines = createStore();
 const operators = createStore();
+const fluteFactors = createStore();
 const rules = createStore(10);
 
 const lookups = reactive({
     departments: [],
     machines: [],
     printing_colors: [],
+    flute_factors: [],
 });
 
 const masterDialog = reactive({
@@ -376,6 +417,16 @@ const masterTabs = {
             { prop: 'machine.department.department_name', label: 'Department' },
         ],
     },
+    fluteFactors: {
+        endpoint: '/api/production-config/flute-factors',
+        title: 'Flute Factor',
+        columns: [
+            { prop: 'flute_type', label: 'Flute Type', sortable: true, code: true, minWidth: 110 },
+            { prop: 'factor', label: 'Factor', sortable: true, align: 'right', minWidth: 110 },
+            { prop: 'description', label: 'Description', minWidth: 240 },
+            { prop: 'is_active', label: 'Status', align: 'center', minWidth: 110, booleanStatus: true },
+        ],
+    },
 };
 
 const ruleRules = {
@@ -401,6 +452,12 @@ const masterRules = computed(() => {
         return {
             machine_name: [{ required: true, message: 'Machine name is required', trigger: 'blur' }],
             department_id: [{ required: true, message: 'Select department', trigger: 'change' }],
+        };
+    }
+    if (masterDialog.type === 'fluteFactors') {
+        return {
+            flute_type: [{ required: true, message: 'Flute type is required', trigger: 'blur' }],
+            factor: [{ required: true, message: 'Flute factor is required', trigger: 'blur' }],
         };
     }
     return {
@@ -463,6 +520,10 @@ const fetchMachines = async () => {
     await fetchLookups();
 };
 const fetchOperators = () => fetchStore(operators, masterTabs.operators.endpoint);
+const fetchFluteFactors = async () => {
+    await fetchStore(fluteFactors, masterTabs.fluteFactors.endpoint);
+    await fetchLookups();
+};
 const fetchRules = () => fetchStore(rules, '/api/production-config/optimization-rules');
 
 async function fetchLookups() {
@@ -471,6 +532,7 @@ async function fetchLookups() {
         lookups.departments = data.departments || [];
         lookups.machines = data.machines || [];
         lookups.printing_colors = data.printing_colors || [];
+        lookups.flute_factors = data.flute_factors || [];
     } catch (error) {}
 }
 
@@ -483,6 +545,7 @@ function refreshActiveTab() {
     if (activeTab.value === 'departments') fetchDepartments();
     if (activeTab.value === 'machines') fetchMachines();
     if (activeTab.value === 'operators') fetchOperators();
+    if (activeTab.value === 'flute-factors') fetchFluteFactors();
     if (activeTab.value === 'optimization-rules') fetchRules();
 }
 
@@ -513,10 +576,17 @@ function openMasterForm(type, row = null) {
             base_speed: row?.base_speed ?? null,
             minimum_speed: row?.minimum_speed ?? null,
         });
-    } else {
+    } else if (type === 'operators') {
         Object.assign(masterForm, {
             operator_name: row?.operator_name || '',
             machine_id: row?.machine_id || null,
+        });
+    } else if (type === 'fluteFactors') {
+        Object.assign(masterForm, {
+            flute_type: row?.flute_type || '',
+            factor: row?.factor ?? 1,
+            description: row?.description || '',
+            is_active: row?.is_active ?? true,
         });
     }
 
@@ -705,6 +775,9 @@ const MasterPanel = defineComponent({
                         if (column.code) {
                             return h('span', { class: 'code-badge' }, value || '-');
                         }
+                        if (column.booleanStatus) {
+                            return h('span', { class: ['status-pill', value ? 'active' : 'inactive'] }, value ? 'Active' : 'Inactive');
+                        }
                         return h('span', value ?? '-');
                     },
                 })),
@@ -828,6 +901,22 @@ onMounted(async () => {
     font-family: Consolas, monospace;
     font-weight: 800;
     padding: 3px 7px;
+}
+
+.status-pill {
+    border-radius: 999px;
+    display: inline-flex;
+    font-size: 0.75rem;
+    font-weight: 900;
+    padding: 4px 10px;
+}
+.status-pill.active {
+    background: #dcfce7;
+    color: #047857;
+}
+.status-pill.inactive {
+    background: #e2e8f0;
+    color: #475569;
 }
 
 .pagination-row {
@@ -970,6 +1059,18 @@ code {
     background: var(--config-surface-2);
     border-color: #475569;
     color: #e2e8f0;
+}
+
+:global([data-theme="dark"]) .status-pill.active,
+:global(body.dark-mode) .status-pill.active {
+    background: #064e3b;
+    color: #d1fae5;
+}
+
+:global([data-theme="dark"]) .status-pill.inactive,
+:global(body.dark-mode) .status-pill.inactive {
+    background: #334155;
+    color: #cbd5e1;
 }
 
 :global([data-theme="dark"]) .config-tabs :deep(.el-tabs__header),

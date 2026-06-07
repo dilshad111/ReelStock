@@ -8,7 +8,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "Transport Distance Error Resolved"
+git commit -m "Job card working"
 
 echo.
 echo Pushing to origin main...

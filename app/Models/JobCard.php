@@ -12,6 +12,8 @@ class JobCard extends Model
 
     protected $fillable = [
         'job_card_no',
+        'current_version_no',
+        'active_version_id',
         'customer_id',
         'fg_product_id',
         'planned_qty',
@@ -85,6 +87,21 @@ class JobCard extends Model
     public function productionLogs()
     {
         return $this->hasMany(ProductionLog::class);
+    }
+
+    public function jobIssues()
+    {
+        return $this->hasMany(JobIssue::class);
+    }
+
+    public function versions()
+    {
+        return $this->hasMany(JobCardVersion::class)->orderBy('version_no', 'desc');
+    }
+
+    public function activeVersion()
+    {
+        return $this->belongsTo(JobCardVersion::class, 'active_version_id');
     }
 
     public function creator()

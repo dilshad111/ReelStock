@@ -9,11 +9,16 @@ use App\Models\JobCardPiece;
 use App\Models\JobCardLayer;
 use App\Models\Product;
 use App\Domains\Production\DTOs\JobCardDTO;
+use App\Services\JobCardVersionService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 class CreateJobCardAction
 {
+    public function __construct(private JobCardVersionService $versionService)
+    {
+    }
+
     public function execute(JobCardDTO $dto): JobCard
     {
         return DB::transaction(function () use ($dto) {
@@ -130,7 +135,9 @@ class CreateJobCardAction
                 ]);
             }
 
-            return $jobCard;
+            $this->versionService->ensureInitialVersion($jobCard);
+
+            return $jobCard->fresh(['customer', 'product', 'versions']);
         });
     }
 

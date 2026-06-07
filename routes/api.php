@@ -44,6 +44,7 @@ use App\Http\Controllers\RMConsumptionController;
 use App\Http\Controllers\RMDashboardController;
 use App\Http\Controllers\RMReportController;
 use App\Http\Controllers\JobCardController;
+use App\Http\Controllers\JobIssueController;
 use App\Http\Controllers\ProductionConfigurationController;
 use App\Http\Controllers\CartonTypeController;
 
@@ -228,9 +229,27 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/job-cards/dashboard', [JobCardController::class, 'dashboard']);
     Route::get('/job-cards/active-list', [JobCardController::class, 'activeJobCards']);
     Route::get('/job-cards/{id}', [JobCardController::class, 'show']);
+    Route::get('/job-cards/{id}/versions', [JobCardController::class, 'versionHistory']);
+    Route::get('/job-cards/{id}/versions/compare', [JobCardController::class, 'compareVersions']);
+    Route::get('/job-cards/{id}/versions/{versionId}', [JobCardController::class, 'showVersion']);
     Route::post('/job-cards', [JobCardController::class, 'store']);
-    Route::post('/job-cards/record-production', [JobCardController::class, 'recordProduction']);
+    Route::put('/job-cards/{id}', [JobCardController::class, 'update']);
+    Route::delete('/job-cards/{id}', [JobCardController::class, 'destroy']);
+    Route::post('/job-cards/{id}/change-request', [JobCardController::class, 'changeRequest']);
     Route::put('/job-cards/{id}/status', [JobCardController::class, 'updateStatus']);
+
+    Route::prefix('job-issues')->group(function () {
+        Route::get('lookups', [JobIssueController::class, 'lookups']);
+        Route::get('reports/summary', [JobIssueController::class, 'report']);
+        Route::get('customer/{customerId}/job-cards', [JobIssueController::class, 'jobCardsByCustomer']);
+        Route::get('/', [JobIssueController::class, 'index']);
+        Route::post('/', [JobIssueController::class, 'store']);
+        Route::get('{jobIssue}', [JobIssueController::class, 'show']);
+        Route::post('{jobIssue}/start', [JobIssueController::class, 'start']);
+        Route::post('{jobIssue}/entries', [JobIssueController::class, 'storeEntry']);
+        Route::post('{jobIssue}/complete-stage', [JobIssueController::class, 'completeStage']);
+        Route::post('{jobIssue}/complete-job', [JobIssueController::class, 'completeJob']);
+    });
 
     // Production Configuration Module
     Route::prefix('production-config')->group(function () {
@@ -255,6 +274,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('operators', [ProductionConfigurationController::class, 'storeOperator']);
         Route::put('operators/{operator}', [ProductionConfigurationController::class, 'updateOperator']);
         Route::delete('operators/{operator}', [ProductionConfigurationController::class, 'destroyOperator']);
+
+        Route::get('flute-factors', [ProductionConfigurationController::class, 'fluteFactors']);
+        Route::post('flute-factors', [ProductionConfigurationController::class, 'storeFluteFactor']);
+        Route::put('flute-factors/{fluteFactor}', [ProductionConfigurationController::class, 'updateFluteFactor']);
+        Route::delete('flute-factors/{fluteFactor}', [ProductionConfigurationController::class, 'destroyFluteFactor']);
 
         Route::get('optimization-rules', [ProductionConfigurationController::class, 'optimizationRules']);
         Route::post('optimization-rules', [ProductionConfigurationController::class, 'storeOptimizationRule']);

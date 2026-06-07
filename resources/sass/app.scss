@@ -1299,3 +1299,109 @@
 [data-theme="dark"] .el-dialog.professional-dialog .el-dialog__close:hover {
     color: #ffffff !important;
 }
+
+/* Job Issue: dark theme readability for paper consumption panels */
+[data-theme="dark"] .job-issue-workspace .ji-reel-quality {
+    background: #142033 !important;
+    border-color: #4b5f7a !important;
+    color: #f8fafc !important;
+    box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08) !important;
+}
+
+[data-theme="dark"] .job-issue-workspace .ji-reel-quality strong {
+    color: #f8fafc !important;
+    -webkit-text-fill-color: #f8fafc !important;
+}
+
+[data-theme="dark"] .job-issue-workspace .ji-reel-quality.empty strong {
+    color: #c8d5e6 !important;
+    -webkit-text-fill-color: #c8d5e6 !important;
+}
+
+[data-theme="dark"] .job-issue-workspace .ji-reel-quality span {
+    color: #9bb4d3 !important;
+    -webkit-text-fill-color: #9bb4d3 !important;
+}
+
+[data-theme="dark"] .job-issue-workspace .ji-consumption-summary {
+    background: #121d30 !important;
+    border-color: #4b5f7a !important;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18) !important;
+}
+
+[data-theme="dark"] .job-issue-workspace .ji-summary-head {
+    background: #1d2a40 !important;
+    border-bottom: 1px solid #4b5f7a !important;
+}
+
+[data-theme="dark"] .job-issue-workspace .ji-summary-head strong,
+[data-theme="dark"] .job-issue-workspace .ji-side-title strong {
+    color: #f8fafc !important;
+    -webkit-text-fill-color: #f8fafc !important;
+}
+
+[data-theme="dark"] .job-issue-workspace .ji-summary-head span {
+    color: #b8c9e5 !important;
+    -webkit-text-fill-color: #b8c9e5 !important;
+}
+
+[data-theme="dark"] .job-issue-workspace .ji-summary-row {
+    background: #162238 !important;
+    border-color: #40536e !important;
+}
+
+[data-theme="dark"] .job-issue-workspace .ji-summary-row.header {
+    background: #223149 !important;
+}
+
+[data-theme="dark"] .job-issue-workspace .ji-summary-row.total {
+    background: #263b5a !important;
+    border-top: 1px solid #6b7f99 !important;
+}
+
+[data-theme="dark"] .job-issue-workspace .ji-summary-row span {
+    color: #f1f7ff !important;
+    -webkit-text-fill-color: #f1f7ff !important;
+}
+
+[data-theme="dark"] .job-issue-workspace .ji-summary-row.total span {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+[data-theme="dark"] .job-issue-workspace .ji-side-metrics div {
+    background: #17243a !important;
+    border-color: #4b5f7a !important;
+    box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.07) !important;
+}
+
+[data-theme="dark"] .job-issue-workspace .ji-side-metrics span {
+    color: #a9bedc !important;
+    -webkit-text-fill-color: #a9bedc !important;
+}
+
+[data-theme="dark"] .job-issue-workspace .ji-side-metrics strong {
+    color: #f8fafc !important;
+    -webkit-text-fill-color: #f8fafc !important;
+}
+
+[data-theme="dark"] .job-issue-workspace .ji-consumption-status.variance-ok {
+    background: #1e3a8a !important;
+    border: 1px solid #60a5fa !important;
+    color: #eff6ff !important;
+    -webkit-text-fill-color: #eff6ff !important;
+}
+
+[data-theme="dark"] .job-issue-workspace .ji-consumption-status.variance-over {
+    background: #7f1d1d !important;
+    border: 1px solid #f87171 !important;
+    color: #fee2e2 !important;
+    -webkit-text-fill-color: #fee2e2 !important;
+}
+
+[data-theme="dark"] .job-issue-workspace .ji-consumption-status.variance-under {
+    background: #134e4a !important;
+    border: 1px solid #5eead4 !important;
+    color: #ccfbf1 !important;
+    -webkit-text-fill-color: #ccfbf1 !important;
+}

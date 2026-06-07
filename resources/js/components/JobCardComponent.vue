@@ -4,15 +4,15 @@
         <div class="d-flex justify-content-between align-items-center mb-3 p-3 glass-header rounded shadow-sm">
             <div>
                 <h2 class="h4 mb-1 fw-bold text-dark">
-                    <i class="bi bi-file-earmark-ruled-fill text-indigo me-2"></i>{{ isCreating ? 'New Job Card' : 'Manufacturing Specifications & Job Cards' }}
+                    <i class="bi bi-file-earmark-ruled-fill text-indigo me-2"></i>{{ headerTitle }}
                 </h2>
-                <p class="small text-muted mb-0">{{ isCreating ? 'Complete corrugated carton manufacturing job card.' : 'Packaging specifications, ply layer compositions, and real-time corrugation calculation engine.' }}</p>
+                <p class="small text-muted mb-0">{{ headerSubtitle }}</p>
             </div>
             <div class="job-header-actions">
                 <template v-if="isCreating">
                     <el-button @click="discardCreateForm">Discard</el-button>
                     <el-button type="primary" class="btn-indigo" @click="submitCreateForm" :loading="submitting">
-                        <i class="bi bi-check2-circle me-1"></i>Create Job Card
+                        <i class="bi bi-check2-circle me-1"></i>{{ submitButtonText }}
                     </el-button>
                 </template>
                 <el-button v-else type="primary" class="btn-indigo shadow-sm" @click="openCreateForm">
@@ -36,12 +36,9 @@
                     </el-select>
                 </div>
                 <div class="col-md-3">
-                    <label class="small text-muted fw-bold mb-1">Status Filter</label>
-                    <el-select v-model="filters.status" placeholder="All Statuses" clearable @change="fetchJobCards" class="w-100">
-                        <el-option label="Open" value="Open" />
-                        <el-option label="In-Progress" value="In-Progress" />
-                        <el-option label="Completed" value="Completed" />
-                        <el-option label="Cancelled" value="Cancelled" />
+                    <label class="small text-muted fw-bold mb-1">Cartons Category</label>
+                    <el-select v-model="filters.carton_category" placeholder="All Categories" clearable @change="fetchJobCards" class="w-100">
+                        <el-option v-for="category in cartonCategories" :key="category.value" :label="category.label" :value="category.value" />
                     </el-select>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
@@ -58,7 +55,11 @@
                 </el-table-column>
                 <el-table-column prop="customer.name" label="Customer Name" min-width="180" show-overflow-tooltip />
                 <el-table-column prop="product.item_name" label="FG Product" min-width="200" show-overflow-tooltip />
-                <el-table-column label="Box Type" width="130" prop="carton_type" />
+                <el-table-column label="Cartons Category" width="150">
+                    <template #default="scope">
+                        <span class="fw-bold">{{ cartonCategoryLabel(scope.row) }}</span>
+                    </template>
+                </el-table-column>
                 <el-table-column label="Outer Dimensions (mm)" min-width="160">
                     <template #default="scope">
                         <span class="small font-mono fw-bold">
@@ -71,31 +72,28 @@
                         <span class="fw-bold text-dark">{{ formatNum(scope.row.est_unit_weight, 4) }}</span>
                     </template>
                 </el-table-column>
-                <el-table-column prop="planned_qty" label="Planned Qty" width="120" align="right">
+                <el-table-column label="Version" width="115" align="center">
                     <template #default="scope">
-                        {{ formatQty(scope.row.planned_qty) }}
+                        <span class="job-version-badge">{{ currentVersionLabel(scope.row) }}</span>
                     </template>
                 </el-table-column>
-                <el-table-column prop="status" label="Status" width="115" align="center">
-                    <template #default="scope">
-                        <el-tag :type="getStatusTag(scope.row.status)" effect="dark" size="small">{{ scope.row.status }}</el-tag>
-                    </template>
-                </el-table-column>
-                <th width="190">Actions</th>
-                <el-table-column label="Actions" width="190" align="center">
+                <el-table-column label="Actions" width="230" align="center">
                     <template #default="scope">
                         <el-button-group>
                             <el-button type="info" size="small" @click="viewDetails(scope.row)" title="View Specifications" circle>
                                 <i class="bi bi-eye"></i>
                             </el-button>
+                            <el-button type="primary" size="small" @click="openEditForm(scope.row)" title="Edit Current Version" circle class="btn-indigo">
+                                <i class="bi bi-pencil"></i>
+                            </el-button>
                             <el-button type="primary" size="small" @click="printDirectly(scope.row.id)" title="Print Blueprint" circle class="btn-indigo">
                                 <i class="bi bi-printer"></i>
                             </el-button>
-                            <el-button type="success" size="small" @click="openProductionDialog(scope.row)" title="Record Production" circle :disabled="scope.row.status === 'Completed' || scope.row.status === 'Cancelled'">
-                                <i class="bi bi-play-circle"></i>
+                            <el-button type="danger" size="small" @click="openChangeRequest(scope.row)" title="Change Request" circle>
+                                <i class="bi bi-pencil-square"></i>
                             </el-button>
-                            <el-button type="warning" size="small" @click="changeStatus(scope.row)" title="Change Status" circle>
-                                <i class="bi bi-arrow-repeat"></i>
+                            <el-button type="danger" size="small" @click="deleteJobCard(scope.row)" title="Delete Job Card" circle plain>
+                                <i class="bi bi-trash"></i>
                             </el-button>
                         </el-button-group>
                     </template>
@@ -131,13 +129,20 @@
                                         </el-select>
                                     </el-form-item>
                                     <el-form-item label="Item Code">
-                                        <el-input v-model="createForm.item_code" placeholder="Item Code" />
+                                        <el-input v-model="createForm.item_code" placeholder="Item Code" :disabled="isChangeRequestMode" />
                                     </el-form-item>
                                 </div>
 
                                 <el-form-item label="Item Name" prop="item_name">
-                                    <el-input v-model="createForm.item_name" placeholder="Name of the carton..." />
+                                    <el-input v-model="createForm.item_name" placeholder="Name of the carton..." :disabled="isChangeRequestMode" />
                                 </el-form-item>
+
+                                <el-alert v-if="isChangeRequestMode" type="warning" show-icon :closable="false" class="mb-3 job-mode-alert">
+                                    Item Code and Item Name are locked. Changes will create a new active version under the same Job Card.
+                                </el-alert>
+                                <el-alert v-else-if="isEditMode" type="info" show-icon :closable="false" class="mb-3 job-mode-alert">
+                                    Editing corrects the current active Job Card only. It will not create a change request or a new version.
+                                </el-alert>
 
                                 <div class="carton-selection-layout">
                                     <div class="carton-selection-fields">
@@ -212,21 +217,6 @@
                                     <el-form-item label="Height">
                                         <el-input-number v-model="createForm.height" :min="0" :precision="2" class="w-100" :controls="false" @input="recalculateSpecs" />
                                     </el-form-item>
-                                </div>
-                            </div>
-
-                            <div class="metrics-strip">
-                                <div>
-                                    <span>Deckle / Roll Width</span>
-                                    <strong>{{ formatNum(createForm.deckle_size, 2) }}"</strong>
-                                </div>
-                                <div>
-                                    <span>Sheet Length</span>
-                                    <strong>{{ formatNum(createForm.sheet_length, 2) }}"</strong>
-                                </div>
-                                <div>
-                                    <span>Estimated Net Unit Weight</span>
-                                    <strong>{{ formatNum(createForm.est_unit_weight, 4) }} kg</strong>
                                 </div>
                             </div>
                         </div>
@@ -558,67 +548,14 @@
             </el-form>
         </div>
 
-        <!-- Record daily production popup -->
-        <el-dialog v-model="prodDialogVisible" title="Record Production Log" width="500px" destroy-on-close>
-            <el-form :model="prodForm" :rules="prodRules" ref="prodFormRef" label-position="top" v-if="selectedJob">
-                <div class="mb-3 p-3 bg-light rounded border">
-                    <div class="fw-bold text-indigo">{{ selectedJob.job_card_no }}</div>
-                    <div class="small text-muted">{{ selectedJob.product?.item_name }}</div>
-                </div>
-
-                <el-form-item label="Process Step" prop="job_card_step_id">
-                    <el-select v-model="prodForm.job_card_step_id" placeholder="Select Step" class="w-100">
-                        <el-option v-for="step in selectedJob.steps" :key="step.id" :label="`${step.step_name} (Produced: ${formatQty(step.produced_qty)})`" :value="step.id" />
-                    </el-select>
-                </el-form-item>
-
-                <el-row :gutter="20">
-                    <el-col :span="12">
-                        <el-form-item label="Production Date" prop="date">
-                            <el-date-picker v-model="prodForm.date" type="date" class="w-100" format="DD/MM/YYYY" value-format="YYYY-MM-DD" />
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="Shift" prop="shift">
-                            <el-select v-model="prodForm.shift" class="w-100">
-                                <el-option label="Day" value="Day" />
-                                <el-option label="Night" value="Night" />
-                            </el-select>
-                        </el-form-item>
-                    </el-col>
-                </el-row>
-
-                <el-row :gutter="20">
-                    <el-col :span="12">
-                        <el-form-item label="Quantity Produced" prop="quantity">
-                            <el-input-number v-model="prodForm.quantity" :min="0" class="w-100" :controls="false" />
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="Wastage" prop="wastage">
-                            <el-input-number v-model="prodForm.wastage" :min="0" class="w-100" :controls="false" />
-                        </el-form-item>
-                    </el-col>
-                </el-row>
-
-                <el-form-item label="Operator Name">
-                    <el-input v-model="prodForm.operator_name" placeholder="Name of operator/worker" />
-                </el-form-item>
-            </el-form>
-            <template #footer>
-                <el-button @click="prodDialogVisible = false">Cancel</el-button>
-                <el-button type="success" @click="submitProdForm" :loading="submitting">Save Entry</el-button>
-            </template>
-        </el-dialog>
-
         <!-- View Specifications dialog -->
         <el-dialog v-model="detailsDialogVisible" width="950px" title="Manufacturing Spec Sheet Detailed View">
             <div v-if="selectedJobFull" class="job-details-view" id="printableJobCard">
                 <el-descriptions border title="Basic Specs Metadata" :column="3">
                     <el-descriptions-item label="Spec Code">{{ selectedJobFull.job_card_no }}</el-descriptions-item>
                     <el-descriptions-item label="Customer">{{ selectedJobFull.customer?.name }}</el-descriptions-item>
-                    <el-descriptions-item label="Spec Status">
-                        <el-tag :type="getStatusTag(selectedJobFull.status)" size="small">{{ selectedJobFull.status }}</el-tag>
+                    <el-descriptions-item label="Current Version">
+                        <span class="job-version-badge">{{ currentVersionLabel(selectedJobFull) }}</span>
                     </el-descriptions-item>
                     <el-descriptions-item label="FG Item Name" :span="2">{{ selectedJobFull.product?.item_name }}</el-descriptions-item>
                     <el-descriptions-item label="Outer Box Size">
@@ -657,38 +594,85 @@
                     </div>
                 </div>
 
-                <div class="row mt-4">
-                    <div class="col-md-6">
-                        <div class="fw-bold mb-2 text-indigo"><i class="bi bi-activity me-1"></i>Process Progress Tracking</div>
-                        <el-table :data="selectedJobFull.steps" border size="small">
-                            <el-table-column prop="step_name" label="Step" />
-                            <el-table-column prop="status" label="Status" width="100">
-                                <template #default="scope">
-                                    <el-tag :type="scope.row.status === 'Completed' ? 'success' : 'warning'" size="small">{{ scope.row.status }}</el-tag>
-                                </template>
-                            </el-table-column>
-                            <el-table-column prop="produced_qty" label="Produced" width="100" align="right" />
-                            <el-table-column label="%" width="120">
-                                <template #default="scope">
-                                    <el-progress :percentage="Math.min(100, Math.round((scope.row.produced_qty / selectedJobFull.planned_qty) * 100))" />
-                                </template>
-                            </el-table-column>
-                        </el-table>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="fw-bold mb-2 text-indigo"><i class="bi bi-cart4 me-1"></i>Material BOM Requirements</div>
-                        <el-table :data="selectedJobFull.items" border size="small">
-                            <el-table-column prop="item.name" label="Material Roll" />
-                            <el-table-column prop="required_qty" label="Required" width="100" align="right" />
-                            <el-table-column prop="consumed_qty" label="Consumed" width="100" align="right" class-name="text-danger fw-bold" />
-                        </el-table>
-                    </div>
+                <div class="mt-4">
+                    <div class="fw-bold mb-2 text-indigo"><i class="bi bi-cart4 me-1"></i>Material BOM Requirements</div>
+                    <el-table :data="jobCardBomRows(selectedJobFull)" border size="small">
+                        <el-table-column prop="layer" label="Layer / Type" width="160" />
+                        <el-table-column prop="material" label="Material / Paper Grade" min-width="220" show-overflow-tooltip />
+                        <el-table-column prop="gsm" label="GSM" width="90" align="right" />
+                        <el-table-column prop="flute" label="Flute" width="100" align="center" />
+                        <el-table-column prop="required" label="Required" width="120" align="right" />
+                        <el-table-column prop="consumed" label="Consumed" width="120" align="right" class-name="text-danger fw-bold" />
+                    </el-table>
+                </div>
+
+                <div class="mt-4">
+                    <div class="fw-bold mb-2 text-indigo"><i class="bi bi-clock-history me-1"></i>Version History</div>
+                    <el-table :data="selectedJobFull.versions || []" border size="small">
+                        <el-table-column label="Version" width="90">
+                            <template #default="scope">V{{ scope.row.version_no }}</template>
+                        </el-table-column>
+                        <el-table-column label="Change Request No." min-width="150">
+                            <template #default="scope">{{ scope.row.change_request_no || 'Initial Version' }}</template>
+                        </el-table-column>
+                        <el-table-column label="Date" width="130">
+                            <template #default="scope">{{ formatDate(scope.row.created_at) }}</template>
+                        </el-table-column>
+                        <el-table-column label="Changed By" min-width="130">
+                            <template #default="scope">{{ scope.row.creator?.name || '-' }}</template>
+                        </el-table-column>
+                        <el-table-column label="Status" width="120" align="center">
+                            <template #default="scope">
+                                <el-tag :type="scope.row.version_status === 'Active' ? 'success' : 'info'" size="small">{{ scope.row.version_status }}</el-tag>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="Actions" width="220" align="center">
+                            <template #default="scope">
+                                <el-button size="small" @click="viewVersion(scope.row)">View</el-button>
+                                <el-button size="small" type="primary" plain @click="compareVersion(scope.row)">Compare</el-button>
+                                <el-button size="small" type="success" plain @click="printVersion(scope.row)">Print</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
                 </div>
             </div>
             <template #footer>
                 <el-button @click="detailsDialogVisible = false">Close</el-button>
                 <el-button type="primary" class="btn-indigo animate-gradient" @click="printDirectly(selectedJobFull.id)"><i class="bi bi-printer me-1"></i> Print Spec Sheet Blueprint</el-button>
             </template>
+        </el-dialog>
+
+        <el-dialog v-model="versionDialogVisible" width="850px" title="Job Card Version Snapshot">
+            <div v-if="selectedVersion">
+                <el-descriptions border :column="3" size="small">
+                    <el-descriptions-item label="Version">V{{ selectedVersion.version_no }}</el-descriptions-item>
+                    <el-descriptions-item label="Change Request">{{ selectedVersion.change_request_no || 'Initial Version' }}</el-descriptions-item>
+                    <el-descriptions-item label="Status">{{ selectedVersion.version_status }}</el-descriptions-item>
+                    <el-descriptions-item label="Reason" :span="3">{{ selectedVersion.change_reason || '-' }}</el-descriptions-item>
+                </el-descriptions>
+                <div class="mt-3 fw-bold text-indigo">Audit Trail</div>
+                <el-table :data="selectedVersion.change_logs || selectedVersion.changeLogs || []" border size="small" class="mt-2">
+                    <el-table-column prop="field_name" label="Field" width="180" />
+                    <el-table-column prop="old_value" label="Old Value" show-overflow-tooltip />
+                    <el-table-column prop="new_value" label="New Value" show-overflow-tooltip />
+                    <el-table-column label="Modified" width="150">
+                        <template #default="scope">{{ formatDateTime(scope.row.modified_at) }}</template>
+                    </el-table-column>
+                </el-table>
+            </div>
+        </el-dialog>
+
+        <el-dialog v-model="compareDialogVisible" width="900px" title="Compare Job Card Versions">
+            <div v-if="versionCompare">
+                <div class="mb-2 fw-bold">
+                    V{{ versionCompare.from?.version_no }} to V{{ versionCompare.to?.version_no }}
+                </div>
+                <el-table :data="versionCompare.changes || []" border size="small">
+                    <el-table-column prop="field_name" label="Field" width="190" />
+                    <el-table-column prop="old_value" label="Previous Value" show-overflow-tooltip />
+                    <el-table-column prop="new_value" label="Updated Value" show-overflow-tooltip />
+                </el-table>
+            </div>
         </el-dialog>
     </div>
 </template>
@@ -705,6 +689,13 @@ const defaultCartonTypes = [
     { id: 4, name: 'Half Slotted Carton', standard_code: '0201-HSC', preview_image: '/images/fefco/0201-HSC.png' }
 ];
 
+const cartonCategories = [
+    { label: 'RSC Carton', value: 'RSC Carton' },
+    { label: 'Top & Bottom Carton', value: 'Top & Bottom Carton' },
+    { label: 'Separator', value: 'Separator' },
+    { label: 'Honeycomb', value: 'Honeycomb' }
+];
+
 const jobCards = ref([]);
 const customers = ref([]);
 const cartonTypes = ref([...defaultCartonTypes]);
@@ -716,18 +707,24 @@ const submitting = ref(false);
 const isCreating = ref(false);
 const nextJobCardNo = ref('QC-JC-110001');
 const cartonPreviewFailed = ref(false);
-const prodDialogVisible = ref(false);
 const detailsDialogVisible = ref(false);
-const selectedJob = ref(null);
+const versionDialogVisible = ref(false);
+const compareDialogVisible = ref(false);
 const selectedJobFull = ref(null);
+const selectedVersion = ref(null);
+const versionCompare = ref(null);
 const createFormRef = ref(null);
-const prodFormRef = ref(null);
 const activePieceTab = ref('piece_0');
+const isEditMode = ref(false);
+const editJobId = ref(null);
+const isChangeRequestMode = ref(false);
+const changeRequestJobId = ref(null);
+const changeRequestReason = ref('');
 
 const filters = reactive({
     search: '',
     customer_id: null,
-    status: ''
+    carton_category: ''
 });
 
 const pagination = reactive({
@@ -869,18 +866,6 @@ const makeCreateForm = () => ({
 
 const createForm = reactive(makeCreateForm());
 
-const prodForm = reactive({
-    job_card_id: null,
-    job_card_step_id: null,
-    date: todayString(),
-    shift: 'Day',
-    machine_no: '',
-    quantity: 0,
-    wastage: 0,
-    operator_name: '',
-    remarks: ''
-});
-
 const createRules = {
     customer_id: [{ required: true, message: 'Select customer', trigger: 'change' }],
     carton_type_id: [{ required: true, message: 'Select carton type', trigger: 'change' }],
@@ -890,18 +875,29 @@ const createRules = {
     pasting_type: [{ required: true, message: 'Select joinery technique', trigger: 'change' }]
 };
 
-const prodRules = {
-    job_card_step_id: [{ required: true, message: 'Select step', trigger: 'change' }],
-    date: [{ required: true, message: 'Select date', trigger: 'change' }],
-    quantity: [{ required: true, message: 'Enter quantity', trigger: 'blur' }]
-};
-
 const selectedCartonType = computed(() => cartonTypes.value.find(type => Number(type.id) === Number(createForm.carton_type_id)) || null);
 const selectedCustomer = computed(() => customers.value.find(customer => Number(customer.id) === Number(createForm.customer_id)) || null);
 const hasDimensions = computed(() => Number(createForm.length) > 0 && Number(createForm.width) > 0 && Number(createForm.height) > 0);
 const corrugationMachines = computed(() => machineByDepartment(['corrugation', 'plant']));
 const printingMachines = computed(() => machineByDepartment(['printing', 'print', 'flexo']));
 const dieCuttingMachines = computed(() => machineByDepartment(['die', 'cut']));
+const headerTitle = computed(() => {
+    if (!isCreating.value) return 'Manufacturing Specifications & Job Cards';
+    if (isChangeRequestMode.value) return 'Job Card Change Request';
+    if (isEditMode.value) return 'Edit Job Card';
+    return 'New Job Card';
+});
+const headerSubtitle = computed(() => {
+    if (!isCreating.value) return 'Packaging specifications, ply layer compositions, and real-time corrugation calculation engine.';
+    if (isChangeRequestMode.value) return 'Revise the current active specification while preserving full version history.';
+    if (isEditMode.value) return 'Correct current active Job Card data without creating a customer change request.';
+    return 'Complete corrugated carton manufacturing job card.';
+});
+const submitButtonText = computed(() => {
+    if (isChangeRequestMode.value) return 'Save Change Request';
+    if (isEditMode.value) return 'Save Job Card';
+    return 'Create Job Card';
+});
 
 const escapeSvgText = (value) => String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -981,6 +977,7 @@ const formDieLineSvg = computed(() => {
     return `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${widthPx} ${heightPx}" role="img" aria-label="Carton die-line preview">
             <style>
+                .jc-svg-paper{fill:#fff;stroke:#d1d5db;stroke-width:1}
                 .jc-svg-fill{fill:#fff;stroke:none}
                 .jc-svg-cut{stroke:#111;stroke-width:1.2;fill:none}
                 .jc-svg-fold{stroke:#111;stroke-width:1;stroke-dasharray:2 4;stroke-linecap:round;fill:none}
@@ -996,6 +993,7 @@ const formDieLineSvg = computed(() => {
                     <path d="M0,0 L8,4 L0,8 z" fill="#111"></path>
                 </marker>
             </defs>
+            <rect x="0.5" y="0.5" width="${widthPx - 1}" height="${heightPx - 1}" rx="10" class="jc-svg-paper" />
             <text x="${widthPx / 2}" y="${pad}" text-anchor="middle" class="jc-svg-head">${customerName}</text>
             <text x="${widthPx / 2}" y="${pad + 18}" text-anchor="middle" class="jc-svg-sub">${itemCode} | ${itemName}</text>
             ${panelMarkup}
@@ -1077,6 +1075,11 @@ const fetchNextJobCardNo = async () => {
 
 const openCreateForm = () => {
     resetCreateForm();
+    isEditMode.value = false;
+    editJobId.value = null;
+    isChangeRequestMode.value = false;
+    changeRequestJobId.value = null;
+    changeRequestReason.value = '';
     fetchNextJobCardNo();
     isCreating.value = true;
 };
@@ -1090,16 +1093,23 @@ const resetCreateForm = () => {
     Object.assign(createForm, makeCreateForm());
     activePieceTab.value = 'piece_0';
     cartonPreviewFailed.value = false;
+    isEditMode.value = false;
+    editJobId.value = null;
+    isChangeRequestMode.value = false;
+    changeRequestJobId.value = null;
+    changeRequestReason.value = '';
 };
 
 const resetFilters = () => {
     filters.search = '';
     filters.customer_id = null;
-    filters.status = '';
+    filters.carton_category = '';
     fetchJobCards();
 };
 
 const cartonTypeLabel = (type) => type ? `${type.name} (${type.standard_code})` : '';
+
+const cartonCategoryLabel = (job) => job?.special_details?.carton_category || job?.carton_category || 'RSC Carton';
 
 const onCartonTypeChange = () => {
     cartonPreviewFailed.value = false;
@@ -1352,6 +1362,92 @@ const piecePayload = (piece, index) => {
     };
 };
 
+const normalizeLayerFromRecord = (layer) => ({
+    layer_type: layer.layer_type || 'Layer',
+    paper_id: null,
+    paper_name: layer.paper_name || '',
+    gsm: Number(layer.gsm || 0),
+    flute_profile: layer.flute_profile || 'Flat'
+});
+
+const inferPlyType = (layers = []) => [3, 5, 7].includes(layers.length) ? layers.length : 3;
+
+const formLengthFromMm = (value, uom) => {
+    const num = Number(value || 0);
+    if (uom === 'inch') return num / 25.4;
+    if (uom === 'cm') return num / 10;
+    return num;
+};
+
+const hydrateCreateFormFromJob = (job) => {
+    const special = job.special_details || {};
+    const uom = job.uom || 'mm';
+    const layers = (job.layers || []).map(normalizeLayerFromRecord);
+    const pieces = (job.pieces || []).map((piece, index) => {
+        const pieceLayers = (piece.layers || []).map(normalizeLayerFromRecord);
+        return {
+            ...makePiece(index),
+            piece_name: piece.piece_name || `Component ${index + 1}`,
+            length: formLengthFromMm(piece.length_mm, uom),
+            width: formLengthFromMm(piece.width_mm, uom),
+            height: formLengthFromMm(piece.height_mm, uom),
+            deckle_size: Number(piece.deckle_size || 0),
+            sheet_length: Number(piece.sheet_length || 0),
+            ups: Number(piece.ups || 1),
+            ply_type: inferPlyType(pieceLayers),
+            layers: pieceLayers.length ? pieceLayers : layersForPly(3),
+            print_colors: Number(piece.print_colors ?? special.print_colors ?? 0),
+            printing_data: piece.printing_data || { inks: [] },
+            finishing_protocol: piece.finishing_protocol || special.process_type || 'Rotary Slotter',
+            instructions: piece.instructions || ''
+        };
+    });
+
+    Object.assign(createForm, makeCreateForm(), {
+        customer_id: job.customer_id,
+        item_code: job.product?.item_code || '',
+        item_name: job.product?.item_name || '',
+        carton_type_id: Number(special.carton_type_id || 1),
+        carton_category: special.carton_category || 'RSC Carton',
+        carton_quality: special.carton_quality || 'normal',
+        planned_qty: Number(job.planned_qty || 1),
+        planned_date: job.planned_date || todayString(),
+        delivery_date: job.delivery_date || null,
+        uom,
+        length: formLengthFromMm(job.length_mm, uom),
+        width: formLengthFromMm(job.width_mm, uom),
+        height: formLengthFromMm(job.height_mm, uom),
+        deckle_size: Number(job.deckle_size || 0),
+        sheet_length: Number(job.sheet_length || 0),
+        est_unit_weight: Number(job.est_unit_weight || 0),
+        pieces_count: Number(job.pieces_count || 1),
+        ups: Number(job.ups || 1),
+        ply_type: inferPlyType(layers),
+        layers: layers.length ? layers : layersForPly(3),
+        print_colors: Number(special.print_colors ?? job.printing_colors_count ?? 0),
+        printing_data: special.printing_data || { inks: job.pantone_colors || [] },
+        pasting_type: special.pasting_type || job.pasting_closure || 'None',
+        slot_type: special.slot_type || 'Simple',
+        process_type: special.process_type || 'Rotary Slotter',
+        die_cutting_scope: special.die_cutting_scope || 'sheet_wise',
+        job_type: special.job_type || 'Repeat',
+        quality_priority: special.quality_priority || 'Normal',
+        ink_coverage: Number(special.ink_coverage || 20),
+        special_details: {
+            honeycomb: { ...makeSpecialDetails().honeycomb, ...(special.honeycomb_detail || {}), enabled: Boolean(special.honeycomb) },
+            separator: { ...makeSpecialDetails().separator, ...(special.separator_detail || {}), enabled: Boolean(special.separators) }
+        },
+        corrugation_instruction: special.corrugation_instruction || '',
+        printing_instruction: special.printing_instruction || '',
+        finishing_instruction: special.finishing_instruction || '',
+        remarks: job.notes || '',
+        pieces
+    });
+
+    activePieceTab.value = createForm.pieces.length ? createForm.pieces[0].local_id : 'piece_0';
+    cartonPreviewFailed.value = false;
+};
+
 const validateCreateForm = async () => {
     if (!createFormRef.value) return false;
     const valid = await createFormRef.value.validate().catch(() => false);
@@ -1454,13 +1550,22 @@ const submitCreateForm = async () => {
     submitting.value = true;
     try {
         const payload = buildJobCardPayload();
-        await axios.post('/api/job-cards', payload);
-        ElMessage.success('Job card created successfully');
+        if (isChangeRequestMode.value) {
+            payload.change_reason = changeRequestReason.value;
+            await axios.post(`/api/job-cards/${changeRequestJobId.value}/change-request`, payload);
+            ElMessage.success('Change request saved as a new active version');
+        } else if (isEditMode.value) {
+            await axios.put(`/api/job-cards/${editJobId.value}`, payload);
+            ElMessage.success('Job card updated successfully');
+        } else {
+            await axios.post('/api/job-cards', payload);
+            ElMessage.success('Job card created successfully');
+        }
         isCreating.value = false;
         resetCreateForm();
         fetchJobCards();
     } catch (error) {
-        ElMessage.error(error.response?.data?.error || 'Failed to create job card');
+        ElMessage.error(error.response?.data?.error || 'Failed to save job card');
     } finally {
         submitting.value = false;
     }
@@ -1513,40 +1618,6 @@ const downloadDieLine = async () => {
     link.remove();
 };
 
-const openProductionDialog = (job) => {
-    selectedJob.value = job;
-    Object.assign(prodForm, {
-        job_card_id: job.id,
-        job_card_step_id: null,
-        date: todayString(),
-        shift: 'Day',
-        machine_no: '',
-        quantity: 0,
-        wastage: 0,
-        operator_name: '',
-        remarks: ''
-    });
-    prodDialogVisible.value = true;
-};
-
-const submitProdForm = async () => {
-    if (!prodFormRef.value) return;
-    await prodFormRef.value.validate(async (valid) => {
-        if (!valid) return;
-        submitting.value = true;
-        try {
-            await axios.post('/api/job-cards/record-production', prodForm);
-            ElMessage.success('Production log recorded successfully');
-            prodDialogVisible.value = false;
-            fetchJobCards();
-        } catch (error) {
-            ElMessage.error(error.response?.data?.error || 'Failed to record production');
-        } finally {
-            submitting.value = false;
-        }
-    });
-};
-
 const viewDetails = async (job) => {
     try {
         const res = await axios.get(`/api/job-cards/${job.id}`);
@@ -1557,33 +1628,155 @@ const viewDetails = async (job) => {
     }
 };
 
-const changeStatus = async (job) => {
+const openEditForm = async (job) => {
     try {
-        const { value: status } = await ElMessageBox.prompt('Update Status', 'Change Job Card Status', {
-            confirmButtonText: 'Update',
+        const res = await axios.get(`/api/job-cards/${job.id}`);
+        hydrateCreateFormFromJob(res.data);
+        isEditMode.value = true;
+        editJobId.value = job.id;
+        isChangeRequestMode.value = false;
+        changeRequestJobId.value = null;
+        changeRequestReason.value = '';
+        nextJobCardNo.value = res.data.job_card_no;
+        isCreating.value = true;
+    } catch (error) {
+        ElMessage.error('Failed to open job card for editing');
+    }
+};
+
+const openChangeRequest = async (job) => {
+    try {
+        const { value: reason } = await ElMessageBox.prompt('Reason for Change', 'Create Job Card Change Request', {
+            confirmButtonText: 'Continue',
             cancelButtonText: 'Cancel',
-            inputPattern: /^(Open|In-Progress|Completed|Cancelled)$/,
-            inputErrorMessage: 'Status must be Open, In-Progress, Completed, or Cancelled',
-            inputValue: job.status
+            inputType: 'textarea',
+            inputPlaceholder: 'Describe the customer requested specification change...',
+            inputPattern: /\S{3,}/,
+            inputErrorMessage: 'Reason for change is required'
         });
 
-        await axios.put(`/api/job-cards/${job.id}/status`, { status });
-        ElMessage.success('Status updated successfully');
+        const res = await axios.get(`/api/job-cards/${job.id}`);
+        hydrateCreateFormFromJob(res.data);
+        isEditMode.value = false;
+        editJobId.value = null;
+        isChangeRequestMode.value = true;
+        changeRequestJobId.value = job.id;
+        changeRequestReason.value = reason;
+        nextJobCardNo.value = res.data.job_card_no;
+        isCreating.value = true;
+    } catch (error) {
+        if (error !== 'cancel' && error !== 'close') {
+            ElMessage.error('Failed to open change request');
+        }
+    }
+};
+
+const deleteJobCard = async (job) => {
+    try {
+        await ElMessageBox.confirm(
+            `Permanently remove Job Card ${job.job_card_no} from active records?`,
+            'Delete Job Card',
+            {
+                confirmButtonText: 'Delete',
+                cancelButtonText: 'Cancel',
+                type: 'warning',
+                confirmButtonClass: 'el-button--danger'
+            }
+        );
+
+        await axios.delete(`/api/job-cards/${job.id}`);
+        ElMessage.success('Job Card deleted successfully');
         fetchJobCards();
-    } catch (error) {}
+    } catch (error) {
+        if (error === 'cancel' || error === 'close') return;
+        ElMessage.error(error.response?.data?.error || 'Failed to delete Job Card');
+    }
+};
+
+const viewVersion = async (version) => {
+    if (!selectedJobFull.value) return;
+    try {
+        const res = await axios.get(`/api/job-cards/${selectedJobFull.value.id}/versions/${version.id}`);
+        selectedVersion.value = res.data;
+        versionDialogVisible.value = true;
+    } catch (error) {
+        ElMessage.error('Failed to load version details');
+    }
+};
+
+const compareVersion = async (version) => {
+    if (!selectedJobFull.value) return;
+    const versions = [...(selectedJobFull.value.versions || [])].sort((a, b) => a.version_no - b.version_no);
+    const previous = [...versions].reverse().find(item => item.version_no < version.version_no) || versions.find(item => item.id !== version.id);
+
+    if (!previous) {
+        ElMessage.info('No previous version is available for comparison.');
+        return;
+    }
+
+    try {
+        const res = await axios.get(`/api/job-cards/${selectedJobFull.value.id}/versions/compare`, {
+            params: { from: previous.id, to: version.id }
+        });
+        versionCompare.value = res.data;
+        compareDialogVisible.value = true;
+    } catch (error) {
+        ElMessage.error('Failed to compare versions');
+    }
+};
+
+const printVersion = (version) => {
+    if (!selectedJobFull.value) return;
+    window.open(`/job-cards/${selectedJobFull.value.id}/versions/${version.id}/print`, '_blank');
 };
 
 const printDirectly = (id) => {
     window.open(`/job-cards/${id}/print`, '_blank');
 };
 
-const getStatusTag = (status) => {
-    const map = { 'Open': 'info', 'In-Progress': 'primary', 'Completed': 'success', 'Cancelled': 'danger' };
-    return map[status] || 'info';
+const currentVersionLabel = (job) => `V${job?.active_version?.version_no || job?.activeVersion?.version_no || job?.current_version_no || 1}`;
+
+const jobCardBomRows = (job) => {
+    if (!job) return [];
+
+    const itemRows = (job.items || []).map((item) => ({
+        layer: item.unit || 'Material',
+        material: item.item?.rm_name || item.item?.name || item.item?.item_name || item.item?.item_code || '-',
+        gsm: '-',
+        flute: '-',
+        required: `${formatNum(item.required_qty, 2)} ${item.unit || ''}`.trim(),
+        consumed: `${formatNum(item.consumed_qty, 2)} ${item.unit || ''}`.trim()
+    }));
+
+    if (itemRows.length) {
+        return itemRows;
+    }
+
+    const singlePieceRows = (job.layers || []).map((layer) => ({
+        layer: layer.layer_type || 'Layer',
+        material: layer.paper_name || '-',
+        gsm: Number(layer.gsm || 0) ? formatNum(layer.gsm, 0) : '-',
+        flute: layer.flute_profile && layer.flute_profile !== 'Flat' ? layer.flute_profile : '-',
+        required: '-',
+        consumed: '-'
+    }));
+
+    const pieceRows = (job.pieces || []).flatMap((piece) => (piece.layers || []).map((layer) => ({
+        layer: `${piece.piece_name || 'Component'} - ${layer.layer_type || 'Layer'}`,
+        material: layer.paper_name || '-',
+        gsm: Number(layer.gsm || 0) ? formatNum(layer.gsm, 0) : '-',
+        flute: layer.flute_profile && layer.flute_profile !== 'Flat' ? layer.flute_profile : '-',
+        required: '-',
+        consumed: '-'
+    })));
+
+    return singlePieceRows.length ? singlePieceRows : pieceRows;
 };
 
 const formatQty = (val) => Number(val || 0).toLocaleString();
 const formatNum = (val, dec) => Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec });
+const formatDate = (value) => value ? new Date(value).toLocaleDateString('en-GB') : '-';
+const formatDateTime = (value) => value ? new Date(value).toLocaleString('en-GB') : '-';
 
 onMounted(() => {
     fetchJobCards();
@@ -1651,18 +1844,72 @@ onMounted(() => {
 .job-card-management > .glass-card {
     border-radius: 9px;
 }
+.job-version-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 22px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(79, 70, 229, 0.28);
+    background: rgba(79, 70, 229, 0.1);
+    color: #3730a3;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+}
+[data-theme="dark"] .job-version-badge {
+    border-color: rgba(129, 140, 248, 0.45);
+    background: rgba(79, 70, 229, 0.22);
+    color: #dbeafe;
+}
+.job-mode-alert {
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    background: #eff6ff;
+}
+.job-mode-alert :deep(.el-alert__title),
+.job-mode-alert :deep(.el-alert__content),
+.job-mode-alert :deep(.el-alert__description) {
+    color: #1e3a8a !important;
+    font-weight: 800;
+    line-height: 1.45;
+}
+.job-mode-alert :deep(.el-alert__icon) {
+    color: #2563eb !important;
+}
+:global([data-theme="dark"]) .job-card-management .job-mode-alert,
+:global(body.dark-mode) .job-card-management .job-mode-alert {
+    border-color: rgba(96, 165, 250, 0.42) !important;
+    background: rgba(30, 58, 138, 0.32) !important;
+}
+:global([data-theme="dark"]) .job-card-management .job-mode-alert .el-alert__title,
+:global([data-theme="dark"]) .job-card-management .job-mode-alert .el-alert__content,
+:global([data-theme="dark"]) .job-card-management .job-mode-alert .el-alert__description,
+:global(body.dark-mode) .job-card-management .job-mode-alert .el-alert__title,
+:global(body.dark-mode) .job-card-management .job-mode-alert .el-alert__content,
+:global(body.dark-mode) .job-card-management .job-mode-alert .el-alert__description {
+    color: #e0f2fe !important;
+}
+:global([data-theme="dark"]) .job-card-management .job-mode-alert .el-alert__icon,
+:global(body.dark-mode) .job-card-management .job-mode-alert .el-alert__icon {
+    color: #93c5fd !important;
+}
 .filter-container {
     align-items: end;
-    padding: 14px 20px !important;
+    margin-bottom: 10px !important;
+    padding: 7px 10px !important;
 }
 .filter-container label {
-    font-size: 0.78rem !important;
+    font-size: 0.64rem !important;
     line-height: 1.2;
-    margin-bottom: 6px !important;
+    margin-bottom: 3px !important;
 }
 .filter-container .col-md-2,
 .filter-container .col-md-3,
-.filter-container .col-md-4 {
+.filter-container .col-md-4,
+.filter-container .col-md-5 {
     min-width: 0;
 }
 .job-create-workspace {
@@ -1898,36 +2145,10 @@ onMounted(() => {
 .segmented-control :deep(.el-radio-button__inner) {
     width: 100%;
 }
-.metrics-strip {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-    margin: 0;
-}
 .sizing-section {
     display: grid;
     gap: 12px;
     margin-top: 18px;
-}
-.metrics-strip div {
-    background: #172033;
-    border: 1px solid #243044;
-    border-radius: 8px;
-    color: #f8fafc;
-    padding: 12px;
-}
-.metrics-strip span {
-    color: #a7b4c8;
-    display: block;
-    font-size: 0.72rem;
-    font-weight: 800;
-    text-transform: uppercase;
-}
-.metrics-strip strong {
-    color: #8bdbad;
-    display: block;
-    font-size: 1rem;
-    margin-top: 4px;
 }
 .dieline-panel strong {
     color: var(--jc-create-text);
@@ -2078,33 +2299,33 @@ onMounted(() => {
 .filter-container :deep(.el-select),
 .filter-container :deep(.el-input__wrapper),
 .filter-container :deep(.el-select__wrapper) {
-    height: 44px;
-    min-height: 44px;
+    height: 32px;
+    min-height: 32px;
 }
 .filter-container :deep(.el-input__wrapper),
 .filter-container :deep(.el-select__wrapper) {
-    border-radius: 8px;
-    padding: 0 16px;
+    border-radius: 7px;
+    padding: 0 10px;
 }
 .filter-container :deep(.el-input__inner),
 .filter-container :deep(.el-select__selected-item),
 .filter-container :deep(.el-select__placeholder) {
-    font-size: 0.92rem;
+    font-size: 0.76rem;
     font-weight: 700;
-    line-height: 42px;
-    min-height: 42px;
+    line-height: 30px;
+    min-height: 30px;
 }
 .filter-container :deep(.el-select__caret) {
-    font-size: 0.95rem;
+    font-size: 0.78rem;
 }
 .filter-container :deep(.el-button),
 .filter-container .btn-clear-filters {
-    border-radius: 8px;
-    font-size: 0.92rem;
+    border-radius: 7px;
+    font-size: 0.76rem;
     font-weight: 800;
-    height: 44px;
-    min-height: 44px;
-    padding: 0 18px;
+    height: 32px;
+    min-height: 32px;
+    padding: 0 10px;
 }
 .ink-grid {
     display: grid;
@@ -2362,7 +2583,6 @@ onMounted(() => {
     .two-col,
     .three-col,
     .four-col,
-    .metrics-strip,
     .ink-grid {
         grid-template-columns: 1fr;
     }
@@ -2621,6 +2841,14 @@ body.dark-mode .job-card-management .preview-panel-header {
 body.dark-mode .job-card-management .construction-table th {
     background: #1e293b !important;
     color: #dbeafe !important;
+}
+
+[data-theme="dark"] .job-card-management .dieline-canvas,
+body.dark-mode .job-card-management .dieline-canvas {
+    background:
+        linear-gradient(#f8fafc, #f8fafc) padding-box,
+        repeating-linear-gradient(45deg, #e2e8f0 0 1px, transparent 1px 12px) !important;
+    border-color: #475569 !important;
 }
 
 [data-theme="dark"] .job-card-management .construction-table td,

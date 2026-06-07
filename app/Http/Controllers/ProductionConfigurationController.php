@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Department;
+use App\Models\FluteFactor;
 use App\Models\MachineOperator;
 use App\Models\OptimizationRule;
 use App\Models\PrintingColor;
@@ -213,6 +214,39 @@ class ProductionConfigurationController extends Controller
         return response()->noContent();
     }
 
+    public function fluteFactors(Request $request)
+    {
+        $query = FluteFactor::query();
+        $this->applySearch($query, $request, ['flute_type', 'description']);
+        $this->applySort($query, $request, ['flute_type', 'factor', 'created_at'], 'flute_type');
+
+        return $query->paginate($request->integer('per_page', 15));
+    }
+
+    public function storeFluteFactor(Request $request)
+    {
+        $data = $this->validateFluteFactor($request);
+        $data['created_by'] = optional($request->user())->id;
+        $data['updated_by'] = optional($request->user())->id;
+
+        return response()->json(FluteFactor::create($data), 201);
+    }
+
+    public function updateFluteFactor(Request $request, FluteFactor $fluteFactor)
+    {
+        $data = $this->validateFluteFactor($request, $fluteFactor);
+        $data['updated_by'] = optional($request->user())->id;
+        $fluteFactor->update($data);
+
+        return response()->json($fluteFactor);
+    }
+
+    public function destroyFluteFactor(FluteFactor $fluteFactor)
+    {
+        $fluteFactor->delete();
+        return response()->noContent();
+    }
+
     public function optimizationRules(Request $request)
     {
         $query = OptimizationRule::query();
@@ -272,7 +306,22 @@ class ProductionConfigurationController extends Controller
             'departments' => Department::orderBy('department_name')->get(),
             'machines' => ProductionMachine::with('department')->orderBy('machine_name')->get(),
             'printing_colors' => PrintingColor::orderBy('ink_code')->get(),
+            'flute_factors' => FluteFactor::where('is_active', true)->orderBy('flute_type')->get(),
         ]);
+    }
+
+    private function validateFluteFactor(Request $request, ?FluteFactor $fluteFactor = null): array
+    {
+        $data = $request->validate([
+            'flute_type' => ['required', 'string', 'max:20', Rule::unique('flute_factors', 'flute_type')->ignore($fluteFactor?->id)],
+            'factor' => ['required', 'numeric', 'gt:0'],
+            'description' => ['nullable', 'string', 'max:255'],
+            'is_active' => ['boolean'],
+        ]);
+
+        $data['flute_type'] = strtoupper(trim($data['flute_type']));
+
+        return $data;
     }
 
     private function validateOptimizationRule(Request $request): array

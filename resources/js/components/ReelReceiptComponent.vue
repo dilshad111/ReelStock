@@ -917,8 +917,9 @@ export default {
       this.fetchReceipts();
     },
     goToPage(page) {
-      if (page < 1 || page > this.pagination.last_page) return;
-      this.fetchReceipts({ page: page, reel_no: this.reelSearch || undefined });
+      const targetPage = Number(page);
+      if (!Number.isInteger(targetPage) || targetPage < 1 || targetPage > this.pagination.last_page) return;
+      this.fetchReceipts(targetPage);
     },
     fetchSuppliers() {
       axios.get('/api/suppliers').then(response => {
