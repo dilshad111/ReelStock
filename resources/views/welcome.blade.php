@@ -1890,12 +1890,13 @@
 
 
 
-                    <el-sub-menu index="production-module" v-if="canView('production-configuration') || canView('job-cards') || canView('job-issue') || canView('production-dashboard')">
+                    <el-sub-menu index="production-module" v-if="canView('production-configuration') || canView('product-engineering') || canView('job-cards') || canView('job-issue') || canView('production-dashboard')">
                         <template #title>
                             <i class="bi bi-gear-wide-connected me-2" style="color: #a78bfa !important;"></i>
                             <span>Production</span>
                         </template>
                         <el-menu-item index="production-configuration" v-if="canView('production-configuration')">Configuration</el-menu-item>
+                        <el-menu-item index="product-engineering" v-if="canView('product-engineering')">Product Engineering</el-menu-item>
                         <el-menu-item index="job-cards" v-if="canView('job-cards')">Job Cards</el-menu-item>
                         <el-menu-item index="job-issue" v-if="canView('job-issue')">Job Issue</el-menu-item>
                         <el-menu-item index="production-dashboard" v-if="canView('production-dashboard')">Production Analytics</el-menu-item>
@@ -2028,6 +2029,7 @@
                 <rm-consumption-component v-else-if="currentView === 'rm-consumptions'" :user="user"></rm-consumption-component>
                 <rm-report-component v-else-if="currentView === 'rm-reports'" :user="user"></rm-report-component>
                 <unit-of-measure-component v-else-if="currentView === 'unit-of-measures'" :user="user"></unit-of-measure-component>
+                <product-engineering-component v-else-if="currentView === 'product-engineering'" :user="user"></product-engineering-component>
                 <job-card-component v-else-if="currentView === 'job-cards'" :user="user"></job-card-component>
                 <job-issue-component v-else-if="currentView === 'job-issue'" :user="user"></job-issue-component>
                 <production-configuration-component v-else-if="currentView === 'production-configuration'" :user="user"></production-configuration-component>

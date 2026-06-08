@@ -10,6 +10,26 @@
     $tolerance = $jobCard->pieces_count == 1 && $jobCard->layers->count() >= 5 ? 5 : 3;
     $printDate = now()->format('d/m/Y');
     $itemCode = $product->item_code ?? $product->code ?? '-';
+    $cartonCode = $special['carton_type_code'] ?? null;
+
+    if (!$cartonCode && preg_match('/(\d{4}(?:-[A-Za-z0-9]+)?)/', (string) $jobCard->carton_type, $matches)) {
+        $cartonCode = $matches[1];
+    }
+
+    $cartonPreviewDataUri = null;
+    $cartonPreviewCandidates = array_filter([
+        $cartonCode ? public_path('images/fefco/' . $cartonCode . '.png') : null,
+        $cartonCode ? public_path('images/fefco/' . strtoupper($cartonCode) . '.png') : null,
+        $cartonCode ? public_path('images/fefco/' . substr($cartonCode, 0, 4) . '.png') : null,
+        public_path('images/fefco/0201.png'),
+    ]);
+
+    foreach ($cartonPreviewCandidates as $candidate) {
+        if (is_file($candidate)) {
+            $cartonPreviewDataUri = 'data:image/png;base64,' . base64_encode(file_get_contents($candidate));
+            break;
+        }
+    }
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -113,14 +133,22 @@
             border-top: 1px dashed #aaa;
             font-size: 8.5pt;
         }
-        .job-no-box {
+        .carton-preview-box {
             border: 2px solid #000;
-            display: grid;
-            place-items: center;
-            font-size: 10px;
-            font-weight: 900;
-            writing-mode: vertical-rl;
-            text-orientation: mixed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+            min-height: 1.22in;
+            background: #fff;
+        }
+        .carton-preview-box img {
+            display: block;
+            width: 100%;
+            max-width: 1.08in;
+            max-height: 0.82in;
+            object-fit: contain;
         }
         .speed-strip {
             display: flex;
@@ -256,12 +284,11 @@
                     @endif
                 </div>
             </div>
-            <div class="job-no-box">{{ $jobCard->job_card_no }}</div>
-        </div>
-        <div class="speed-strip">
-            <span><strong>Machine Target:</strong> {{ $jobCard->machine_name ?: 'N/A' }}</span>
-            <span><strong>Target Speed:</strong> {{ number_format($jobCard->target_speed) }} pcs/hr</span>
-            <span><strong>Box Type:</strong> {{ $jobCard->carton_type }}</span>
+            <div class="carton-preview-box">
+                @if($cartonPreviewDataUri)
+                    <img src="{{ $cartonPreviewDataUri }}" alt="FEFCO carton preview">
+                @endif
+            </div>
         </div>
     </div>
 

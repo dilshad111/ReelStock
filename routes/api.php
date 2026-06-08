@@ -47,6 +47,7 @@ use App\Http\Controllers\JobCardController;
 use App\Http\Controllers\JobIssueController;
 use App\Http\Controllers\ProductionConfigurationController;
 use App\Http\Controllers\CartonTypeController;
+use App\Http\Controllers\ProductEngineeringController;
 
 /*
 |--------------------------------------------------------------------------
@@ -224,6 +225,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Production / Job Card Routes
     Route::get('/carton-types', [CartonTypeController::class, 'index']);
+    Route::get('/product-engineering/lookups', [ProductEngineeringController::class, 'lookups']);
+    Route::get('/product-engineering/{productEngineering}/explode', [ProductEngineeringController::class, 'explode']);
+    Route::apiResource('/product-engineering', ProductEngineeringController::class);
     Route::get('/job-cards', [JobCardController::class, 'index']);
     Route::get('/job-cards/next-number', [JobCardController::class, 'nextNumber']);
     Route::get('/job-cards/dashboard', [JobCardController::class, 'dashboard']);

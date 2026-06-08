@@ -213,6 +213,7 @@ export default {
         category: 'Production',
         items: [
           { key: 'production-configuration', name: 'Configuration', hasAmounts: false },
+          { key: 'product-engineering', name: 'Product Engineering', hasAmounts: false },
           { key: 'job-cards', name: 'Job Cards', hasAmounts: false },
           { key: 'job-issue', name: 'Job Issue', hasAmounts: false },
           { key: 'production-dashboard', name: 'Production Analytics', hasAmounts: false },
@@ -383,6 +384,7 @@ export default {
             'rm-consumptions': 'bi bi-file-earmark-arrow-up',
             'rm-reports': 'bi bi-clipboard-data',
             'unit-of-measures': 'bi bi-rulers',
+            'product-engineering': 'bi bi-diagram-3',
             'job-cards': 'bi bi-card-checklist',
             'job-issue': 'bi bi-clipboard2-pulse',
             'production-configuration': 'bi bi-sliders',

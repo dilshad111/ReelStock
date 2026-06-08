@@ -56,6 +56,7 @@ const PERMISSION_KEY_MAP = {
     'rm-reports': 'rm-reports',
     'unit-of-measures': 'unit-of-measures',
     'job-cards': 'job-cards',
+    'product-engineering': 'product-engineering',
     'job-issue': 'job-issue',
     'production-configuration': 'production-configuration',
     'production-dashboard': 'production-dashboard'
@@ -111,6 +112,7 @@ const PERMISSION_KEYS = [
     'rm-reports',
     'unit-of-measures',
     'job-cards',
+    'product-engineering',
     'job-issue',
     'production-configuration',
     'production-dashboard'
@@ -165,6 +167,7 @@ const VIEW_ORDER = [
     'rm-reports',
     'unit-of-measures',
     'job-cards',
+    'product-engineering',
     'job-issue',
     'production-configuration',
     'production-dashboard',
@@ -222,6 +225,7 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     'rm-reports': 'rm-reports',
     'unit-of-measures': 'unit-of-measures',
     'job-cards': 'job-cards',
+    'product-engineering': 'product-engineering',
     'job-issue': 'job-issue',
     'production-configuration': 'production-configuration',
     'production-dashboard': 'production-dashboard',
@@ -702,6 +706,7 @@ import RMDashboardComponent from './components/RMDashboardComponent.vue';
 import RMReportComponent from './components/RMReportComponent.vue';
 import UnitOfMeasureComponent from './components/UnitOfMeasureComponent.vue';
 import JobCardComponent from './components/JobCardComponent.vue';
+import ProductEngineeringComponent from './components/ProductEngineeringComponent.vue';
 import JobIssueComponent from './components/JobIssueComponent.vue';
 import ProductionConfigurationComponent from './components/ProductionConfigurationComponent.vue';
 import ProductionDashboardComponent from './components/ProductionDashboardComponent.vue';
@@ -759,6 +764,7 @@ app.component('rm-dashboard-component', RMDashboardComponent);
 app.component('rm-report-component', RMReportComponent);
 app.component('unit-of-measure-component', UnitOfMeasureComponent);
 app.component('job-card-component', JobCardComponent);
+app.component('product-engineering-component', ProductEngineeringComponent);
 app.component('job-issue-component', JobIssueComponent);
 app.component('production-configuration-component', ProductionConfigurationComponent);
 app.component('production-dashboard-component', ProductionDashboardComponent);
