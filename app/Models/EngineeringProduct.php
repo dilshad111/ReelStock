@@ -11,6 +11,8 @@ class EngineeringProduct extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'product_number',
+        'product_created_date',
         'product_code',
         'product_name',
         'customer_id',
@@ -24,6 +26,7 @@ class EngineeringProduct extends Model
     ];
 
     protected $casts = [
+        'product_created_date' => 'date',
         'revision_number' => 'integer',
         'revision_date' => 'date',
     ];

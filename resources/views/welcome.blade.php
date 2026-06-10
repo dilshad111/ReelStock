@@ -1162,12 +1162,17 @@
 
         /* Icon Colors */
         .icon-dashboard { color: #4dabf7 !important; }
+        .icon-reels { color: #60a5fa !important; }
         .icon-suppliers { color: #ff922b !important; }
         .icon-paper { color: #51cf66 !important; }
         .icon-reports { color: #cc5de8 !important; }
+        .icon-qc { color: #2dd4bf !important; }
         .icon-cartons { color: #ff6b6b !important; }
+        .icon-fg { color: #a78bfa !important; }
+        .icon-rm { color: #34d399 !important; }
+        .icon-production { color: #c084fc !important; }
         .icon-users { color: #20c997 !important; }
-        .icon-setup { color: #868e96 !important; }
+        .icon-setup { color: #fbbf24 !important; }
         .icon-transport { color: #fcc419 !important; }
 
         .navbar-brand-el {
@@ -1798,7 +1803,7 @@
                     
                     <el-sub-menu index="reels-inventory" v-if="canView('suppliers') || canView('qualities') || canView('paper-colors') || canView('receipts') || canView('issues') || canView('return-supplier') || canView('stock-alerts') || canView('monthly-consumption') || canView('reel-stock') || canView('reel-receipt') || canView('monthly-closing') || canView('reel-stock-count') || canView('usage-intelligence') || canView('old-reels') || canView('qc-inspection')">
                         <template #title>
-                            <i class="bi bi-stack me-2" style="color: #60a5fa !important;"></i>
+                            <i class="bi bi-stack me-2 icon-reels"></i>
                             <span>Reels Inventory</span>
                         </template>
                         
@@ -1836,7 +1841,7 @@
                         
                         <el-sub-menu index="qc-module" v-if="canView('qc-inspection')">
                             <template #title>
-                                <i class="bi bi-clipboard2-check-fill me-2" style="color: #2dd4bf !important;"></i>
+                                <i class="bi bi-clipboard2-check-fill me-2 icon-qc"></i>
                                 <span>QC Inspection</span>
                             </template>
                             <el-menu-item index="qc-inspection" v-if="canView('qc-inspection')">Reel Inspection</el-menu-item>
@@ -1863,7 +1868,7 @@
 
                     <el-sub-menu index="finished-goods" v-if="canView('fg-dashboard') || canView('fg-products') || canView('fg-receipts') || canView('fg-dispatches') || canView('fg-reports') || canView('fg-inventory-email')">
                         <template #title>
-                            <i class="bi bi-box-seam-fill me-2" style="color: #a78bfa !important;"></i>
+                            <i class="bi bi-box-seam-fill me-2 icon-fg"></i>
                             <span>Finished Goods</span>
                         </template>
                         <el-menu-item index="fg-dashboard" v-if="canView('fg-dashboard')">FG Dashboard</el-menu-item>
@@ -1876,7 +1881,7 @@
 
                     <el-sub-menu index="raw-materials" v-if="canView('rm-dashboard') || canView('rm-categories') || canView('rm-items') || canView('unit-of-measures') || canView('rm-receipts') || canView('rm-consumptions') || canView('rm-reports')">
                         <template #title>
-                            <i class="bi bi-layers-fill me-2" style="color: #a78bfa !important;"></i>
+                            <i class="bi bi-layers-fill me-2 icon-rm"></i>
                             <span>Raw Material</span>
                         </template>
                         <el-menu-item index="rm-dashboard" v-if="canView('rm-dashboard')">RM Dashboard</el-menu-item>
@@ -1892,7 +1897,7 @@
 
                     <el-sub-menu index="production-module" v-if="canView('production-configuration') || canView('product-engineering') || canView('job-cards') || canView('job-issue') || canView('production-dashboard')">
                         <template #title>
-                            <i class="bi bi-gear-wide-connected me-2" style="color: #a78bfa !important;"></i>
+                            <i class="bi bi-gear-wide-connected me-2 icon-production"></i>
                             <span>Production</span>
                         </template>
                         <el-menu-item index="production-configuration" v-if="canView('production-configuration')">Configuration</el-menu-item>

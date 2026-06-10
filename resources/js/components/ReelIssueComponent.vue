@@ -347,6 +347,10 @@ export default {
     },
     saveIssue() {
       const payload = { ...this.formData, reel_no: this.normalizeReelNo(this.formData.reel_no) };
+      if (!payload.issue_date) {
+        alert('Issue date is required.');
+        return;
+      }
       payload.quantity_issued = Number(payload.quantity_issued) || 0;
       payload.return_to_stock_weight = Number(payload.return_to_stock_weight) || 0;
       payload.net_consumed_weight = this.calculatedBalance;

@@ -21,6 +21,7 @@ class EngineeringComponentSpecification extends Model
         'joint_type',
         'is_printed',
         'printing_colors',
+        'printing_color_codes',
         'bundle_quantity',
         'special_instructions',
     ];
@@ -31,6 +32,7 @@ class EngineeringComponentSpecification extends Model
         'height' => 'float',
         'is_printed' => 'boolean',
         'printing_colors' => 'integer',
+        'printing_color_codes' => 'array',
         'bundle_quantity' => 'integer',
     ];
 

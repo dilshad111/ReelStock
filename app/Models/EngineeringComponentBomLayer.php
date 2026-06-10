@@ -12,7 +12,9 @@ class EngineeringComponentBomLayer extends Model
     protected $fillable = [
         'engineering_component_id',
         'layer_sequence',
+        'layer_label',
         'paper_type',
+        'paper_quality_id',
         'gsm',
         'supplier_id',
     ];
@@ -30,5 +32,10 @@ class EngineeringComponentBomLayer extends Model
     public function supplier()
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    public function paperQuality()
+    {
+        return $this->belongsTo(PaperQuality::class);
     }
 }

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\EngineeringProduct;
 use App\Models\EngineeringProductRevision;
+use App\Models\PaperQuality;
+use App\Models\PrintingColor;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,17 +17,16 @@ class ProductEngineeringController extends Controller
 {
     private const PROCESSES = [
         'Corrugation',
+        'Corrugation + Online Slitting',
+        'Manual Scoring',
         'Printing',
-        'Slotting',
+        'Printing + Slotting',
+        'Printing + Slotting + Gluing + Packing',
         'Die Cutting',
         'Gluing',
         'Stitching',
         'Packing',
-        'Lamination',
-        'UV Coating',
         'Window Pasting',
-        'Foil Stamping',
-        'Embossing',
     ];
 
     public function index(Request $request)
@@ -65,6 +66,9 @@ class ProductEngineeringController extends Controller
         return response()->json([
             'customers' => Customer::orderBy('name')->get(['id', 'name']),
             'suppliers' => Supplier::orderBy('name')->get(['id', 'name']),
+            'paper_qualities' => PaperQuality::orderBy('quality')
+                ->get(['id', 'quality', 'gsm_range', 'standard_gsm', 'min_gsm', 'max_gsm']),
+            'printing_colors' => PrintingColor::orderBy('ink_code')->get(['id', 'ink_code', 'ink_name']),
             'processes' => collect(self::PROCESSES)->map(fn ($name) => ['label' => $name, 'value' => $name])->values(),
             'categories' => EngineeringProduct::query()
                 ->whereNotNull('product_category')
@@ -86,6 +90,8 @@ class ProductEngineeringController extends Controller
 
         return DB::transaction(function () use ($data) {
             $product = EngineeringProduct::create([
+                'product_number' => $this->nextProductNumber(),
+                'product_created_date' => now()->toDateString(),
                 ...$this->productPayload($data),
                 'revision_number' => (int) ($data['revision_number'] ?? 1),
                 'revision_date' => $data['revision_date'] ?? now()->toDateString(),
@@ -95,7 +101,7 @@ class ProductEngineeringController extends Controller
 
             $this->syncComponents($product, $data['components']);
             $product = $this->loadProduct($product);
-            $this->recordRevision($product, $data['change_notes'] ?? 'Initial product engineering master.');
+            $this->recordRevision($product, $data['change_notes'] ?? 'Original Product Master version.');
 
             return response()->json($this->loadProduct($product), 201);
         });
@@ -175,6 +181,8 @@ class ProductEngineeringController extends Controller
             'product_name' => ['required', 'string', 'max:255'],
             'customer_id' => ['nullable', 'exists:customers,id'],
             'product_category' => ['nullable', 'string', 'max:120'],
+            'product_number' => ['nullable', 'string', 'max:40'],
+            'product_created_date' => ['nullable', 'date'],
             'revision_number' => ['nullable', 'integer', 'min:1'],
             'revision_date' => ['nullable', 'date'],
             'status' => ['required', Rule::in(['Active', 'Inactive'])],
@@ -198,11 +206,15 @@ class ProductEngineeringController extends Controller
             'components.*.specification.joint_type' => ['nullable', 'string', 'max:120'],
             'components.*.specification.is_printed' => ['nullable', 'boolean'],
             'components.*.specification.printing_colors' => ['nullable', 'integer', 'min:0', 'max:12'],
+            'components.*.specification.printing_color_codes' => ['nullable', 'array'],
+            'components.*.specification.printing_color_codes.*' => ['nullable', 'string', 'max:50'],
             'components.*.specification.bundle_quantity' => ['nullable', 'integer', 'min:0'],
             'components.*.specification.special_instructions' => ['nullable', 'string'],
             'components.*.bom_layers' => ['nullable', 'array'],
             'components.*.bom_layers.*.layer_sequence' => ['required_with:components.*.bom_layers', 'integer', 'min:1'],
+            'components.*.bom_layers.*.layer_label' => ['nullable', 'string', 'max:120'],
             'components.*.bom_layers.*.paper_type' => ['required_with:components.*.bom_layers', 'string', 'max:255'],
+            'components.*.bom_layers.*.paper_quality_id' => ['nullable', 'exists:paper_qualities,id'],
             'components.*.bom_layers.*.gsm' => ['nullable', 'integer', 'min:1'],
             'components.*.bom_layers.*.supplier_id' => ['nullable', 'exists:suppliers,id'],
             'components.*.routings' => ['nullable', 'array'],
@@ -251,15 +263,25 @@ class ProductEngineeringController extends Controller
                 'joint_type' => $spec['joint_type'] ?? null,
                 'is_printed' => (bool) ($spec['is_printed'] ?? false),
                 'printing_colors' => (int) ($spec['printing_colors'] ?? 0),
+                'printing_color_codes' => array_values(array_filter($spec['printing_color_codes'] ?? [])),
                 'bundle_quantity' => $spec['bundle_quantity'] ?? null,
                 'special_instructions' => $spec['special_instructions'] ?? null,
             ]);
 
             foreach (($componentData['bom_layers'] ?? []) as $layer) {
+                $paperQuality = !empty($layer['paper_quality_id'])
+                    ? PaperQuality::find($layer['paper_quality_id'])
+                    : null;
                 $component->bomLayers()->create([
                     'layer_sequence' => $layer['layer_sequence'],
-                    'paper_type' => $layer['paper_type'],
-                    'gsm' => $layer['gsm'] ?? null,
+                    'layer_label' => $layer['layer_label'] ?? null,
+                    'paper_type' => $paperQuality
+                        ? trim($paperQuality->quality . ' (' . $paperQuality->gsm_range . ')')
+                        : $layer['paper_type'],
+                    'paper_quality_id' => $layer['paper_quality_id'] ?? null,
+                    'gsm' => $paperQuality
+                        ? (int) round((float) ($paperQuality->standard_gsm ?: $paperQuality->min_gsm ?: $paperQuality->max_gsm))
+                        : ($layer['gsm'] ?? null),
                     'supplier_id' => $layer['supplier_id'] ?? null,
                 ]);
             }
@@ -299,8 +321,16 @@ class ProductEngineeringController extends Controller
             'customer',
             'components.specification',
             'components.bomLayers.supplier',
+            'components.bomLayers.paperQuality',
             'components.routings',
             'revisions.creator',
         ]);
+    }
+
+    private function nextProductNumber(): string
+    {
+        $lastId = (int) EngineeringProduct::withTrashed()->max('id');
+
+        return 'QC-PM-' . str_pad((string) (110001 + $lastId), 6, '0', STR_PAD_LEFT);
     }
 }

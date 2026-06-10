@@ -45,6 +45,7 @@
                 </div>
 
                 <el-table :data="products" v-loading="loading" border class="pe-table" highlight-current-row @row-click="selectProduct">
+                    <el-table-column prop="product_number" label="Product No." min-width="145" />
                     <el-table-column prop="product_code" label="Product Code" min-width="140" />
                     <el-table-column prop="product_name" label="Product Name" min-width="220" show-overflow-tooltip />
                     <el-table-column label="Customer" min-width="170" show-overflow-tooltip>
@@ -70,6 +71,7 @@
                                     <el-dropdown-menu>
                                         <el-dropdown-item @click="selectProduct(row)"><i class="bi bi-eye me-2"></i>View</el-dropdown-item>
                                         <el-dropdown-item @click="openEditor(row)"><i class="bi bi-pencil me-2"></i>Edit</el-dropdown-item>
+                                        <el-dropdown-item @click="openRevision(row)"><i class="bi bi-arrow-up-right-square me-2"></i>Revision</el-dropdown-item>
                                         <el-dropdown-item divided @click="deleteProduct(row)" class="text-danger"><i class="bi bi-trash me-2"></i>Delete</el-dropdown-item>
                                     </el-dropdown-menu>
                                 </template>
@@ -99,9 +101,12 @@
                         <div>
                             <span class="pe-eyebrow">Product Structure View</span>
                             <h2>{{ selectedProduct.product_code }} | {{ selectedProduct.product_name }}</h2>
-                            <p>Revision R{{ selectedProduct.revision_number }} · {{ selectedProduct.customer?.name || 'General Master' }}</p>
+                            <p>{{ selectedProduct.product_number || '-' }} &middot; Revision R{{ selectedProduct.revision_number }} &middot; {{ selectedProduct.customer?.name || 'General Master' }}</p>
                         </div>
-                        <el-button type="primary" plain @click="openEditor(selectedProduct)">Edit Master</el-button>
+                        <div class="pe-detail-actions">
+                            <el-button plain @click="openEditor(selectedProduct)">Edit</el-button>
+                            <el-button type="primary" plain @click="openRevision(selectedProduct)">Revision</el-button>
+                        </div>
                     </div>
 
                     <el-tabs v-model="activeDetailTab" class="pe-detail-tabs">
@@ -151,15 +156,16 @@
                                     <div>
                                         <h4>Paper BOM</h4>
                                         <table class="pe-mini-table">
-                                            <thead><tr><th>Seq</th><th>Paper Type</th><th>GSM</th><th>Supplier</th></tr></thead>
+                                            <thead><tr><th>Seq</th><th>Layer</th><th>Paper Name</th><th>GSM</th><th>Supplier</th></tr></thead>
                                             <tbody>
                                                 <tr v-for="layer in component.bom_layers" :key="layer.id">
                                                     <td>{{ layer.layer_sequence }}</td>
+                                                    <td>{{ layer.layer_label || '-' }}</td>
                                                     <td>{{ layer.paper_type }}</td>
                                                     <td>{{ layer.gsm || '-' }}</td>
                                                     <td>{{ layer.supplier?.name || '-' }}</td>
                                                 </tr>
-                                                <tr v-if="!component.bom_layers?.length"><td colspan="4">No BOM layers.</td></tr>
+                                                <tr v-if="!component.bom_layers?.length"><td colspan="5">No BOM layers.</td></tr>
                                             </tbody>
                                         </table>
                                     </div>
@@ -221,7 +227,7 @@
             </section>
         </div>
 
-        <el-dialog v-model="editorVisible" :title="editingId ? 'Edit Product Engineering Master' : 'Create Product Engineering Master'" width="96%" top="2vh" destroy-on-close class="pe-editor-dialog">
+        <el-dialog v-model="editorVisible" :title="editorTitle" width="96%" top="2vh" destroy-on-close class="pe-editor-dialog">
             <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="pe-form">
                 <section class="pe-editor-section">
                     <div class="pe-editor-title">
@@ -231,7 +237,15 @@
                         </div>
                         <span class="pe-version">R{{ form.revision_number || 1 }}</span>
                     </div>
+                    <div class="pe-master-grid">
+                        <div class="pe-master-form">
                     <div class="pe-form-grid four">
+                        <el-form-item label="Product Master No.">
+                            <el-input v-model="form.product_number" disabled placeholder="Auto generated on save" />
+                        </el-form-item>
+                        <el-form-item label="Creation Date">
+                            <el-date-picker v-model="form.product_created_date" type="date" value-format="YYYY-MM-DD" format="DD/MM/YYYY" disabled class="w-100" />
+                        </el-form-item>
                         <el-form-item label="Product Code" prop="product_code">
                             <el-input v-model="form.product_code" placeholder="e.g. PRD-MC-0001" />
                         </el-form-item>
@@ -253,7 +267,7 @@
                             </el-select>
                         </el-form-item>
                         <el-form-item label="Revision Number">
-                            <el-input-number v-model="form.revision_number" :min="1" :controls="false" class="w-100" />
+                            <el-input-number v-model="form.revision_number" :min="1" :controls="false" disabled class="w-100" />
                         </el-form-item>
                         <el-form-item label="Status" prop="status">
                             <el-select v-model="form.status" class="w-100">
@@ -262,10 +276,7 @@
                             </el-select>
                         </el-form-item>
                         <el-form-item label="Revision Date">
-                            <el-date-picker v-model="form.revision_date" type="date" value-format="YYYY-MM-DD" format="DD/MM/YYYY" class="w-100" />
-                        </el-form-item>
-                        <el-form-item v-if="editingId" label="Create New Revision">
-                            <el-switch v-model="form.create_revision" active-text="Yes" inactive-text="No" />
+                            <el-date-picker v-model="form.revision_date" type="date" value-format="YYYY-MM-DD" format="DD/MM/YYYY" disabled class="w-100" />
                         </el-form-item>
                     </div>
                     <div class="pe-form-grid two">
@@ -275,6 +286,56 @@
                         <el-form-item label="Change Notes">
                             <el-input v-model="form.change_notes" type="textarea" :rows="2" placeholder="Why this version/revision is being saved" />
                         </el-form-item>
+                    </div>
+                        </div>
+                        <div class="pe-master-visuals">
+                            <div class="pe-visual-card">
+                                <div class="pe-visual-head">
+                                    <span>Carton Preview</span>
+                                    <small>{{ previewComponent.component_name || 'Primary Component' }}</small>
+                                </div>
+                                <svg class="pe-carton-svg" viewBox="0 0 420 230" role="img" aria-label="Carton preview">
+                                    <path d="M116 78 L236 44 L335 86 L212 126 Z" class="pe-svg-panel pe-svg-top" />
+                                    <path d="M116 78 L212 126 L212 190 L116 140 Z" class="pe-svg-panel" />
+                                    <path d="M212 126 L335 86 L335 150 L212 190 Z" class="pe-svg-panel" />
+                                    <path d="M236 44 L282 22 L378 63 L335 86 Z" class="pe-svg-flap" />
+                                    <path d="M116 78 L76 54 L196 22 L236 44 Z" class="pe-svg-flap" />
+                                    <path d="M212 190 L164 207 L72 158 L116 140 Z" class="pe-svg-flap" />
+                                    <text x="276" y="176">L {{ dimensionText(previewSpec.length) }}</text>
+                                    <text x="87" y="134">W {{ dimensionText(previewSpec.width) }}</text>
+                                    <text x="345" y="130">H {{ dimensionText(previewSpec.height) }}</text>
+                                </svg>
+                            </div>
+                            <div class="pe-visual-card">
+                                <div class="pe-visual-head">
+                                    <span>Die-Line Structure</span>
+                                    <small>{{ form.product_category || 'Carton structure' }}</small>
+                                </div>
+                                <svg class="pe-dieline-svg" viewBox="0 0 560 250" role="img" aria-label="Die-line structure">
+                                    <rect x="36" y="84" width="28" height="82" class="pe-svg-flap" />
+                                    <rect x="64" y="46" width="116" height="158" class="pe-svg-panel" />
+                                    <rect x="180" y="46" width="88" height="158" class="pe-svg-panel" />
+                                    <rect x="268" y="46" width="116" height="158" class="pe-svg-panel" />
+                                    <rect x="384" y="46" width="88" height="158" class="pe-svg-panel" />
+                                    <line x1="64" y1="84" x2="472" y2="84" class="pe-svg-dash" />
+                                    <line x1="64" y1="166" x2="472" y2="166" class="pe-svg-dash" />
+                                    <line x1="180" y1="46" x2="180" y2="204" class="pe-svg-dash" />
+                                    <line x1="268" y1="46" x2="268" y2="204" class="pe-svg-dash" />
+                                    <line x1="384" y1="46" x2="384" y2="204" class="pe-svg-dash" />
+                                    <path d="M64 32 L180 32" class="pe-svg-arrow" marker-start="url(#peArrow)" marker-end="url(#peArrow)" />
+                                    <path d="M180 220 L268 220" class="pe-svg-arrow" marker-start="url(#peArrow)" marker-end="url(#peArrow)" />
+                                    <path d="M498 84 L498 166" class="pe-svg-arrow" marker-start="url(#peArrow)" marker-end="url(#peArrow)" />
+                                    <defs>
+                                        <marker id="peArrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                                            <path d="M 0 0 L 10 5 L 0 10 z" />
+                                        </marker>
+                                    </defs>
+                                    <text x="88" y="27">L {{ dimensionText(previewSpec.length) }}</text>
+                                    <text x="195" y="238">W {{ dimensionText(previewSpec.width) }}</text>
+                                    <text x="512" y="129" transform="rotate(90 512 129)">H {{ dimensionText(previewSpec.height) }}</text>
+                                </svg>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -375,10 +436,28 @@
                                         <el-switch v-model="component.specification.is_printed" active-text="Yes" inactive-text="No" />
                                     </el-form-item>
                                     <el-form-item label="Printing Colors">
-                                        <el-input-number v-model="component.specification.printing_colors" :min="0" :max="12" :controls="false" class="w-100" />
+                                        <el-select v-model="component.specification.printing_colors" class="w-100" @change="syncColorSlots(component)">
+                                            <el-option v-for="option in colorCountOptions" :key="option.value" :label="option.label" :value="option.value" />
+                                        </el-select>
                                     </el-form-item>
                                     <el-form-item label="Bundle Quantity">
-                                        <el-input-number v-model="component.specification.bundle_quantity" :min="0" :controls="false" class="w-100" />
+                                        <el-input-number v-model="component.specification.bundle_quantity" :min="0" :controls="false" placeholder="No. of Cartons in Each Bundle" class="w-100" />
+                                    </el-form-item>
+                                </div>
+                                <div v-if="Number(component.specification.printing_colors || 0) > 0" class="pe-color-grid">
+                                    <el-form-item
+                                        v-for="slot in Number(component.specification.printing_colors || 0)"
+                                        :key="`${component.local_id}_color_${slot}`"
+                                        :label="`Color ${slot}`"
+                                    >
+                                        <el-select v-model="component.specification.printing_color_codes[slot - 1]" filterable clearable placeholder="Select configured color" class="w-100">
+                                            <el-option v-for="color in lookups.printing_colors" :key="color.id" :label="printingColorLabel(color)" :value="color.ink_code">
+                                                <span class="pe-color-option">
+                                                    <span class="pe-color-chip" :style="{ backgroundColor: color.ink_code }"></span>
+                                                    {{ printingColorLabel(color) }}
+                                                </span>
+                                            </el-option>
+                                        </el-select>
                                     </el-form-item>
                                 </div>
                                 <el-form-item label="Special Instructions">
@@ -397,8 +476,12 @@
                                 <div class="pe-row-list">
                                     <div v-for="(layer, lIndex) in component.bom_layers" :key="layer.local_id" class="pe-bom-row">
                                         <el-input-number v-model="layer.layer_sequence" :min="1" :controls="false" placeholder="Seq" />
-                                        <el-input v-model="layer.paper_type" placeholder="Paper Type / Layer Name" />
-                                        <el-input-number v-model="layer.gsm" :min="1" :controls="false" placeholder="GSM" />
+                                        <el-input v-model="layer.layer_label" placeholder="Layer e.g. Top Paper" />
+                                        <el-select v-model="layer.paper_quality_id" filterable clearable placeholder="Select paper reel item" @change="syncBomPaper(layer)">
+                                            <el-option v-for="paper in lookups.paper_qualities" :key="paper.id" :label="paperQualityLabel(paper)" :value="paper.id" />
+                                        </el-select>
+                                        <el-input v-model="layer.paper_type" readonly placeholder="Paper Name" />
+                                        <el-input-number v-model="layer.gsm" :min="1" :controls="false" disabled placeholder="GSM" />
                                         <el-select v-model="layer.supplier_id" filterable clearable placeholder="Supplier optional">
                                             <el-option v-for="supplier in lookups.suppliers" :key="supplier.id" :label="supplier.name" :value="supplier.id" />
                                         </el-select>
@@ -474,6 +557,7 @@ const products = ref([]);
 const selectedProduct = ref(null);
 const editorVisible = ref(false);
 const editingId = ref(null);
+const editorMode = ref('create');
 const activeDetailTab = ref('tree');
 const activeComponentKey = ref('');
 const formRef = ref(null);
@@ -496,8 +580,26 @@ const pagination = reactive({
 const lookups = reactive({
     customers: [],
     suppliers: [],
+    paper_qualities: [],
+    printing_colors: [],
     processes: [],
     categories: [],
+});
+
+const colorCountOptions = [
+    { label: 'Un-Printed', value: 0 },
+    { label: '1 Color', value: 1 },
+    { label: '2 Colors', value: 2 },
+    { label: '3 Colors', value: 3 },
+    { label: '4 Colors', value: 4 },
+    { label: '5 Colors', value: 5 },
+    { label: '6 Colors', value: 6 },
+];
+
+const editorTitle = computed(() => {
+    if (editorMode.value === 'revision') return 'Create Product Master Revision';
+    if (editingId.value) return 'Edit Product Master';
+    return 'Create Product Master';
 });
 
 const rules = {
@@ -519,14 +621,17 @@ const defaultSpecification = () => ({
     joint_type: 'Glue',
     is_printed: false,
     printing_colors: 0,
+    printing_color_codes: [],
     bundle_quantity: null,
     special_instructions: '',
 });
 
-const bomLayer = (sequence = 1, paperType = '') => ({
+const bomLayer = (sequence = 1, layerLabel = '', paperType = '') => ({
     local_id: makeId(),
     layer_sequence: sequence,
+    layer_label: layerLabel,
     paper_type: paperType,
+    paper_quality_id: null,
     gsm: null,
     supplier_id: null,
 });
@@ -558,6 +663,8 @@ const componentRow = (index = 0) => ({
 });
 
 const defaultForm = () => ({
+    product_number: '',
+    product_created_date: new Date().toISOString().slice(0, 10),
     product_code: '',
     product_name: '',
     customer_id: null,
@@ -573,10 +680,22 @@ const defaultForm = () => ({
 
 const form = reactive(defaultForm());
 
+const previewComponent = computed(() => form.components[0] || componentRow(0));
+const previewSpec = computed(() => previewComponent.value.specification || defaultSpecification());
+
+function dimensionText(value) {
+    const numeric = Number(value || 0);
+    return numeric > 0 ? `${numeric.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${previewSpec.value.uom || 'mm'}` : '--';
+}
+
 function defaultParametersForProcess(processName) {
     const presets = {
         Corrugation: ['Reel Width', 'Sheet Width', 'Sheet Length', 'Online Slitting', 'Number of Outs', 'Trim Allowance'],
+        'Corrugation + Online Slitting': ['Reel Width', 'Sheet Width', 'Sheet Length', 'Online Slitting', 'Number of Outs', 'Trim Allowance'],
+        'Manual Scoring': ['Score Width', 'Score Depth', 'Operator Note'],
         Printing: ['Artwork Code', 'Number of Colors', 'Print Side', 'Print Position'],
+        'Printing + Slotting': ['Artwork Code', 'Number of Colors', 'Print Side', 'Slot Width', 'Slot Depth'],
+        'Printing + Slotting + Gluing + Packing': ['Artwork Code', 'Number of Colors', 'Slot Width', 'Glue Type', 'Bundle Quantity'],
         'Die Cutting': ['Die Number', 'Crease Layout', 'Slot Dimensions'],
         Gluing: ['Joint Width', 'Glue Type'],
         Stitching: ['Joint Width', 'Stitch Count'],
@@ -590,6 +709,7 @@ function resetForm() {
     Object.assign(form, defaultForm());
     activeComponentKey.value = form.components[0].local_id;
     editingId.value = null;
+    editorMode.value = 'create';
 }
 
 async function fetchLookups() {
@@ -638,18 +758,33 @@ function clearFilters() {
     fetchProducts();
 }
 
-async function openEditor(row = null) {
+async function openEditor(row = null, mode = 'edit') {
     resetForm();
     if (row?.id) {
         const { data } = await axios.get(`/api/product-engineering/${row.id}`);
         hydrateForm(data);
         editingId.value = data.id;
+        editorMode.value = mode;
+        form.create_revision = mode === 'revision';
+        if (mode === 'revision') {
+            form.revision_number = Number(data.revision_number || 1) + 1;
+            form.revision_date = new Date().toISOString().slice(0, 10);
+            form.change_notes = '';
+        }
+    } else {
+        editorMode.value = 'create';
     }
     editorVisible.value = true;
 }
 
+function openRevision(row) {
+    openEditor(row, 'revision');
+}
+
 function hydrateForm(product) {
     Object.assign(form, {
+        product_number: product.product_number || '',
+        product_created_date: product.product_created_date ? String(product.product_created_date).slice(0, 10) : new Date().toISOString().slice(0, 10),
         product_code: product.product_code || '',
         product_name: product.product_name || '',
         customer_id: product.customer_id || null,
@@ -668,11 +803,19 @@ function hydrateForm(product) {
             component_type: component.component_type || '',
             is_active: Boolean(component.is_active),
             sort_order: component.sort_order || index + 1,
-            specification: { ...defaultSpecification(), ...(component.specification || {}) },
+            specification: {
+                ...defaultSpecification(),
+                ...(component.specification || {}),
+                printing_color_codes: Array.isArray(component.specification?.printing_color_codes)
+                    ? [...component.specification.printing_color_codes]
+                    : [],
+            },
             bom_layers: (component.bom_layers || []).map(layer => ({
                 local_id: makeId(),
                 layer_sequence: layer.layer_sequence,
+                layer_label: layer.layer_label || '',
                 paper_type: layer.paper_type,
+                paper_quality_id: layer.paper_quality_id || null,
                 gsm: layer.gsm,
                 supplier_id: layer.supplier_id,
             })),
@@ -692,6 +835,7 @@ function hydrateForm(product) {
         })),
     });
     if (!form.components.length) addComponent();
+    form.components.forEach(syncColorSlots);
     activeComponentKey.value = form.components[0].local_id;
 }
 
@@ -721,7 +865,7 @@ function applyPlyTemplate(component) {
 }
 
 function addBomLayer(component) {
-    component.bom_layers.push(bomLayer(component.bom_layers.length + 1, ''));
+    component.bom_layers.push(bomLayer(component.bom_layers.length + 1, 'Custom Layer'));
 }
 
 function removeBomLayer(component, index) {
@@ -729,6 +873,38 @@ function removeBomLayer(component, index) {
     component.bom_layers.forEach((layer, lIndex) => {
         layer.layer_sequence = lIndex + 1;
     });
+}
+
+function paperQualityLabel(paper) {
+    return `${paper.quality} (${paper.gsm_range || standardGsm(paper) + ' gsm'})`;
+}
+
+function standardGsm(paper) {
+    return Number(paper?.standard_gsm || paper?.min_gsm || paper?.max_gsm || 0);
+}
+
+function syncBomPaper(layer) {
+    const paper = lookups.paper_qualities.find(item => item.id === layer.paper_quality_id);
+    if (!paper) {
+        layer.paper_type = '';
+        layer.gsm = null;
+        return;
+    }
+    layer.paper_type = paperQualityLabel(paper);
+    layer.gsm = Math.round(standardGsm(paper)) || null;
+}
+
+function syncColorSlots(component) {
+    const count = Number(component.specification.printing_colors || 0);
+    const colors = Array.isArray(component.specification.printing_color_codes)
+        ? component.specification.printing_color_codes
+        : [];
+    component.specification.printing_color_codes = Array.from({ length: count }, (_, index) => colors[index] || '');
+    component.specification.is_printed = count > 0;
+}
+
+function printingColorLabel(color) {
+    return `${color.ink_name} (${color.ink_code})`;
 }
 
 function addRouting(component) {
@@ -759,6 +935,10 @@ function parametersObject(routing) {
 }
 
 function validateNested() {
+    if (editorMode.value === 'revision' && !String(form.change_notes || '').trim()) {
+        ElMessage.error('Revision notes are required when creating a Product Master revision.');
+        return false;
+    }
     for (const component of form.components) {
         if (!component.component_code || !component.component_name) {
             ElMessage.error('Every component requires Component Code and Component Name.');
@@ -770,7 +950,7 @@ function validateNested() {
         }
         for (const layer of component.bom_layers) {
             if (!layer.layer_sequence || !layer.paper_type) {
-                ElMessage.error('Every BOM layer requires sequence and paper type.');
+                ElMessage.error('Every BOM layer requires sequence and a selected paper reel item.');
                 return false;
             }
         }
@@ -786,6 +966,8 @@ function validateNested() {
 
 function payload() {
     return {
+        product_number: form.product_number,
+        product_created_date: form.product_created_date,
         product_code: form.product_code,
         product_name: form.product_name,
         customer_id: form.customer_id,
@@ -803,10 +985,17 @@ function payload() {
             component_type: component.component_type,
             is_active: component.is_active,
             sort_order: index + 1,
-            specification: component.specification,
+            specification: {
+                ...component.specification,
+                printing_color_codes: (component.specification.printing_color_codes || [])
+                    .slice(0, Number(component.specification.printing_colors || 0))
+                    .filter(Boolean),
+            },
             bom_layers: component.bom_layers.map((layer, lIndex) => ({
                 layer_sequence: layer.layer_sequence || lIndex + 1,
+                layer_label: layer.layer_label,
                 paper_type: layer.paper_type,
+                paper_quality_id: layer.paper_quality_id,
                 gsm: layer.gsm,
                 supplier_id: layer.supplier_id,
             })),
@@ -832,7 +1021,9 @@ async function saveProduct() {
             ? axios.put(`/api/product-engineering/${editingId.value}`, payload())
             : axios.post('/api/product-engineering', payload());
         const { data } = await request;
-        ElMessage.success(editingId.value ? 'Product engineering master updated.' : 'Product engineering master created.');
+        ElMessage.success(editorMode.value === 'revision'
+            ? 'Product Master revision created.'
+            : (editingId.value ? 'Product Master updated.' : 'Product Master created.'));
         editorVisible.value = false;
         await fetchProducts();
         selectedProduct.value = data;
@@ -1155,6 +1346,103 @@ onMounted(async () => {
 .pe-form-grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .pe-form-grid.five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .pe-form-grid.six { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.pe-master-grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: minmax(0, 1.18fr) minmax(360px, 0.82fr);
+}
+.pe-master-form {
+    min-width: 0;
+}
+.pe-master-visuals {
+    display: grid;
+    gap: 12px;
+}
+.pe-visual-card {
+    background: #f8fafc;
+    border: 1px solid var(--pe-border);
+    border-radius: 8px;
+    min-height: 214px;
+    padding: 12px;
+}
+.pe-visual-head {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+.pe-visual-head span {
+    color: #26364d;
+    font-size: 0.82rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.pe-visual-head small {
+    color: var(--pe-muted);
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+.pe-carton-svg,
+.pe-dieline-svg {
+    background: #ffffff;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    height: 174px;
+    width: 100%;
+}
+.pe-carton-svg text,
+.pe-dieline-svg text {
+    fill: #0f172a;
+    font-size: 13px;
+    font-weight: 900;
+}
+.pe-svg-panel,
+.pe-svg-flap {
+    fill: #ffffff;
+    stroke: #111827;
+    stroke-linejoin: round;
+    stroke-width: 2;
+}
+.pe-svg-flap {
+    fill: #f8fafc;
+}
+.pe-svg-dash {
+    fill: none;
+    stroke: #334155;
+    stroke-dasharray: 4 4;
+    stroke-width: 1.5;
+}
+.pe-svg-arrow {
+    fill: none;
+    stroke: #111827;
+    stroke-width: 1.8;
+}
+.pe-dieline-svg marker path {
+    fill: #111827;
+}
+.pe-detail-actions {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+}
+.pe-color-grid {
+    display: grid;
+    gap: 10px 12px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.pe-color-option {
+    align-items: center;
+    display: inline-flex;
+    gap: 8px;
+}
+.pe-color-chip {
+    border: 1px solid #94a3b8;
+    border-radius: 999px;
+    display: inline-block;
+    height: 12px;
+    width: 12px;
+}
 .pe-form :deep(.el-form-item__label) {
     color: #52627a;
     font-size: 0.78rem;
@@ -1179,7 +1467,7 @@ onMounted(async () => {
 .pe-bom-row {
     display: grid;
     gap: 8px;
-    grid-template-columns: 92px 1.3fr 110px 1fr 42px;
+    grid-template-columns: 74px 1fr 1.35fr 1.25fr 92px 1fr 42px;
 }
 .pe-routing-card {
     background: #fff;
@@ -1317,6 +1605,34 @@ onMounted(async () => {
 :global(body.dark-mode) .pe-mini-table td {
     border-color: #40516c;
     color: #f8fafc;
+}
+:global([data-theme="dark"]) .pe-visual-card,
+:global(body.dark-mode) .pe-visual-card {
+    background: #1d293d;
+    border-color: #40516c;
+}
+:global([data-theme="dark"]) .pe-visual-head span,
+:global(body.dark-mode) .pe-visual-head span {
+    color: #dbeafe;
+}
+:global([data-theme="dark"]) .pe-carton-svg,
+:global([data-theme="dark"]) .pe-dieline-svg,
+:global(body.dark-mode) .pe-carton-svg,
+:global(body.dark-mode) .pe-dieline-svg {
+    background: #f8fafc;
+    border-color: #64748b;
+}
+:global([data-theme="dark"]) .pe-carton-svg text,
+:global([data-theme="dark"]) .pe-dieline-svg text,
+:global(body.dark-mode) .pe-carton-svg text,
+:global(body.dark-mode) .pe-dieline-svg text {
+    fill: #0f172a !important;
+}
+:global([data-theme="dark"]) .pe-svg-panel,
+:global([data-theme="dark"]) .pe-svg-flap,
+:global(body.dark-mode) .pe-svg-panel,
+:global(body.dark-mode) .pe-svg-flap {
+    stroke: #111827;
 }
 
 :global([data-theme="dark"] .pe-module),
@@ -1564,6 +1880,7 @@ onMounted(async () => {
 
 @media (max-width: 1200px) {
     .pe-content-grid,
+    .pe-master-grid,
     .pe-two-col,
     .pe-form-grid.four,
     .pe-form-grid.five,
@@ -1583,11 +1900,13 @@ onMounted(async () => {
         flex-direction: column;
     }
     .pe-content-grid,
+    .pe-master-grid,
     .pe-filter-card,
     .pe-form-grid.two,
     .pe-form-grid.four,
     .pe-form-grid.five,
     .pe-form-grid.six,
+    .pe-color-grid,
     .pe-bom-row,
     .pe-param-row {
         grid-template-columns: 1fr;
