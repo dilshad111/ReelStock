@@ -9,7 +9,7 @@ class FetchReelIssuesAction
 {
     public function execute(array $filters, int $limit = 50): LengthAwarePaginator
     {
-        $query = ReelIssue::with('reel.paperQuality');
+        $query = ReelIssue::with(['reel.paperQuality', 'reel.supplier']);
 
         if (!empty($filters['search'])) {
             $searchTerm = $filters['search'];

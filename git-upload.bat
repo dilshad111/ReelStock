@@ -8,7 +8,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "Job card working-2"
+git commit -m "Supplier fetch issue updated"
 
 echo.
 echo Pushing to origin main...

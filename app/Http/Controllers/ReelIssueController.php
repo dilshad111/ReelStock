@@ -50,7 +50,7 @@ class ReelIssueController extends Controller
     public function show($id)
     {
         try {
-            $issue = ReelIssue::with('reel')->findOrFail($id);
+            $issue = ReelIssue::with(['reel.paperQuality', 'reel.supplier'])->findOrFail($id);
             return $this->success(new ReelIssueResource($issue));
         } catch (\Exception $e) {
             return $this->error('Reel issue not found', 404);
@@ -70,7 +70,7 @@ class ReelIssueController extends Controller
         ]);
 
         try {
-            $issue = ReelIssue::with(['reel'])->lockForUpdate()->findOrFail($id);
+            $issue = ReelIssue::with(['reel.paperQuality', 'reel.supplier'])->lockForUpdate()->findOrFail($id);
             $updatedIssue = $action->execute($issue, $request->all());
 
             return $this->success(

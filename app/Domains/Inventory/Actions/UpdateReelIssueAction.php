@@ -60,7 +60,7 @@ class UpdateReelIssueAction
                 if ($autoReturn) {
                     $autoReturn->update([
                         'return_date'      => $data['issue_date'],
-                        'remaining_weight' => $newBalance,
+                        'remaining_weight' => $returnWeight,
                         'return_location'  => $data['return_location'] ?? null,
                         'remarks'          => !empty($data['remarks']) ? ($data['remarks'] . ' (auto return)') : 'Auto return from issue form',
                     ]);
@@ -83,9 +83,9 @@ class UpdateReelIssueAction
                 $issue->save();
             }
 
-            event(new \App\Events\InventoryUpdated('issue_updated', $issue->load('reel')));
+            event(new \App\Events\InventoryUpdated('issue_updated', $issue->load('reel.paperQuality', 'reel.supplier')));
 
-            return $issue->load('reel');
+            return $issue->load('reel.paperQuality', 'reel.supplier');
         });
     }
 
