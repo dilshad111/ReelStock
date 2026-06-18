@@ -57,6 +57,9 @@ class UpdateReelIssueAction
             $autoReturn = $issue->auto_return_id ? ReelReturn::lockForUpdate()->find($issue->auto_return_id) : null;
 
             if ($returnWeight > 0) {
+                $reel->current_location = $this->normalizeStockLocation($data['return_location'] ?? null);
+                $reel->save();
+
                 if ($autoReturn) {
                     $autoReturn->update([
                         'return_date'      => $data['issue_date'],
@@ -98,6 +101,11 @@ class UpdateReelIssueAction
         } else {
             $reel->status = 'in_stock';
         }
+    }
+
+    protected function normalizeStockLocation(?string $location): string
+    {
+        return $location === 'Factory' ? 'Factory' : 'Warehouse';
     }
 
     protected function validateAndSyncBalance($reel): bool

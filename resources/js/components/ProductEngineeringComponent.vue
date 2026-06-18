@@ -65,14 +65,14 @@
                     </el-table-column>
                     <el-table-column label="Actions" width="125" align="center">
                         <template #default="{ row }">
-                            <el-dropdown trigger="click">
+                            <el-dropdown trigger="click" @command="command => handleProductAction(command, row)">
                                 <button class="pe-dots-btn" @click.stop><i class="bi bi-three-dots-vertical"></i></button>
                                 <template #dropdown>
                                     <el-dropdown-menu>
-                                        <el-dropdown-item @click="selectProduct(row)"><i class="bi bi-eye me-2"></i>View</el-dropdown-item>
-                                        <el-dropdown-item @click="openEditor(row)"><i class="bi bi-pencil me-2"></i>Edit</el-dropdown-item>
-                                        <el-dropdown-item @click="openRevision(row)"><i class="bi bi-arrow-up-right-square me-2"></i>Revision</el-dropdown-item>
-                                        <el-dropdown-item divided @click="deleteProduct(row)" class="text-danger"><i class="bi bi-trash me-2"></i>Delete</el-dropdown-item>
+                                        <el-dropdown-item command="view"><i class="bi bi-eye me-2"></i>View</el-dropdown-item>
+                                        <el-dropdown-item command="edit"><i class="bi bi-pencil me-2"></i>Edit</el-dropdown-item>
+                                        <el-dropdown-item command="revision"><i class="bi bi-arrow-up-right-square me-2"></i>Revision</el-dropdown-item>
+                                        <el-dropdown-item command="delete" divided class="text-danger"><i class="bi bi-trash me-2"></i>Delete</el-dropdown-item>
                                     </el-dropdown-menu>
                                 </template>
                             </el-dropdown>
@@ -266,6 +266,16 @@
                                 <el-option v-for="category in lookups.categories" :key="category" :label="category" :value="category" />
                             </el-select>
                         </el-form-item>
+                        <el-form-item label="FEFCO Code">
+                            <el-select v-model="form.fefco_code" filterable placeholder="Select FEFCO code" class="w-100">
+                                <el-option
+                                    v-for="option in fefcoOptions"
+                                    :key="option.code"
+                                    :label="optionLabel(option)"
+                                    :value="option.code"
+                                />
+                            </el-select>
+                        </el-form-item>
                         <el-form-item label="Revision Number">
                             <el-input-number v-model="form.revision_number" :min="1" :controls="false" disabled class="w-100" />
                         </el-form-item>
@@ -291,25 +301,33 @@
                         <div class="pe-master-visuals">
                             <div class="pe-visual-card">
                                 <div class="pe-visual-head">
-                                    <span>Carton Preview</span>
-                                    <small>{{ previewComponent.component_name || 'Primary Component' }}</small>
+                                    <div>
+                                        <span>Carton Preview</span>
+                                        <strong>{{ selectedFefcoOption.name }}</strong>
+                                    </div>
+                                    <small>FEFCO {{ selectedFefcoOption.code }}</small>
                                 </div>
-                                <svg class="pe-carton-svg" viewBox="0 0 420 230" role="img" aria-label="Carton preview">
-                                    <path d="M116 78 L236 44 L335 86 L212 126 Z" class="pe-svg-panel pe-svg-top" />
-                                    <path d="M116 78 L212 126 L212 190 L116 140 Z" class="pe-svg-panel" />
-                                    <path d="M212 126 L335 86 L335 150 L212 190 Z" class="pe-svg-panel" />
-                                    <path d="M236 44 L282 22 L378 63 L335 86 Z" class="pe-svg-flap" />
-                                    <path d="M116 78 L76 54 L196 22 L236 44 Z" class="pe-svg-flap" />
-                                    <path d="M212 190 L164 207 L72 158 L116 140 Z" class="pe-svg-flap" />
-                                    <text x="276" y="176">L {{ dimensionText(previewSpec.length) }}</text>
-                                    <text x="87" y="134">W {{ dimensionText(previewSpec.width) }}</text>
-                                    <text x="345" y="130">H {{ dimensionText(previewSpec.height) }}</text>
-                                </svg>
+                                <div class="pe-preview-frame">
+                                    <img
+                                        class="pe-fefco-preview"
+                                        :src="selectedFefcoOption.image"
+                                        :alt="`${selectedFefcoOption.name} FEFCO ${selectedFefcoOption.code}`"
+                                    >
+                                </div>
                             </div>
                             <div class="pe-visual-card">
                                 <div class="pe-visual-head">
-                                    <span>Die-Line Structure</span>
-                                    <small>{{ form.product_category || 'Carton structure' }}</small>
+                                    <div>
+                                        <span>Die-Line Structure</span>
+                                        <strong>{{ selectedFefcoOption.name }}</strong>
+                                    </div>
+                                    <div class="pe-visual-tools">
+                                        <small>{{ previewComponent.component_name || 'Component 1' }}</small>
+                                        <button type="button" class="pe-download-sketch-btn" @click="downloadGenericSketch">
+                                            <i class="bi bi-download"></i>
+                                            JPEG
+                                        </button>
+                                    </div>
                                 </div>
                                 <svg class="pe-dieline-svg" viewBox="0 0 560 250" role="img" aria-label="Die-line structure">
                                     <rect x="36" y="84" width="28" height="82" class="pe-svg-flap" />
@@ -596,6 +614,54 @@ const colorCountOptions = [
     { label: '6 Colors', value: 6 },
 ];
 
+const fefcoOptions = [
+    { code: '0200', name: 'Slotted Carton' },
+    { code: '0201', name: 'Regular Slotted Carton' },
+    { code: '0202', name: 'Half Slotted Carton' },
+    { code: '0203', name: 'Overlap Slotted Carton' },
+    { code: '0204', name: 'Full Overlap Slotted Carton' },
+    { code: '0205', name: 'Center Special Slotted Carton' },
+    { code: '0206', name: 'Center Special Overlap Carton' },
+    { code: '0207', name: 'Full Flap Slotted Carton' },
+    { code: '0208', name: 'Slotted Tray Carton' },
+    { code: '0209', name: 'Display Slotted Carton' },
+    { code: '0300', name: 'Telescopic Carton' },
+    { code: '0301', name: 'Full Telescope Design Carton' },
+    { code: '0302', name: 'Two Piece Telescope Carton' },
+    { code: '0303', name: 'Lid and Tray Carton' },
+    { code: '0400', name: 'Folder Type Carton' },
+    { code: '0401', name: 'Folder Carton' },
+    { code: '0403', name: 'One Piece Folder' },
+    { code: '0404', name: 'Wrap Around Blank' },
+    { code: '0405', name: 'Five Panel Folder' },
+    { code: '0406', name: 'Book Wrap Carton' },
+    { code: '0409', name: 'Folder with Locking Flaps' },
+    { code: '0500', name: 'Slide Type Carton' },
+    { code: '0501', name: 'Sleeve Carton' },
+    { code: '0502', name: 'Tray and Sleeve Carton' },
+    { code: '0503', name: 'Slide Box' },
+    { code: '0600', name: 'Rigid Type Carton' },
+    { code: '0601', name: 'Rigid Box' },
+    { code: '0602', name: 'Rigid Two Piece Box' },
+    { code: '0603', name: 'Rigid Tray' },
+    { code: '0700', name: 'Ready Glued Carton' },
+    { code: '0701', name: 'Crash Lock Bottom Carton' },
+    { code: '0703', name: 'Pre-Glued Carton' },
+    { code: '0711', name: 'Auto Bottom Carton' },
+    { code: '0713', name: 'Mailer Lock Carton' },
+    { code: '0900', name: 'Interior Fitment' },
+    { code: '0901', name: 'Partition Set' },
+    { code: '0902', name: 'Pad Sheet' },
+    { code: '0903', name: 'Separator' },
+    { code: '0904', name: 'Divider' },
+    { code: '0905', name: 'Honeycomb Insert' },
+].map(option => ({
+    ...option,
+    image: `/images/fefco/${option.code}.png`,
+}));
+
+const optionLabel = (option) => `${option.name} (${option.code})`;
+
 const editorTitle = computed(() => {
     if (editorMode.value === 'revision') return 'Create Product Master Revision';
     if (editingId.value) return 'Edit Product Master';
@@ -669,6 +735,7 @@ const defaultForm = () => ({
     product_name: '',
     customer_id: null,
     product_category: 'RSC Carton',
+    fefco_code: '0201',
     revision_number: 1,
     revision_date: new Date().toISOString().slice(0, 10),
     status: 'Active',
@@ -682,10 +749,94 @@ const form = reactive(defaultForm());
 
 const previewComponent = computed(() => form.components[0] || componentRow(0));
 const previewSpec = computed(() => previewComponent.value.specification || defaultSpecification());
+const selectedFefcoOption = computed(() => (
+    fefcoOptions.find(option => option.code === form.fefco_code)
+    || fefcoOptions.find(option => option.code === '0201')
+    || fefcoOptions[0]
+));
 
 function dimensionText(value) {
     const numeric = Number(value || 0);
     return numeric > 0 ? `${numeric.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${previewSpec.value.uom || 'mm'}` : '--';
+}
+
+function safeFileName(value) {
+    return String(value || 'product')
+        .trim()
+        .replace(/[\\/:*?"<>|]+/g, '-')
+        .replace(/\s+/g, '_')
+        .slice(0, 90) || 'product';
+}
+
+function loadImage(src) {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = src;
+    });
+}
+
+async function downloadGenericSketch() {
+    try {
+        const sketch = selectedFefcoOption.value;
+        const image = await loadImage(sketch.image);
+        const canvas = document.createElement('canvas');
+        const width = 1400;
+        const height = 900;
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+        ctx.strokeStyle = '#111827';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(44, 44, width - 88, height - 88);
+
+        ctx.fillStyle = '#0f172a';
+        ctx.font = '700 44px Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(form.product_name || sketch.name, width / 2, 112);
+
+        ctx.font = '600 24px Arial, sans-serif';
+        ctx.fillStyle = '#334155';
+        ctx.fillText(`${form.product_code || 'Product Code'} | FEFCO ${sketch.code} | ${sketch.name}`, width / 2, 152);
+
+        const frame = { x: 135, y: 205, w: 1130, h: 520 };
+        ctx.setLineDash([12, 10]);
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(frame.x, frame.y, frame.w, frame.h);
+        ctx.setLineDash([]);
+
+        const scale = Math.min((frame.w - 120) / image.width, (frame.h - 90) / image.height);
+        const drawW = image.width * scale;
+        const drawH = image.height * scale;
+        const drawX = frame.x + (frame.w - drawW) / 2;
+        const drawY = frame.y + (frame.h - drawH) / 2;
+        ctx.drawImage(image, drawX, drawY, drawW, drawH);
+
+        ctx.fillStyle = '#0f172a';
+        ctx.font = '700 26px Arial, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Component: ${previewComponent.value.component_name || 'Component 1'}`, 90, 780);
+
+        ctx.textAlign = 'right';
+        ctx.fillText(`L ${dimensionText(previewSpec.value.length)}   W ${dimensionText(previewSpec.value.width)}   H ${dimensionText(previewSpec.value.height)}`, width - 90, 780);
+
+        ctx.textAlign = 'center';
+        ctx.font = '700 22px Arial, sans-serif';
+        ctx.fillStyle = '#475569';
+        ctx.fillText('Generic carton engineering sketch', width / 2, 835);
+
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/jpeg', 0.95);
+        link.download = `${safeFileName(form.product_code || form.product_name || sketch.code)}_FEFCO_${sketch.code}_generic_sketch.jpeg`;
+        link.click();
+    } catch (error) {
+        ElMessage.error('Unable to generate generic sketch. Please check the selected FEFCO preview image.');
+    }
 }
 
 function defaultParametersForProcess(processName) {
@@ -743,6 +894,16 @@ async function selectProduct(row) {
     await loadProduct(row.id);
 }
 
+function handleProductAction(command, row) {
+    const actions = {
+        view: () => selectProduct(row),
+        edit: () => openEditor(row),
+        revision: () => openRevision(row),
+        delete: () => deleteProduct(row),
+    };
+    actions[command]?.();
+}
+
 async function loadProduct(id) {
     const { data } = await axios.get(`/api/product-engineering/${id}`);
     selectedProduct.value = data;
@@ -789,6 +950,7 @@ function hydrateForm(product) {
         product_name: product.product_name || '',
         customer_id: product.customer_id || null,
         product_category: product.product_category || '',
+        fefco_code: product.fefco_code || '0201',
         revision_number: product.revision_number || 1,
         revision_date: product.revision_date ? String(product.revision_date).slice(0, 10) : new Date().toISOString().slice(0, 10),
         status: product.status || 'Active',
@@ -972,6 +1134,7 @@ function payload() {
         product_name: form.product_name,
         customer_id: form.customer_id,
         product_category: form.product_category,
+        fefco_code: form.fefco_code || '0201',
         revision_number: form.revision_number,
         revision_date: form.revision_date,
         status: form.status,
@@ -1347,9 +1510,10 @@ onMounted(async () => {
 .pe-form-grid.five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .pe-form-grid.six { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .pe-master-grid {
+    align-items: start;
     display: grid;
     gap: 14px;
-    grid-template-columns: minmax(0, 1.18fr) minmax(360px, 0.82fr);
+    grid-template-columns: minmax(0, 1fr) 450px;
 }
 .pe-master-form {
     min-width: 0;
@@ -1357,38 +1521,105 @@ onMounted(async () => {
 .pe-master-visuals {
     display: grid;
     gap: 12px;
+    max-width: 450px;
+    min-width: 450px;
+    width: 450px;
 }
 .pe-visual-card {
-    background: #f8fafc;
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
     border: 1px solid var(--pe-border);
-    border-radius: 8px;
-    min-height: 214px;
-    padding: 12px;
+    border-radius: 10px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    min-height: 232px;
+    padding: 14px;
 }
 .pe-visual-head {
     align-items: center;
     display: flex;
     justify-content: space-between;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
+    gap: 12px;
 }
 .pe-visual-head span {
     color: #26364d;
-    font-size: 0.82rem;
+    display: block;
+    font-size: 0.8rem;
     font-weight: 900;
     letter-spacing: 0.06em;
     text-transform: uppercase;
 }
+.pe-visual-head strong {
+    color: #0f172a;
+    display: block;
+    font-size: 0.92rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    line-height: 1.25;
+    margin-top: 3px;
+}
 .pe-visual-head small {
-    color: var(--pe-muted);
+    background: #e8f0ff;
+    border: 1px solid #c7d8ff;
+    border-radius: 999px;
+    color: #1d4ed8;
+    flex: 0 0 auto;
     font-size: 0.72rem;
     font-weight: 800;
+    padding: 4px 10px;
+}
+.pe-visual-tools {
+    align-items: center;
+    display: flex;
+    flex: 0 0 auto;
+    gap: 8px;
+}
+.pe-download-sketch-btn {
+    align-items: center;
+    background: linear-gradient(135deg, #2563eb, #3b82f6);
+    border: 0;
+    border-radius: 999px;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.24);
+    color: #ffffff;
+    display: inline-flex;
+    font-size: 0.72rem;
+    font-weight: 900;
+    gap: 6px;
+    height: 30px;
+    letter-spacing: 0.02em;
+    padding: 0 12px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.pe-download-sketch-btn:hover,
+.pe-download-sketch-btn:focus {
+    box-shadow: 0 10px 22px rgba(37, 99, 235, 0.34);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+.pe-preview-frame {
+    align-items: center;
+    background:
+        linear-gradient(135deg, rgba(37, 99, 235, 0.04), rgba(14, 165, 233, 0.02)),
+        #ffffff;
+    border: 1px dashed #c2d0e2;
+    border-radius: 10px;
+    display: flex;
+    height: 186px;
+    justify-content: center;
+    overflow: hidden;
+    padding: 14px;
+}
+.pe-fefco-preview {
+    display: block;
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
 }
 .pe-carton-svg,
 .pe-dieline-svg {
     background: #ffffff;
-    border: 1px dashed #cbd5e1;
-    border-radius: 8px;
-    height: 174px;
+    border: 1px dashed #c2d0e2;
+    border-radius: 10px;
+    height: 186px;
     width: 100%;
 }
 .pe-carton-svg text,
@@ -1608,12 +1839,35 @@ onMounted(async () => {
 }
 :global([data-theme="dark"]) .pe-visual-card,
 :global(body.dark-mode) .pe-visual-card {
-    background: #1d293d;
+    background: linear-gradient(180deg, #1d293d 0%, #172235 100%);
     border-color: #40516c;
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
 }
 :global([data-theme="dark"]) .pe-visual-head span,
 :global(body.dark-mode) .pe-visual-head span {
     color: #dbeafe;
+}
+:global([data-theme="dark"]) .pe-visual-head strong,
+:global(body.dark-mode) .pe-visual-head strong {
+    color: #f8fafc;
+}
+:global([data-theme="dark"]) .pe-visual-head small,
+:global(body.dark-mode) .pe-visual-head small {
+    background: rgba(59, 130, 246, 0.16);
+    border-color: rgba(147, 197, 253, 0.32);
+    color: #bfdbfe;
+}
+:global([data-theme="dark"]) .pe-download-sketch-btn,
+:global(body.dark-mode) .pe-download-sketch-btn {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.34);
+}
+:global([data-theme="dark"]) .pe-preview-frame,
+:global(body.dark-mode) .pe-preview-frame {
+    background:
+        linear-gradient(135deg, rgba(96, 165, 250, 0.08), rgba(45, 212, 191, 0.04)),
+        #f8fafc;
+    border-color: #64748b;
 }
 :global([data-theme="dark"]) .pe-carton-svg,
 :global([data-theme="dark"]) .pe-dieline-svg,
@@ -1880,7 +2134,6 @@ onMounted(async () => {
 
 @media (max-width: 1200px) {
     .pe-content-grid,
-    .pe-master-grid,
     .pe-two-col,
     .pe-form-grid.four,
     .pe-form-grid.five,
@@ -1889,6 +2142,16 @@ onMounted(async () => {
     }
     .pe-filter-card {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (max-width: 980px) {
+    .pe-master-grid {
+        grid-template-columns: 1fr;
+    }
+    .pe-master-visuals {
+        max-width: none;
+        min-width: 0;
+        width: 100%;
     }
 }
 @media (max-width: 768px) {

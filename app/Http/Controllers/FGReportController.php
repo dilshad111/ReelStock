@@ -322,7 +322,7 @@ class FGReportController extends Controller
 
             $dispAmount = 0;
             foreach ($dispatches as $d) {
-                $dispAmount += ($d->quantity_dispatched * (float)($d->product->rate ?? 0));
+                $dispAmount += (float)($d->dispatch_amount ?? ((float)$d->quantity_dispatched * (float)($d->product->rate ?? 0)));
             }
 
             $monthlyTrend[] = [

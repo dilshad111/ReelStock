@@ -17,6 +17,7 @@ class EngineeringProduct extends Model
         'product_name',
         'customer_id',
         'product_category',
+        'fefco_code',
         'revision_number',
         'revision_date',
         'status',

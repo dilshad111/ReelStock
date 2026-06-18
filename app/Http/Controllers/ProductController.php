@@ -4,15 +4,17 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Product;
+use App\Models\FGProductCustomerLink;
 use App\Models\FGStockLedger;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
     public function index(Request $request)
     {
         try {
-            $query = Product::with('customer');
+            $query = Product::with(['customer', 'customerLinks.customer']);
 
             if ($request->filled('customer_id')) {
                 $query->where('customer_id', $request->customer_id);
@@ -52,7 +54,19 @@ class ProductController extends Controller
             'item_name' => 'required|string|max:255',
             'rate' => 'nullable|numeric|min:0',
             'opening_balance' => 'nullable|integer|min:0',
+            'dispatch_policy' => ['nullable', Rule::in([Product::POLICY_SHARED, Product::POLICY_RESTRICTED])],
+            'customer_links' => 'nullable|array',
+            'customer_links.*.customer_id' => 'nullable|exists:customers,id',
+            'customer_links.*.customer_item_code' => 'nullable|string|max:100',
+            'customer_links.*.customer_item_name' => 'nullable|string|max:255',
+            'customer_links.*.customer_rate' => 'nullable|numeric|min:0',
+            'customer_links.*.status' => ['nullable', Rule::in(['Active', 'Inactive'])],
         ]);
+
+        if (($request->dispatch_policy ?: Product::POLICY_RESTRICTED) === Product::POLICY_SHARED
+            && count($request->input('customer_links', [])) === 0) {
+            return response()->json(['error' => 'Add at least one linked customer item for a shared product.'], 422);
+        }
 
 
 
@@ -63,6 +77,7 @@ class ProductController extends Controller
                 'item_name' => $request->item_name,
                 'rate' => $request->rate,
                 'opening_balance' => (int) ($request->opening_balance ?? 0),
+                'dispatch_policy' => $request->dispatch_policy ?: Product::POLICY_RESTRICTED,
             ]);
 
             // Record opening balance in ledger if > 0
@@ -80,13 +95,15 @@ class ProductController extends Controller
                 ]);
             }
 
-            return response()->json($product->load('customer'), 201);
+            $this->syncCustomerLinks($product, $request);
+
+            return response()->json($product->load(['customer', 'customerLinks.customer']), 201);
         });
     }
 
     public function show($id)
     {
-        $product = Product::with('customer')->findOrFail($id);
+        $product = Product::with(['customer', 'customerLinks.customer'])->findOrFail($id);
         $lastLedger = FGStockLedger::where('product_id', $product->id)
             ->latest('id')->first();
         $product->current_balance = $lastLedger ? $lastLedger->balance_after : $product->opening_balance;
@@ -103,7 +120,19 @@ class ProductController extends Controller
             'item_name' => 'required|string|max:255',
             'rate' => 'nullable|numeric|min:0',
             'opening_balance' => 'nullable|integer|min:0',
+            'dispatch_policy' => ['nullable', Rule::in([Product::POLICY_SHARED, Product::POLICY_RESTRICTED])],
+            'customer_links' => 'nullable|array',
+            'customer_links.*.customer_id' => 'nullable|exists:customers,id',
+            'customer_links.*.customer_item_code' => 'nullable|string|max:100',
+            'customer_links.*.customer_item_name' => 'nullable|string|max:255',
+            'customer_links.*.customer_rate' => 'nullable|numeric|min:0',
+            'customer_links.*.status' => ['nullable', Rule::in(['Active', 'Inactive'])],
         ]);
+
+        if (($request->dispatch_policy ?: Product::POLICY_RESTRICTED) === Product::POLICY_SHARED
+            && count($request->input('customer_links', [])) === 0) {
+            return response()->json(['error' => 'Add at least one linked customer item for a shared product.'], 422);
+        }
 
         return DB::transaction(function () use ($request, $product) {
             $oldOpening = (float) $product->opening_balance;
@@ -115,7 +144,10 @@ class ProductController extends Controller
                 'item_name' => $request->item_name,
                 'rate' => $request->rate,
                 'opening_balance' => $newOpening,
+                'dispatch_policy' => $request->dispatch_policy ?: Product::POLICY_RESTRICTED,
             ]);
+
+            $this->syncCustomerLinks($product, $request);
 
             if ($oldOpening != $newOpening) {
                 $diff = $newOpening - $oldOpening;
@@ -155,7 +187,7 @@ class ProductController extends Controller
                 }
             }
 
-            return response()->json($product->load('customer'));
+            return response()->json($product->load(['customer', 'customerLinks.customer']));
         });
     }
 
@@ -185,10 +217,71 @@ class ProductController extends Controller
      */
     public function byCustomer($customerId)
     {
-        $products = Product::where('customer_id', $customerId)
+        $products = Product::with(['customer', 'customerLinks.customer'])
+            ->where(function ($query) use ($customerId) {
+                $query->where('customer_id', $customerId)
+                    ->orWhereHas('customerLinks', function ($linkQuery) use ($customerId) {
+                        $linkQuery->where('customer_id', $customerId)
+                            ->where('status', 'Active');
+                    });
+            })
             ->orderBy('item_name')
             ->get();
 
         return response()->json($products);
+    }
+
+    public function customerItems($customerId)
+    {
+        $products = Product::where('customer_id', $customerId)
+            ->orderBy('item_name')
+            ->get(['id', 'customer_id', 'item_code', 'item_name', 'rate']);
+
+        return response()->json($products);
+    }
+
+    private function syncCustomerLinks(Product $product, Request $request): void
+    {
+        if ($product->dispatch_policy !== Product::POLICY_SHARED) {
+            $product->customerLinks()->delete();
+            return;
+        }
+
+        $links = collect($request->input('customer_links', []))
+            ->filter(fn ($link) => !empty($link['customer_id']) && !empty($link['customer_item_code']) && !empty($link['customer_item_name']))
+            ->values();
+
+        $seen = [];
+        $ids = [];
+
+        foreach ($links as $index => $link) {
+            $key = $product->id . ':' . $link['customer_id'] . ':' . strtoupper(trim($link['customer_item_code']));
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+
+            $record = FGProductCustomerLink::updateOrCreate(
+                [
+                    'id' => $link['id'] ?? null,
+                    'product_id' => $product->id,
+                ],
+                [
+                    'product_id' => $product->id,
+                    'customer_id' => $link['customer_id'],
+                    'customer_item_code' => trim($link['customer_item_code']),
+                    'customer_item_name' => trim($link['customer_item_name']),
+                    'customer_rate' => (float)($link['customer_rate'] ?? 0),
+                    'is_default' => (bool)($link['is_default'] ?? $index === 0),
+                    'status' => $link['status'] ?? 'Active',
+                ]
+            );
+
+            $ids[] = $record->id;
+        }
+
+        $product->customerLinks()
+            ->whereNotIn('id', $ids ?: [0])
+            ->delete();
     }
 }

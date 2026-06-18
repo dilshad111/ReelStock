@@ -1,5 +1,8 @@
 <template>
-  <div class="login-page-wrapper">
+  <div
+    class="login-page-wrapper"
+    :style="{ backgroundImage: `url(${loginBackground})` }"
+  >
     <div class="login-overlay"></div>
     <div class="login-card-container animate__animated animate__fadeIn">
       <div class="login-card-glass">
@@ -63,7 +66,8 @@ export default {
       },
       showPassword: false,
       loading: false,
-      error: null
+      error: null,
+      loginBackground: '/images/login_bg.png'
     };
   },
   methods: {
@@ -100,7 +104,10 @@ export default {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: url('/images/login_bg.png') no-repeat center center fixed;
+  background-color: #0f172a;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-attachment: fixed;
   background-size: cover;
   display: flex;
   justify-content: center;

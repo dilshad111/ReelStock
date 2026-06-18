@@ -181,6 +181,7 @@ class ProductEngineeringController extends Controller
             'product_name' => ['required', 'string', 'max:255'],
             'customer_id' => ['nullable', 'exists:customers,id'],
             'product_category' => ['nullable', 'string', 'max:120'],
+            'fefco_code' => ['nullable', 'string', 'max:20'],
             'product_number' => ['nullable', 'string', 'max:40'],
             'product_created_date' => ['nullable', 'date'],
             'revision_number' => ['nullable', 'integer', 'min:1'],
@@ -234,6 +235,7 @@ class ProductEngineeringController extends Controller
             'product_name' => $data['product_name'],
             'customer_id' => $data['customer_id'] ?? null,
             'product_category' => $data['product_category'] ?? null,
+            'fefco_code' => $data['fefco_code'] ?? '0201',
             'status' => $data['status'],
             'remarks' => $data['remarks'] ?? null,
         ];

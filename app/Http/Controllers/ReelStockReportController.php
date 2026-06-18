@@ -191,6 +191,7 @@ class ReelStockReportController extends Controller
                 'amount' => $amount,
                 'status' => $displayStatus,
                 'raw_status' => $reel->status,
+                'current_location' => $reel->current_location ?: 'Warehouse',
             ];
         });
 
@@ -202,7 +203,7 @@ class ReelStockReportController extends Controller
         try {
             $reel = Reel::with(['paperQuality', 'supplier', 'receipts' => function ($q) {
                 $q->orderByDesc('receiving_date');
-            }, 'issues', 'returns'])->where('reel_no', $reel_no)->first();
+            }, 'issues', 'returns', 'transfers'])->where('reel_no', $reel_no)->first();
 
             if (!$reel) {
                 return response()->json(['message' => 'Reel not found'], 404);
@@ -252,6 +253,15 @@ class ReelStockReportController extends Controller
                 ];
             }
 
+            foreach ($reel->transfers as $transfer) {
+                $history[] = [
+                    'date' => $transfer->transfer_date,
+                    'type' => 'Location Transfer',
+                    'details' => "Moved from {$transfer->from_location} to {$transfer->to_location}",
+                    'weight' => 0,
+                ];
+            }
+
             // Sort by date
             usort($history, function($a, $b) {
                 return strtotime($a['date']) - strtotime($b['date']);
@@ -272,6 +282,7 @@ class ReelStockReportController extends Controller
                     'supplier' => $reel->supplier->name,
                     'original_weight' => $reel->original_weight,
                     'current_balance' => $reel->balance_weight,
+                    'current_location' => $reel->current_location ?: 'Warehouse',
                     'gsm' => $latestReceipt ? $latestReceipt->gsm : null,
                     'bursting_strength' => $latestReceipt ? $latestReceipt->bursting_strength : null,
                     'qc_status' => $latestReceipt ? $latestReceipt->qc_status : null,

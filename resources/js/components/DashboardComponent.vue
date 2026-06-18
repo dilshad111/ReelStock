@@ -47,16 +47,16 @@
                 <div class="card location-card border-0 shadow-sm bg-white overflow-hidden h-100">
                     <div class="card-body p-0">
                         <div class="d-flex h-100">
-                            <div :class="[name === 'godown' ? 'bg-primary' : 'bg-indigo', 'text-white d-flex align-items-center justify-content-center']" style="width: 70px; min-height: 80px;">
-                                <i :class="['bi', name === 'godown' ? 'bi-building' : 'bi-tools', 'fs-3']"></i>
+                            <div :class="[name === 'warehouse' || name === 'godown' ? 'bg-primary' : 'bg-indigo', 'text-white d-flex align-items-center justify-content-center']" style="width: 70px; min-height: 80px;">
+                                <i :class="['bi', name === 'warehouse' || name === 'godown' ? 'bi-building' : 'bi-tools', 'fs-3']"></i>
                             </div>
                             <div class="p-3 flex-grow-1 d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h5 class="fw-bold mb-0 text-uppercase text-slate-800">{{ name }}</h5>
+                                    <h5 class="fw-bold mb-0 text-uppercase text-slate-800">{{ formatLocationName(name) }}</h5>
                                     <p class="mb-0 text-muted fs-5 fw-bold">{{ loc.count }} <small class="fs-6 fw-normal text-muted">Reels</small></p>
                                 </div>
                                 <div class="text-end">
-                                    <h3 :class="['mb-0 fw-bold', name === 'godown' ? 'text-primary' : 'text-indigo']">{{ formatNumber(loc.weight) }} <small class="fs-6 fw-normal text-muted">kg</small></h3>
+                                    <h3 :class="['mb-0 fw-bold', name === 'warehouse' || name === 'godown' ? 'text-primary' : 'text-indigo']">{{ formatNumber(loc.weight) }} <small class="fs-6 fw-normal text-muted">kg</small></h3>
                                 </div>
                             </div>
                         </div>
@@ -675,6 +675,10 @@ export default {
     },
     destroyCharts() { Object.values(this.charts).forEach(c => c.destroy()); this.charts = {}; },
     formatNumber(val) { return Number(val || 0).toLocaleString(undefined, { maximumFractionDigits: 0 }); },
+    formatLocationName(name) {
+      if (name === 'godown') return 'Warehouse';
+      return String(name || '').replace(/_/g, ' ');
+    },
     formatTons(val) { return Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
   },
   beforeUnmount() { this.destroyCharts(); }

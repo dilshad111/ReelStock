@@ -61,6 +61,8 @@ class CreateReelIssueAction
                     'remarks'          => $dto->remarks ? ($dto->remarks . ' (auto return)') : 'Auto return from issue form',
                 ]);
                 $autoReturnId = $autoReturn->id;
+                $reel->current_location = $this->normalizeStockLocation($dto->returnLocation);
+                $reel->save();
             }
 
             if ($autoReturnId) {
@@ -83,6 +85,11 @@ class CreateReelIssueAction
         } else {
             $reel->status = 'in_stock';
         }
+    }
+
+    protected function normalizeStockLocation(?string $location): string
+    {
+        return $location === 'Factory' ? 'Factory' : 'Warehouse';
     }
 
     protected function validateAndSyncBalance(Reel $reel): bool

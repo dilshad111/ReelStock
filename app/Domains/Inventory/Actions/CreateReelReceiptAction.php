@@ -25,6 +25,7 @@ class CreateReelReceiptAction
                 'original_weight'  => $dto->reelWeight,
                 'balance_weight'   => $dto->reelWeight,
                 'status'           => 'in_stock',
+                'current_location' => 'Warehouse',
             ]);
 
             $receipt = ReelReceipt::create([

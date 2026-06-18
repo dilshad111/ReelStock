@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\FGDispatch;
 use App\Models\FGReceipt;
 use App\Models\FGStockLedger;
+use App\Models\Product;
+use App\Models\FGProductCustomerLink;
 use Illuminate\Support\Facades\DB;
 
 class FGDispatchController extends Controller
@@ -13,7 +15,7 @@ class FGDispatchController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = FGDispatch::with(['customer', 'product', 'creator']);
+            $query = FGDispatch::with(['customer', 'product', 'customerLink', 'creator']);
 
             if ($request->filled('customer_id')) {
                 $query->where('customer_id', $request->customer_id);
@@ -33,6 +35,7 @@ class FGDispatchController extends Controller
 
             $totals = [
                 'total_quantity_dispatched' => (float)$query->sum('quantity_dispatched'),
+                'total_dispatch_amount' => (float)$query->sum('dispatch_amount'),
             ];
 
             $perPage = $request->input('per_page', 50);
@@ -53,6 +56,7 @@ class FGDispatchController extends Controller
             'date' => 'required|date',
             'customer_id' => 'required|exists:customers,id',
             'product_id' => 'required|exists:products,id',
+            'fg_product_customer_link_id' => 'nullable|exists:fg_product_customer_links,id',
             'job_number' => 'nullable|string|max:100',
             'dc_number' => 'required|string|max:100',
             'quantity_dispatched' => 'required|numeric|min:0.01',
@@ -60,6 +64,12 @@ class FGDispatchController extends Controller
         ]);
 
         return DB::transaction(function () use ($request) {
+            $product = Product::findOrFail($request->product_id);
+            $dispatchIdentity = $this->resolveDispatchIdentity($product, (int)$request->customer_id, $request->fg_product_customer_link_id);
+            if ($dispatchIdentity['error']) {
+                return response()->json($dispatchIdentity['error'], 422);
+            }
+
             $lastLedger = FGStockLedger::where('product_id', $request->product_id)
                 ->latest('id')->lockForUpdate()->first();
             $currentBalance = $lastLedger ? (float)$lastLedger->balance_after : 0;
@@ -77,9 +87,14 @@ class FGDispatchController extends Controller
                 'date' => $request->date,
                 'customer_id' => $request->customer_id,
                 'product_id' => $request->product_id,
+                'fg_product_customer_link_id' => $dispatchIdentity['link_id'],
+                'dispatch_item_code' => $dispatchIdentity['item_code'],
+                'dispatch_item_name' => $dispatchIdentity['item_name'],
                 'job_number' => $request->job_number,
                 'dc_number' => $request->dc_number,
                 'quantity_dispatched' => $dispatchQty,
+                'dispatch_rate' => $dispatchIdentity['rate'],
+                'dispatch_amount' => $dispatchQty * $dispatchIdentity['rate'],
                 'remarks' => $request->remarks,
                 'created_by' => $request->user()->id,
             ]);
@@ -96,13 +111,13 @@ class FGDispatchController extends Controller
                 'transaction_date' => $request->date,
             ]);
 
-            return response()->json($dispatch->load(['customer', 'product', 'creator']), 201);
+            return response()->json($dispatch->load(['customer', 'product', 'customerLink', 'creator']), 201);
         });
     }
 
     public function show($id)
     {
-        return response()->json(FGDispatch::with(['customer', 'product', 'creator'])->findOrFail($id));
+        return response()->json(FGDispatch::with(['customer', 'product', 'customerLink', 'creator'])->findOrFail($id));
     }
 
     public function update(Request $request, $id)
@@ -111,6 +126,7 @@ class FGDispatchController extends Controller
             'date' => 'required|date',
             'customer_id' => 'required|exists:customers,id',
             'product_id' => 'required|exists:products,id',
+            'fg_product_customer_link_id' => 'nullable|exists:fg_product_customer_links,id',
             'job_number' => 'nullable|string|max:100',
             'dc_number' => 'required|string|max:100',
             'quantity_dispatched' => 'required|numeric|min:0.01',
@@ -123,6 +139,11 @@ class FGDispatchController extends Controller
             $newProductId = (int)$request->product_id;
             $oldQty = (float)$dispatch->quantity_dispatched;
             $newQty = (float)$request->quantity_dispatched;
+            $product = Product::findOrFail($newProductId);
+            $dispatchIdentity = $this->resolveDispatchIdentity($product, (int)$request->customer_id, $request->fg_product_customer_link_id);
+            if ($dispatchIdentity['error']) {
+                return response()->json($dispatchIdentity['error'], 422);
+            }
 
             if ($oldProductId !== $newProductId) {
                 // 1. Revert old product stock
@@ -193,9 +214,22 @@ class FGDispatchController extends Controller
                 }
             }
 
-            $dispatch->update($request->only(['date', 'customer_id', 'product_id', 'job_number', 'dc_number', 'quantity_dispatched', 'remarks']));
+            $dispatch->update([
+                'date' => $request->date,
+                'customer_id' => $request->customer_id,
+                'product_id' => $request->product_id,
+                'fg_product_customer_link_id' => $dispatchIdentity['link_id'],
+                'dispatch_item_code' => $dispatchIdentity['item_code'],
+                'dispatch_item_name' => $dispatchIdentity['item_name'],
+                'job_number' => $request->job_number,
+                'dc_number' => $request->dc_number,
+                'quantity_dispatched' => $newQty,
+                'dispatch_rate' => $dispatchIdentity['rate'],
+                'dispatch_amount' => $newQty * $dispatchIdentity['rate'],
+                'remarks' => $request->remarks,
+            ]);
 
-            return response()->json($dispatch->load(['customer', 'product', 'creator']));
+            return response()->json($dispatch->load(['customer', 'product', 'customerLink', 'creator']));
         });
     }
 
@@ -235,7 +269,7 @@ class FGDispatchController extends Controller
     {
         try {
             // Find the job in receipts to get customer and product
-            $jobReceipts = FGReceipt::with(['customer', 'product'])
+            $jobReceipts = FGReceipt::with(['customer', 'product.customerLinks.customer'])
                 ->where('job_number', $jobNumber)
                 ->get();
 
@@ -268,6 +302,7 @@ class FGDispatchController extends Controller
                 'job_number' => $jobNumber,
                 'customer' => $customer,
                 'product' => $product,
+                'linked_customers' => $this->linkedCustomersForProduct($product),
                 'total_produced' => (float)$totalProduced,
                 'total_dispatched' => (float)$totalDispatched,
                 'balance' => $balance,
@@ -281,7 +316,7 @@ class FGDispatchController extends Controller
     public function getProductDetails($productId)
     {
         try {
-            $product = \App\Models\Product::with('customer')->findOrFail($productId);
+            $product = \App\Models\Product::with(['customer', 'customerLinks.customer'])->findOrFail($productId);
             $lastLedger = \App\Models\FGStockLedger::where('product_id', $productId)->latest('id')->first();
             $balance = $lastLedger ? (float)$lastLedger->balance_after : 0;
 
@@ -296,6 +331,7 @@ class FGDispatchController extends Controller
                 'job_number' => 'MANUAL/OPENING',
                 'customer' => $product->customer,
                 'product' => $product,
+                'linked_customers' => $this->linkedCustomersForProduct($product),
                 'total_produced' => $balance + $dispatches->sum('quantity_dispatched'),
                 'total_dispatched' => $dispatches->sum('quantity_dispatched'),
                 'balance' => $balance,
@@ -304,5 +340,84 @@ class FGDispatchController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+
+    private function resolveDispatchIdentity(Product $product, int $customerId, $linkId): array
+    {
+        if ($product->dispatch_policy !== Product::POLICY_SHARED) {
+            if ((int)$product->customer_id !== $customerId) {
+                return [
+                    'error' => [
+                        'error' => 'This finished good is customer restricted and can only be dispatched to its assigned customer.',
+                        'product_id' => $product->id,
+                        'dispatch_policy' => $product->dispatch_policy,
+                    ],
+                ];
+            }
+
+            return [
+                'error' => null,
+                'link_id' => null,
+                'item_code' => $product->item_code,
+                'item_name' => $product->item_name,
+                'rate' => (float)$product->rate,
+            ];
+        }
+
+        if ((int)$product->customer_id === $customerId && empty($linkId)) {
+            return [
+                'error' => null,
+                'link_id' => null,
+                'item_code' => $product->item_code,
+                'item_name' => $product->item_name,
+                'rate' => (float)$product->rate,
+            ];
+        }
+
+        $link = FGProductCustomerLink::where('product_id', $product->id)
+            ->where('customer_id', $customerId)
+            ->where('status', 'Active')
+            ->when($linkId, fn ($query) => $query->where('id', $linkId))
+            ->orderByDesc('is_default')
+            ->first();
+
+        if (!$link) {
+            return [
+                'error' => [
+                    'error' => 'This shared product is not linked with the selected customer/item. Please add the customer item mapping in Product Master first.',
+                    'product_id' => $product->id,
+                    'dispatch_policy' => $product->dispatch_policy,
+                ],
+            ];
+        }
+
+        return [
+            'error' => null,
+            'link_id' => $link->id,
+            'item_code' => $link->customer_item_code,
+            'item_name' => $link->customer_item_name,
+            'rate' => (float)$link->customer_rate,
+        ];
+    }
+
+    private function linkedCustomersForProduct(?Product $product): array
+    {
+        if (!$product || $product->dispatch_policy !== Product::POLICY_SHARED) {
+            return [];
+        }
+
+        return $product->customerLinks
+            ->where('status', 'Active')
+            ->groupBy('customer_id')
+            ->map(function ($links) {
+                $first = $links->first();
+                return [
+                    'id' => $first->customer_id,
+                    'name' => $first->customer?->name,
+                    'items_count' => $links->count(),
+                ];
+            })
+            ->values()
+            ->all();
     }
 }

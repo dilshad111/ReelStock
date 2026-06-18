@@ -11,7 +11,17 @@ class Product extends Model implements Auditable
     use HasFactory;
     use \OwenIt\Auditing\Auditable;
 
-    protected $fillable = ['customer_id', 'item_code', 'item_name', 'rate', 'opening_balance'];
+    public const POLICY_SHARED = 'shared_product';
+    public const POLICY_RESTRICTED = 'customer_restricted';
+
+    protected $fillable = [
+        'customer_id',
+        'item_code',
+        'item_name',
+        'rate',
+        'opening_balance',
+        'dispatch_policy',
+    ];
 
     protected $casts = [
         'opening_balance' => 'decimal:2',
@@ -36,6 +46,11 @@ class Product extends Model implements Auditable
     public function stockLedger()
     {
         return $this->hasMany(FGStockLedger::class);
+    }
+
+    public function customerLinks()
+    {
+        return $this->hasMany(FGProductCustomerLink::class);
     }
 
     /**

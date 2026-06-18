@@ -194,24 +194,19 @@ class GetStockDashboardDataAction
         // Location Breakdown
         $factoryCount = 0;
         $factoryWeight = 0;
-        $godownCount = 0;
-        $godownWeight = 0;
+        $warehouseCount = 0;
+        $warehouseWeight = 0;
 
         foreach ($currentStockReels as $reel) {
-            $latestReturn = $reel->returns
-                ->where('returned_to', 'stock')
-                ->sortByDesc(fn($ret) => [$ret->return_date, $ret->id])
-                ->first();
-            
-            $location = $latestReturn ? $latestReturn->return_location : 'GoDown';
+            $location = $reel->current_location ?: 'Warehouse';
             $weight = $reel->balance_weight ?? $reel->original_weight;
 
             if ($location === 'Factory') {
                 $factoryCount++;
                 $factoryWeight += $weight;
             } else {
-                $godownCount++;
-                $godownWeight += $weight;
+                $warehouseCount++;
+                $warehouseWeight += $weight;
             }
         }
 
@@ -227,9 +222,9 @@ class GetStockDashboardDataAction
                     'count' => $factoryCount,
                     'weight' => round($factoryWeight, 2),
                 ],
-                'godown' => [
-                    'count' => $godownCount,
-                    'weight' => round($godownWeight, 2),
+                'warehouse' => [
+                    'count' => $warehouseCount,
+                    'weight' => round($warehouseWeight, 2),
                 ]
             ],
             'stock_overview' => [

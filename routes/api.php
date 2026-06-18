@@ -9,6 +9,7 @@ use App\Http\Controllers\UnitOfMeasureController;
 use App\Http\Controllers\ReelReceiptController;
 use App\Http\Controllers\ReelIssueController;
 use App\Http\Controllers\ReelReturnController;
+use App\Http\Controllers\ReelTransferController;
 use App\Http\Controllers\MonthlyConsumptionReportController;
 use App\Http\Controllers\ReelStockReportController;
 use App\Http\Controllers\ReelReceiptReportController;
@@ -97,6 +98,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('reel-returns', ReelReturnController::class);
     Route::get('fetch-reel-return/{reel_no}', [ReelReturnController::class, 'fetchReel']);
 
+    // Reel Location Transfers
+    Route::get('reel-transfers/fetch-reel/{reel_no}', [ReelTransferController::class, 'fetchReel']);
+    Route::apiResource('reel-transfers', ReelTransferController::class)->only(['index', 'store']);
+
     // Reports
     Route::get('reports/monthly-consumption', [MonthlyConsumptionReportController::class, 'index']);
     Route::get('reports/reel-stock', [ReelStockReportController::class, 'index']);
@@ -177,6 +182,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Finished Goods Inventory Module
     Route::apiResource('products', ProductController::class);
     Route::get('products/by-customer/{customerId}', [ProductController::class, 'byCustomer']);
+    Route::get('products/customer-items/{customerId}', [ProductController::class, 'customerItems']);
 
     Route::apiResource('fg-receipts', FGReceiptController::class);
     Route::apiResource('fg-dispatches', FGDispatchController::class);

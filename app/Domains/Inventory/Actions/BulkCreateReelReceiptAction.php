@@ -28,6 +28,7 @@ class BulkCreateReelReceiptAction
                     'original_weight'  => $reelData['reel_weight'],
                     'balance_weight'   => $reelData['reel_weight'],
                     'status'           => 'in_stock',
+                    'current_location' => 'Warehouse',
                 ]);
 
                 $createdReceipts[] = ReelReceipt::create([

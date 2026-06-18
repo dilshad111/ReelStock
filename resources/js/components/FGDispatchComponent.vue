@@ -57,18 +57,23 @@
                 <div class="col-md-6">
                   <div class="mb-3">
                     <label class="form-label fw-bold text-muted x-small uppercase mb-1">Customer</label>
-                    <select v-model="form.customer_id" @change="onCustomerChange" class="form-select form-select-sm" :disabled="jobInfo.job_number">
+                    <select v-model="form.customer_id" @change="onCustomerChange" class="form-select form-select-sm" :disabled="jobInfo.job_number && !isSharedDispatchJob">
                       <option value="">Select Customer</option>
-                      <option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option>
+                      <option v-for="c in dispatchCustomers" :key="c.id" :value="c.id">{{ c.name }}</option>
                     </select>
                   </div>
 
                   <div class="mb-3">
-                    <label class="form-label fw-bold text-muted x-small uppercase mb-1">Product Name</label>
-                    <select v-model="form.product_id" @change="fetchProductData" class="form-select form-select-sm" :disabled="!form.customer_id || jobInfo.job_number">
+                    <label class="form-label fw-bold text-muted x-small uppercase mb-1">Dispatch Item</label>
+                    <select v-model="form.product_option_key" @change="onProductOptionChange" class="form-select form-select-sm" :disabled="!form.customer_id || (jobInfo.job_number && !isSharedDispatchJob)">
                       <option value="">Select Product</option>
-                      <option v-for="p in customerProducts" :key="p.id" :value="p.id">{{ p.item_code }} - {{ p.item_name }}</option>
+                      <option v-for="p in productOptions" :key="p.option_key" :value="p.option_key">
+                        {{ p.display_item_code }} - {{ p.display_item_name }}{{ productPolicySuffix(p) }}
+                      </option>
                     </select>
+                    <div v-if="selectedProductOption" class="x-small text-muted mt-1">
+                      Rate: {{ formatRate(selectedProductOption.display_rate) }} | Stock Product: {{ selectedProductOption.item_name }}
+                    </div>
                   </div>
 
                   <div class="mb-3">
@@ -218,6 +223,8 @@
               <th class="text-center">Job #</th>
               <th>Customer</th>
               <th>Product</th>
+              <th class="text-end">Rate</th>
+              <th class="text-end">Amount</th>
               <th class="text-center">DC #</th>
               <th class="text-end">Qty Dispatched</th>
               <th class="text-center pe-4">Actions</th>
@@ -231,10 +238,12 @@
               <td><span class="text-dark">{{ d.customer?.name }}</span></td>
               <td>
                 <div class="d-flex flex-column">
-                  <span class="fw-bold">{{ d.product?.item_name }}</span>
-                  <span class="badge bg-light text-muted border-0 p-0 text-start">Code: {{ d.product?.item_code }}</span>
+                  <span class="fw-bold">{{ d.dispatch_item_name || d.product?.item_name }}</span>
+                  <span class="badge bg-light text-muted border-0 p-0 text-start">Code: {{ d.dispatch_item_code || d.product?.item_code }}</span>
                 </div>
               </td>
+              <td class="text-end fw-bold">{{ formatRate(d.dispatch_rate) }}</td>
+              <td class="text-end fw-bold text-success">{{ formatRate(d.dispatch_amount) }}</td>
               <td class="text-center fw-bold text-dark">{{ d.dc_number }}</td>
               <td class="text-end fw-bold text-danger mb-0">{{ formatNumber(d.quantity_dispatched) }}</td>
               <td class="text-center pe-4">
@@ -246,7 +255,7 @@
               </td>
             </tr>
             <tr v-if="dispatches.length === 0">
-              <td colspan="8" class="text-center py-5">
+              <td colspan="10" class="text-center py-5">
                 <div class="py-4">
                   <i class="bi bi-inbox fs-1 text-muted opacity-25"></i>
                   <h5 class="text-muted mt-3">No dispatch entries found matching your criteria.</h5>
@@ -256,12 +265,12 @@
           </tbody>
           <tfoot v-if="dispatches.length > 0">
             <tr class="table-info fw-bold">
-              <td colspan="6" class="text-end ps-4">Page Total:</td>
+              <td colspan="8" class="text-end ps-4">Page Total:</td>
               <td class="text-end text-danger mb-0">{{ formatNumber(pageTotal) }}</td>
               <td></td>
             </tr>
             <tr class="table-secondary fw-bold" v-if="grandTotal > 0">
-              <td colspan="6" class="text-end ps-4">Grand Total:</td>
+              <td colspan="8" class="text-end ps-4">Grand Total:</td>
               <td class="text-end text-danger mb-0">{{ formatNumber(grandTotal) }}</td>
               <td></td>
             </tr>
@@ -301,7 +310,8 @@
                 </div>
                 <div class="detail-item mb-3">
                   <label class="x-small text-muted uppercase fw-bold d-block">Product</label>
-                  <span class="fw-bold">{{ selectedEntry.product?.item_code }} - {{ selectedEntry.product?.item_name }}</span>
+                  <span class="fw-bold">{{ selectedEntry.dispatch_item_code || selectedEntry.product?.item_code }} - {{ selectedEntry.dispatch_item_name || selectedEntry.product?.item_name }}</span>
+                  <div class="small text-muted">Rate: {{ formatRate(selectedEntry.dispatch_rate) }} | Amount: {{ formatRate(selectedEntry.dispatch_amount) }}</div>
                 </div>
                 <div class="detail-item mb-3">
                   <label class="x-small text-muted uppercase fw-bold d-block">Quantity Dispatched</label>
@@ -367,7 +377,7 @@ export default {
       showForm: false, 
       editing: false,
       jobInfo: { job_number: '', customer: null, product: null, balance: null, total_produced: 0, total_dispatched: 0, history: [] },
-      form: { id: null, date: new Date().toISOString().substr(0, 10), customer_id: '', product_id: '', job_number: '', dc_number: '', quantity_dispatched: '', remarks: '' },
+      form: { id: null, date: new Date().toISOString().substr(0, 10), customer_id: '', product_id: '', fg_product_customer_link_id: '', product_option_key: '', job_number: '', dc_number: '', quantity_dispatched: '', remarks: '' },
       filters: { customer_id: '', job_number: '', dc_number: '', date_from: '', date_to: '', per_page: 50 },
       searchTimeout: null,
       pagination: { current_page: 1, last_page: 1, per_page: 50, total: 0 },
@@ -383,6 +393,67 @@ export default {
     pages() { const c = this.pagination.current_page, l = this.pagination.last_page; let s = Math.max(1, c - 2), e = Math.min(l, c + 2), p = []; for (let i = s; i <= e; i++) p.push(i); return p; },
     pageTotal() {
       return this.dispatches.reduce((acc, d) => acc + Number(d.quantity_dispatched || 0), 0);
+    },
+    isSharedDispatchJob() {
+      return this.jobInfo.product?.dispatch_policy === 'shared_product';
+    },
+    dispatchCustomers() {
+      if (!this.isSharedDispatchJob) return this.customers;
+      const owner = this.jobInfo.customer ? [{ id: this.jobInfo.customer.id, name: this.jobInfo.customer.name, items_count: 1 }] : [];
+      const linked = this.jobInfo.linked_customers || [];
+      const customersById = new Map();
+      [...owner, ...linked].forEach(customer => {
+        if (customer?.id) customersById.set(Number(customer.id), customer);
+      });
+      return customersById.size ? Array.from(customersById.values()) : this.customers;
+    },
+    productOptions() {
+      const selectedCustomerId = Number(this.form.customer_id || 0);
+      const baseProducts = this.isSharedDispatchJob && this.jobInfo.product ? [this.jobInfo.product] : this.customerProducts;
+      const options = [];
+
+      baseProducts.forEach(product => {
+        if (product.dispatch_policy === 'shared_product') {
+          if (Number(product.customer_id) === selectedCustomerId) {
+            options.push({
+              ...product,
+              option_key: `${product.id}:`,
+              dispatch_link_id: '',
+              display_item_code: product.item_code,
+              display_item_name: product.item_name,
+              display_rate: product.rate,
+              is_original_item: true,
+            });
+          }
+
+          (product.customer_links || [])
+            .filter(link => Number(link.customer_id) === selectedCustomerId && (link.status || 'Active') === 'Active')
+            .forEach(link => {
+              options.push({
+                ...product,
+                option_key: `${product.id}:${link.id}`,
+                dispatch_link_id: link.id,
+                display_item_code: link.customer_item_code,
+                display_item_name: link.customer_item_name,
+                display_rate: link.customer_rate,
+              });
+            });
+        } else {
+          options.push({
+            ...product,
+            option_key: `${product.id}:`,
+            dispatch_link_id: '',
+            display_item_code: product.item_code,
+            display_item_name: product.item_name,
+            display_rate: product.rate,
+          });
+        }
+      });
+
+      return options;
+    },
+    selectedProductOption() {
+      return this.productOptions.find(p => p.option_key === this.form.product_option_key) || null;
     }
   },
   mounted() {
@@ -415,10 +486,21 @@ export default {
             this.jobInfo.balance = (parseFloat(this.jobInfo.balance) || 0) + parseFloat(this.originalQty);
           }
           this.form.customer_id = r.data.customer.id;
-          this.fetchProductsByCustomer(); // Load products for the customer
           this.form.product_id = r.data.product.id;
+          this.form.fg_product_customer_link_id = '';
+          this.form.product_option_key = r.data.product.dispatch_policy === 'shared_product' ? '' : `${r.data.product.id}:`;
+          if (r.data.product.dispatch_policy === 'shared_product') {
+            if (!this.editing) {
+              this.form.customer_id = '';
+              this.form.product_option_key = '';
+            }
+            this.customerProducts = [];
+            this.$message.success('Shared product found. Select linked customer and item for dispatch.');
+          } else {
+            this.fetchProductsByCustomer();
+            this.$message.success('Job details fetched.');
+          }
           this.manualMode = false;
-          this.$message.success('Job details fetched.');
         })
         .catch(err => {
           this.jobInfo = { job_number: '', customer: null, product: null, balance: null, history: [] };
@@ -432,6 +514,8 @@ export default {
         this.form.job_number = '';
         this.form.customer_id = '';
         this.form.product_id = '';
+        this.form.fg_product_customer_link_id = '';
+        this.form.product_option_key = '';
         this.jobInfo = { job_number: '', customer: null, product: null, balance: null, total_produced: 0, total_dispatched: 0, history: [] };
         this.manualMode = true;
         this.customerProducts = [];
@@ -444,7 +528,15 @@ export default {
     },
 
     onCustomerChange() {
-        this.clearJobData(); // If user manually changes customer, clear any job data
+        this.form.product_id = '';
+        this.form.fg_product_customer_link_id = '';
+        this.form.product_option_key = '';
+        if (this.isSharedDispatchJob) {
+          return;
+        }
+        if (!this.form.job_number) {
+          this.clearJobData();
+        }
         this.fetchProductsByCustomer();
     },
 
@@ -456,6 +548,31 @@ export default {
       axios.get(`/api/products/by-customer/${this.form.customer_id}`).then(r => {
         this.customerProducts = r.data;
       });
+    },
+
+    productPolicySuffix(product) {
+      if (!product) return '';
+      if (product.dispatch_policy === 'shared_product') {
+        const owner = product.customer?.name ? ` / Owner: ${product.customer.name}` : '';
+        return ` (Shared${owner})`;
+      }
+      return ' (Restricted)';
+    },
+
+    onProductOptionChange() {
+      const option = this.selectedProductOption;
+      if (!option) {
+        this.form.product_id = '';
+        this.form.fg_product_customer_link_id = '';
+        return;
+      }
+
+      this.form.product_id = option.id;
+      this.form.fg_product_customer_link_id = option.dispatch_link_id || '';
+
+      if (!this.isSharedDispatchJob) {
+        this.fetchProductData();
+      }
     },
 
     fetchProductData() {
@@ -508,7 +625,7 @@ export default {
     
     resetForm() { 
       this.originalQty = null;
-      this.form = { id: null, date: new Date().toISOString().substr(0, 10), customer_id: '', product_id: '', job_number: '', dc_number: '', quantity_dispatched: '', remarks: '' }; 
+      this.form = { id: null, date: new Date().toISOString().substr(0, 10), customer_id: '', product_id: '', fg_product_customer_link_id: '', product_option_key: '', job_number: '', dc_number: '', quantity_dispatched: '', remarks: '' }; 
       this.jobInfo = { job_number: '', customer: null, product: null, balance: null, total_produced: 0, total_dispatched: 0, history: [] };
       this.manualMode = true;
       this.customerProducts = [];
@@ -534,6 +651,8 @@ export default {
         date: d.date?.split('T')[0], 
         customer_id: d.customer_id, 
         product_id: d.product_id, 
+        fg_product_customer_link_id: d.fg_product_customer_link_id || '',
+        product_option_key: `${d.product_id}:${d.fg_product_customer_link_id || ''}`,
         job_number: d.job_number, 
         dc_number: d.dc_number, 
         quantity_dispatched: d.quantity_dispatched, 
@@ -558,6 +677,7 @@ export default {
     },
     formatDate(d) { if (!d) return '-'; return new Date(d).toLocaleDateString('en-GB'); },
     formatNumber(v) { return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 }); },
+    formatRate(v) { return Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
     printDispatch(d) {
       const printWindow = window.open('', '_blank');
       if (!printWindow) {
@@ -625,8 +745,8 @@ export default {
                 <tr>
                   <td>1</td>
                   <td>
-                    <strong>${d.product?.item_name || 'N/A'}</strong><br>
-                    <small>Code: ${d.product?.item_code || 'N/A'}</small>
+                    <strong>${d.dispatch_item_name || d.product?.item_name || 'N/A'}</strong><br>
+                    <small>Code: ${d.dispatch_item_code || d.product?.item_code || 'N/A'} | Rate: ${this.formatRate(d.dispatch_rate)} | Amount: ${this.formatRate(d.dispatch_amount)}</small>
                   </td>
                   <td class="text-end"><strong>${this.formatNumber(d.quantity_dispatched)}</strong></td>
                 </tr>
@@ -667,7 +787,7 @@ export default {
             <td class="text-center">${this.formatDate(d.date)}</td>
             <td class="text-center">${d.job_number || '-'}</td>
             <td class="text-start">${d.customer?.name || '-'}</td>
-            <td class="text-start">${d.product?.item_code || ''} - ${d.product?.item_name || '-'}</td>
+            <td class="text-start">${d.dispatch_item_code || d.product?.item_code || ''} - ${d.dispatch_item_name || d.product?.item_name || '-'}</td>
             <td class="text-center">${d.dc_number}</td>
             <td class="text-end">${this.formatNumber(d.quantity_dispatched)}</td>
           </tr>

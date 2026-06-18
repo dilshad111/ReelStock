@@ -1801,7 +1801,7 @@
                         <el-menu-item index="transport-dashboard" v-if="canView('transport-dashboard')">Transport Dashboard</el-menu-item>
                     </el-sub-menu>
                     
-                    <el-sub-menu index="reels-inventory" v-if="canView('suppliers') || canView('qualities') || canView('paper-colors') || canView('receipts') || canView('issues') || canView('return-supplier') || canView('stock-alerts') || canView('monthly-consumption') || canView('reel-stock') || canView('reel-receipt') || canView('monthly-closing') || canView('reel-stock-count') || canView('usage-intelligence') || canView('old-reels') || canView('qc-inspection')">
+                    <el-sub-menu index="reels-inventory" v-if="canView('suppliers') || canView('qualities') || canView('paper-colors') || canView('receipts') || canView('issues') || canView('reel-transfer') || canView('return-supplier') || canView('stock-alerts') || canView('monthly-consumption') || canView('reel-stock') || canView('reel-receipt') || canView('monthly-closing') || canView('reel-stock-count') || canView('usage-intelligence') || canView('old-reels') || canView('qc-inspection')">
                         <template #title>
                             <i class="bi bi-stack me-2 icon-reels"></i>
                             <span>Reels Inventory</span>
@@ -1812,7 +1812,7 @@
                             <span>Suppliers</span>
                         </el-menu-item>
 
-                        <el-sub-menu index="paper" v-if="canView('qualities') || canView('paper-colors') || canView('receipts') || canView('issues') || canView('return-supplier') || canView('stock-alerts')">
+                        <el-sub-menu index="paper" v-if="canView('qualities') || canView('paper-colors') || canView('receipts') || canView('issues') || canView('reel-transfer') || canView('return-supplier') || canView('stock-alerts')">
                             <template #title>
                                 <i class="bi bi-file-earmark-text me-2 icon-paper"></i>
                                 <span>Paper</span>
@@ -1821,6 +1821,7 @@
                             <el-menu-item index="paper-colors" v-if="canView('paper-colors')">Paper Colors</el-menu-item>
                             <el-menu-item index="receipts" v-if="canView('receipts')">Receipts</el-menu-item>
                             <el-menu-item index="issues" v-if="canView('issues')">Reel Issue</el-menu-item>
+                            <el-menu-item index="reel-transfer" v-if="canView('reel-transfer')">Reel Transfer</el-menu-item>
                             <el-menu-item index="return-supplier" v-if="canView('return-supplier')">Return to Supp.</el-menu-item>
                             <el-menu-item index="stock-alerts" v-if="canView('stock-alerts')">Stock Alerts</el-menu-item>
                         </el-sub-menu>
@@ -1992,6 +1993,7 @@
                 <paper-color-component v-else-if="currentView === 'paper-colors'" :user="user"></paper-color-component>
                 <reel-receipt-component v-else-if="currentView === 'receipts'" :user="user"></reel-receipt-component>
                 <reel-issue-component v-else-if="currentView === 'issues'" :user="user"></reel-issue-component>
+                <reel-transfer-component v-else-if="currentView === 'reel-transfer'" :user="user"></reel-transfer-component>
                 <reel-return-supplier-component v-else-if="currentView === 'return-supplier'" :user="user"></reel-return-supplier-component>
                 <monthly-consumption-report-component v-else-if="currentView === 'monthly-consumption'" :user="user" :can-see-amounts="canSeeAmounts('monthly-consumption')"></monthly-consumption-report-component>
                 <reel-stock-report-component v-else-if="currentView === 'reel-stock'" :user="user" :can-see-amounts="canSeeAmounts('reel-stock')"></reel-stock-report-component>

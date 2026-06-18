@@ -8,7 +8,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "Supplier fetch issue updated"
+git commit -m "Single item dispatch to multiple customers"
 
 echo.
 echo Pushing to origin main...

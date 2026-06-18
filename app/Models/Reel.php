@@ -18,6 +18,7 @@ class Reel extends Model implements Auditable
         'original_weight',
         'balance_weight',
         'status',
+        'current_location',
     ];
 
     public function paperQuality()
@@ -43,6 +44,11 @@ class Reel extends Model implements Auditable
     public function returns()
     {
         return $this->hasMany(ReelReturn::class);
+    }
+
+    public function transfers()
+    {
+        return $this->hasMany(ReelTransfer::class);
     }
 
     /**

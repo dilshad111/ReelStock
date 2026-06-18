@@ -11,6 +11,7 @@ const PERMISSION_KEY_MAP = {
     qualities: 'qualities',
     'paper-colors': 'paper-colors',
     issues: 'issues',
+    'reel-transfer': 'reel-transfer',
     'return-supplier': 'return-supplier',
     'monthly-consumption': 'monthly-consumption',
     'reel-stock': 'reel-stock',
@@ -69,6 +70,7 @@ const PERMISSION_KEYS = [
     'paper-colors',
     'receipts',
     'issues',
+    'reel-transfer',
     'return-supplier',
     'monthly-consumption',
     'reel-stock',
@@ -126,6 +128,7 @@ const VIEW_ORDER = [
     'qualities',
     'receipts',
     'issues',
+    'reel-transfer',
     'return-supplier',
     'monthly-consumption',
     'reel-stock',
@@ -183,6 +186,7 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     'paper-colors': 'paper-colors',
     receipts: 'receipts',
     issues: 'issues',
+    'reel-transfer': 'reel-transfer',
     'return-supplier': 'return-supplier',
     'monthly-consumption': 'monthly-consumption',
     'reel-stock': 'reel-stock',
@@ -656,6 +660,7 @@ import PaperColorComponent from './components/PaperColorComponent.vue';
 import DashboardComponent from './components/DashboardComponent.vue';
 import ReelReceiptComponent from './components/ReelReceiptComponent.vue';
 import ReelIssueComponent from './components/ReelIssueComponent.vue';
+import ReelTransferComponent from './components/ReelTransferComponent.vue';
 import ReelReturnSupplierComponent from './components/ReelReturnSupplierComponent.vue';
 import LoginComponent from './components/LoginComponent.vue';
 import MonthlyConsumptionReportComponent from './components/MonthlyConsumptionReportComponent.vue';
@@ -719,6 +724,7 @@ app.component('dashboard-component', DashboardComponent);
 app.component('transport-dashboard-component', TransportDashboardComponent);
 app.component('reel-receipt-component', ReelReceiptComponent);
 app.component('reel-issue-component', ReelIssueComponent);
+app.component('reel-transfer-component', ReelTransferComponent);
 app.component('reel-return-supplier-component', ReelReturnSupplierComponent);
 app.component('monthly-consumption-report-component', MonthlyConsumptionReportComponent);
 app.component('reel-stock-report-component', ReelStockReportComponent);

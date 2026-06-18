@@ -100,6 +100,7 @@ class CreateReelReturnAction
 
             if ($dto->returnedTo === 'stock') {
                 $reel->balance_weight = $dto->remainingWeight;
+                $reel->current_location = $this->normalizeStockLocation($dto->returnLocation);
             } else {
                 $reel->balance_weight = max($reel->balance_weight - $dto->remainingWeight, 0);
             }
@@ -156,6 +157,11 @@ class CreateReelReturnAction
         } else {
             $reel->status = 'in_stock';
         }
+    }
+
+    protected function normalizeStockLocation(?string $location): string
+    {
+        return $location === 'Factory' ? 'Factory' : 'Warehouse';
     }
 
     protected function validateAndSyncBalance(Reel $reel): bool

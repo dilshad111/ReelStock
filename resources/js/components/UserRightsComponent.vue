@@ -148,6 +148,7 @@ export default {
           { key: 'paper-colors', name: 'Paper Colors', hasAmounts: false },
           { key: 'receipts', name: 'Receipts', hasAmounts: true },
           { key: 'issues', name: 'Reel Issue', hasAmounts: true },
+          { key: 'reel-transfer', name: 'Reel Transfer', hasAmounts: false },
           { key: 'return-supplier', name: 'Return to Supp.', hasAmounts: true },
           { key: 'stock-alerts', name: 'Stock Alerts', hasAmounts: false },
         ]
@@ -350,6 +351,7 @@ export default {
             'paper-colors': 'bi bi-palette',
             receipts: 'bi bi-box-seam',
             issues: 'bi bi-arrow-left-right',
+            'reel-transfer': 'bi bi-arrow-left-right',
             'return-supplier': 'bi bi-reply-all',
             'stock-alerts': 'bi bi-exclamation-triangle',
             'monthly-consumption': 'bi bi-calculator',
