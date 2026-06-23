@@ -26,6 +26,14 @@ class FGReceiptController extends Controller
                 $query->where('job_number', 'like', '%' . $request->job_number . '%');
             }
 
+            if ($request->filled('item_search')) {
+                $itemSearch = $request->item_search;
+                $query->whereHas('product', function ($productQuery) use ($itemSearch) {
+                    $productQuery->where('item_code', 'like', '%' . $itemSearch . '%')
+                        ->orWhere('item_name', 'like', '%' . $itemSearch . '%');
+                });
+            }
+
             if ($request->filled('date_from') && $request->filled('date_to')) {
                 $query->whereBetween('date', [$request->date_from, $request->date_to]);
             }
@@ -127,9 +135,10 @@ class FGReceiptController extends Controller
 
         return DB::transaction(function () use ($request, $id) {
             $receipt = FGReceipt::findOrFail($id);
+            $oldProductId = $receipt->product_id;
+            $newProductId = (int)$request->product_id;
             $oldQty = (float)$receipt->quantity_produced;
             $newQty = (float)$request->quantity_produced;
-            $diff = $newQty - $oldQty;
 
             $receipt->update([
                 'date' => $request->date,
@@ -144,31 +153,78 @@ class FGReceiptController extends Controller
                 'remarks' => $request->remarks,
             ]);
 
-            // If quantity changed, record adjustment in ledger
-            if ($diff != 0) {
-                $lastLedger = FGStockLedger::where('product_id', $request->product_id)
+            if ($oldProductId !== $newProductId) {
+                // 1. Revert old product stock
+                $lastLedgerOld = FGStockLedger::where('product_id', $oldProductId)
                     ->latest('id')
                     ->lockForUpdate()
                     ->first();
+                $oldProdBalance = $lastLedgerOld ? (float)$lastLedgerOld->balance_after : 0;
+                $newOldProdBalance = $oldProdBalance - $oldQty;
 
-                $currentBalance = $lastLedger ? (float)$lastLedger->balance_after : 0;
-                $newBalance = $currentBalance + $diff;
-
-                if ($newBalance < 0) {
-                    throw new \Exception('Update would result in negative stock balance.');
+                if ($newOldProdBalance < 0) {
+                    throw new \Exception('Update would result in negative stock balance for the old product.');
                 }
 
                 FGStockLedger::create([
                     'transaction_type' => 'adjustment',
                     'reference_id' => $receipt->id,
-                    'product_id' => $request->product_id,
-                    'customer_id' => $request->customer_id,
-                    'job_number' => $request->job_number,
-                    'quantity_in' => $diff > 0 ? $diff : 0,
-                    'quantity_out' => $diff < 0 ? abs($diff) : 0,
-                    'balance_after' => $newBalance,
+                    'product_id' => $oldProductId,
+                    'customer_id' => $receipt->customer_id,
+                    'job_number' => $receipt->job_number,
+                    'quantity_in' => 0,
+                    'quantity_out' => $oldQty,
+                    'balance_after' => $newOldProdBalance,
                     'transaction_date' => $request->date,
                 ]);
+
+                // 2. Add to new product stock
+                $lastLedgerNew = FGStockLedger::where('product_id', $newProductId)
+                    ->latest('id')
+                    ->lockForUpdate()
+                    ->first();
+                $newProdBalance = $lastLedgerNew ? (float)$lastLedgerNew->balance_after : 0;
+                $newNewProdBalance = $newProdBalance + $newQty;
+
+                FGStockLedger::create([
+                    'transaction_type' => 'receipt',
+                    'reference_id' => $receipt->id,
+                    'product_id' => $newProductId,
+                    'customer_id' => $request->customer_id,
+                    'job_number' => $request->job_number,
+                    'quantity_in' => $newQty,
+                    'quantity_out' => 0,
+                    'balance_after' => $newNewProdBalance,
+                    'transaction_date' => $request->date,
+                ]);
+            } else {
+                // Same product, handle quantity change
+                $diff = $newQty - $oldQty;
+                if ($diff != 0) {
+                    $lastLedger = FGStockLedger::where('product_id', $newProductId)
+                        ->latest('id')
+                        ->lockForUpdate()
+                        ->first();
+
+                    $currentBalance = $lastLedger ? (float)$lastLedger->balance_after : 0;
+                    $newBalance = $currentBalance + $diff;
+
+                    if ($newBalance < 0) {
+                        throw new \Exception('Update would result in negative stock balance.');
+                    }
+
+                    FGStockLedger::create([
+                        'transaction_type' => 'adjustment',
+                        'reference_id' => $receipt->id,
+                        'product_id' => $newProductId,
+                        'customer_id' => $request->customer_id,
+                        'job_number' => $request->job_number,
+                        'quantity_in' => $diff > 0 ? $diff : 0,
+                        'quantity_out' => $diff < 0 ? abs($diff) : 0,
+                        'balance_after' => $newBalance,
+                        'transaction_date' => $request->date,
+                    ]);
+                }
             }
 
             return response()->json($receipt->load(['customer', 'product', 'creator']));

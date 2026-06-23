@@ -29,6 +29,17 @@ class FGDispatchController extends Controller
             if ($request->filled('dc_number')) {
                 $query->where('dc_number', 'like', '%' . $request->dc_number . '%');
             }
+            if ($request->filled('item_search')) {
+                $itemSearch = $request->item_search;
+                $query->where(function ($searchQuery) use ($itemSearch) {
+                    $searchQuery->where('dispatch_item_code', 'like', '%' . $itemSearch . '%')
+                        ->orWhere('dispatch_item_name', 'like', '%' . $itemSearch . '%')
+                        ->orWhereHas('product', function ($productQuery) use ($itemSearch) {
+                            $productQuery->where('item_code', 'like', '%' . $itemSearch . '%')
+                                ->orWhere('item_name', 'like', '%' . $itemSearch . '%');
+                        });
+                });
+            }
             if ($request->filled('date_from') && $request->filled('date_to')) {
                 $query->whereBetween('date', [$request->date_from, $request->date_to]);
             }
@@ -257,6 +268,102 @@ class FGDispatchController extends Controller
             $dispatch->delete();
             return response()->json(['message' => 'Dispatch deleted successfully.']);
         });
+    }
+
+    public function getJobMovementDetail(Request $request)
+    {
+        $request->validate([
+            'job_number' => 'required|string',
+            'product_id' => 'nullable|exists:products,id',
+        ]);
+
+        try {
+            $jobNumber = $request->job_number;
+            $productId = $request->product_id;
+
+            $receiptQuery = FGReceipt::with(['customer', 'product'])
+                ->where('job_number', $jobNumber);
+
+            $dispatchQuery = FGDispatch::with(['customer', 'product'])
+                ->where('job_number', $jobNumber);
+
+            if ($productId) {
+                $receiptQuery->where('product_id', $productId);
+                $dispatchQuery->where('product_id', $productId);
+            }
+
+            $receipts = $receiptQuery->orderBy('date')->orderBy('id')->get();
+            $dispatches = $dispatchQuery->orderBy('date')->orderBy('id')->get();
+
+            if ($receipts->isEmpty() && $dispatches->isEmpty()) {
+                return response()->json(['error' => 'No receipt or dispatch entries found for this job.'], 404);
+            }
+
+            $movements = collect();
+
+            foreach ($receipts as $receipt) {
+                $movements->push([
+                    'type' => 'receipt',
+                    'source_id' => $receipt->id,
+                    'date' => $receipt->date,
+                    'customer_name' => $receipt->customer?->name,
+                    'item_code' => $receipt->product?->item_code,
+                    'item_name' => $receipt->product?->item_name,
+                    'dc_number' => null,
+                    'receipt_qty' => (float)$receipt->quantity_produced,
+                    'dispatch_qty' => 0,
+                    'sort_order' => 0,
+                ]);
+            }
+
+            foreach ($dispatches as $dispatch) {
+                $movements->push([
+                    'type' => 'dispatch',
+                    'source_id' => $dispatch->id,
+                    'date' => $dispatch->date,
+                    'customer_name' => $dispatch->customer?->name,
+                    'item_code' => $dispatch->dispatch_item_code ?: $dispatch->product?->item_code,
+                    'item_name' => $dispatch->dispatch_item_name ?: $dispatch->product?->item_name,
+                    'dc_number' => $dispatch->dc_number,
+                    'receipt_qty' => 0,
+                    'dispatch_qty' => (float)$dispatch->quantity_dispatched,
+                    'sort_order' => 1,
+                ]);
+            }
+
+            $runningBalance = 0;
+            $movements = $movements
+                ->sort(function ($a, $b) {
+                    return [strtotime((string)$a['date']), $a['sort_order'], $a['source_id']]
+                        <=> [strtotime((string)$b['date']), $b['sort_order'], $b['source_id']];
+                })
+                ->values()
+                ->map(function ($movement) use (&$runningBalance) {
+                    $runningBalance += (float)$movement['receipt_qty'];
+                    $runningBalance -= (float)$movement['dispatch_qty'];
+                    $movement['balance'] = $runningBalance;
+                    unset($movement['sort_order']);
+                    return $movement;
+                });
+
+            $totalProduced = (float)$receipts->sum('quantity_produced');
+            $totalDispatched = (float)$dispatches->sum('quantity_dispatched');
+            $firstEntry = $receipts->first() ?: $dispatches->first();
+
+            return response()->json([
+                'job_number' => $jobNumber,
+                'customer' => $firstEntry?->customer,
+                'product' => $firstEntry?->product,
+                'receipts' => $receipts,
+                'dispatches' => $dispatches,
+                'movements' => $movements,
+                'total_produced' => $totalProduced,
+                'total_dispatched' => $totalDispatched,
+                'remaining_balance' => $totalProduced - $totalDispatched,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function getAvailableStock($productId)

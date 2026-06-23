@@ -169,35 +169,35 @@
     <!-- Filters -->
     <div class="card shadow-sm border-0 mb-4 bg-white">
       <div class="card-body p-3">
-        <div class="row g-3 align-items-end">
-          <div class="col-md-2">
+        <div class="dispatch-filter-grid">
+          <div>
             <label class="small text-muted fw-bold uppercase mb-1 d-block"><i class="bi bi-person"></i> Customer</label>
             <select v-model="filters.customer_id" @change="fetchDispatches" class="form-select border-0 bg-light">
               <option value="">All Customers</option>
               <option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option>
             </select>
           </div>
-          <div class="col-md-2">
+          <div>
             <label class="small text-muted fw-bold uppercase mb-1 d-block"><i class="bi bi-hash"></i> Job #</label>
             <input v-model="filters.job_number" @input="debouncedFetch" type="text" class="form-control border-0 bg-light" placeholder="Search...">
           </div>
-          <div class="col-md-2">
+          <div>
+            <label class="small text-muted fw-bold uppercase mb-1 d-block"><i class="bi bi-box-seam"></i> Item / Code</label>
+            <input v-model="filters.item_search" @input="debouncedFetch" type="text" class="form-control border-0 bg-light" placeholder="Code or name...">
+          </div>
+          <div>
             <label class="small text-muted fw-bold uppercase mb-1 d-block"><i class="bi bi-file-earmark-text"></i> DC #</label>
             <input v-model="filters.dc_number" @input="debouncedFetch" type="text" class="form-control border-0 bg-light" placeholder="Search...">
           </div>
-          <div class="col-md-3">
-            <div class="row g-2">
-              <div class="col-6">
-                <label class="small text-muted fw-bold uppercase mb-1 d-block"><i class="bi bi-calendar"></i> From</label>
-                <input v-model="filters.date_from" type="date" class="form-control border-0 bg-light" @change="fetchDispatches">
-              </div>
-              <div class="col-6">
-                <label class="small text-muted fw-bold uppercase mb-1 d-block"><i class="bi bi-calendar"></i> To</label>
-                <input v-model="filters.date_to" type="date" class="form-control border-0 bg-light" @change="fetchDispatches">
-              </div>
-            </div>
+          <div>
+            <label class="small text-muted fw-bold uppercase mb-1 d-block"><i class="bi bi-calendar"></i> From</label>
+            <input v-model="filters.date_from" type="date" class="form-control border-0 bg-light" @change="fetchDispatches">
           </div>
-          <div class="col-md-1">
+          <div>
+            <label class="small text-muted fw-bold uppercase mb-1 d-block"><i class="bi bi-calendar"></i> To</label>
+            <input v-model="filters.date_to" type="date" class="form-control border-0 bg-light" @change="fetchDispatches">
+          </div>
+          <div>
             <label class="small text-muted fw-bold uppercase mb-1 d-block"><i class="bi bi-list-ol"></i> Show</label>
             <select v-model="filters.per_page" @change="fetchDispatches(1)" class="form-control border-0 bg-light">
               <option value="50">50</option>
@@ -206,8 +206,8 @@
               <option value="500">500</option>
             </select>
           </div>
-          <div class="col-md-1">
-            <button @click="clearFilters" class="btn btn-clear-filters border-0 w-100" title="Clear Filters"><i class="bi bi-eraser-fill"></i></button>
+          <div class="dispatch-clear-filter">
+            <button @click="clearFilters" class="btn btn-clear-filters border-0" title="Clear Filters"><i class="bi bi-eraser-fill"></i></button>
           </div>
         </div>
       </div>
@@ -234,7 +234,18 @@
             <tr v-for="(d, index) in dispatches" :key="d.id">
               <td class="ps-4 text-muted small">{{ (pagination.current_page - 1) * pagination.per_page + index + 1 }}</td>
               <td class="fw-bold">{{ formatDate(d.date) }}</td>
-              <td class="text-center"><span class="badge bg-primary-subtle text-primary px-3">{{ d.job_number || '-' }}</span></td>
+              <td class="text-center">
+                <button
+                  v-if="d.job_number"
+                  type="button"
+                  class="badge bg-primary-subtle text-primary px-3 border-0 job-link"
+                  title="View selected job report"
+                  @click="openJobMovement(d)"
+                >
+                  {{ d.job_number }}
+                </button>
+                <span v-else class="badge bg-light text-muted px-3">-</span>
+              </td>
               <td><span class="text-dark">{{ d.customer?.name }}</span></td>
               <td>
                 <div class="d-flex flex-column">
@@ -344,6 +355,106 @@
       </div>
     </div>
 
+    <!-- Selected Job Report Modal -->
+    <div v-if="selectedJobDetail" class="modal fade show d-block" style="background: rgba(0,0,0,0.5);">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content border-0 shadow">
+          <div class="modal-header bg-primary text-white py-2">
+            <h5 class="modal-title small fw-bold uppercase">Selected Job Report: {{ selectedJobDetail.job_number }}</h5>
+            <button type="button" class="btn-close btn-close-white" @click="selectedJobDetail = null"></button>
+          </div>
+          <div class="modal-body p-4">
+            <div v-if="loadingJobDetail" class="text-center py-5">
+              <span class="spinner-border text-primary"></span>
+            </div>
+            <template v-else>
+              <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                  <label class="x-small text-muted uppercase fw-bold d-block">Customer</label>
+                  <span class="fw-bold">{{ selectedJobDetail.customer?.name || '-' }}</span>
+                </div>
+                <div class="col-md-4">
+                  <label class="x-small text-muted uppercase fw-bold d-block">Item</label>
+                  <span class="fw-bold">{{ selectedJobDetail.product?.item_code || '-' }} - {{ selectedJobDetail.product?.item_name || '-' }}</span>
+                </div>
+                <div class="col-md-4">
+                  <label class="x-small text-muted uppercase fw-bold d-block">Balance</label>
+                  <span class="fw-bold fs-5 text-primary">{{ formatNumber(selectedJobDetail.remaining_balance) }}</span>
+                </div>
+              </div>
+
+              <div class="row g-2 mb-3">
+                <div class="col-md-4">
+                  <div class="job-summary-box bg-cyan-light">
+                    <span>Total Receipt</span>
+                    <strong>{{ formatNumber(selectedJobDetail.total_produced) }}</strong>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="job-summary-box bg-light">
+                    <span>Total Dispatch</span>
+                    <strong>{{ formatNumber(selectedJobDetail.total_dispatched) }}</strong>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="job-summary-box bg-primary-subtle">
+                    <span>Remaining</span>
+                    <strong>{{ formatNumber(selectedJobDetail.remaining_balance) }}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="table-responsive">
+                <h6 class="fw-bold mb-2">Receipt & Dispatch Ledger</h6>
+                <table class="table table-sm table-bordered align-middle mb-0 job-movement-table">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>Customer</th>
+                      <th>Item</th>
+                      <th class="text-center">DC #</th>
+                      <th class="text-end">Receipt Qty</th>
+                      <th class="text-end">Dispatch Qty</th>
+                      <th class="text-end">Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="movement in selectedJobDetail.movements" :key="`${movement.type}-${movement.source_id}`">
+                      <td>{{ formatDate(movement.date) }}</td>
+                      <td>
+                        <span class="badge" :class="movement.type === 'receipt' ? 'bg-success' : 'bg-danger'">
+                          {{ movement.type === 'receipt' ? 'Receipt' : 'Dispatch' }}
+                        </span>
+                      </td>
+                      <td>{{ movement.customer_name || '-' }}</td>
+                      <td>
+                        <div class="fw-bold">{{ movement.item_name || '-' }}</div>
+                        <div class="x-small text-muted">Code: {{ movement.item_code || '-' }}</div>
+                      </td>
+                      <td class="text-center fw-bold">{{ movement.dc_number || '-' }}</td>
+                      <td class="text-end text-success fw-bold">{{ movement.receipt_qty ? formatNumber(movement.receipt_qty) : '-' }}</td>
+                      <td class="text-end text-danger fw-bold">{{ movement.dispatch_qty ? formatNumber(movement.dispatch_qty) : '-' }}</td>
+                      <td class="text-end fw-bold text-primary">{{ formatNumber(movement.balance) }}</td>
+                    </tr>
+                    <tr v-if="!selectedJobDetail.movements || selectedJobDetail.movements.length === 0">
+                      <td colspan="8" class="text-center text-muted py-4">No receipt or dispatch entries found.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </template>
+          </div>
+          <div class="modal-footer py-2">
+            <button type="button" class="btn btn-secondary btn-sm" @click="selectedJobDetail = null">Close</button>
+            <button type="button" class="btn btn-primary btn-sm" :disabled="loadingJobDetail" @click="printJobMovement">
+              <i class="bi bi-printer me-1"></i> Print
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="d-flex justify-content-between align-items-center mt-4" v-if="pagination.total > 0">
       <div class="text-muted small">Showing {{ dispatches.length }} of {{ pagination.total }} entries</div>
       <nav v-if="pagination.last_page > 1">
@@ -378,11 +489,13 @@ export default {
       editing: false,
       jobInfo: { job_number: '', customer: null, product: null, balance: null, total_produced: 0, total_dispatched: 0, history: [] },
       form: { id: null, date: new Date().toISOString().substr(0, 10), customer_id: '', product_id: '', fg_product_customer_link_id: '', product_option_key: '', job_number: '', dc_number: '', quantity_dispatched: '', remarks: '' },
-      filters: { customer_id: '', job_number: '', dc_number: '', date_from: '', date_to: '', per_page: 50 },
+      filters: { customer_id: '', job_number: '', item_search: '', dc_number: '', date_from: '', date_to: '', per_page: 50 },
       searchTimeout: null,
       pagination: { current_page: 1, last_page: 1, per_page: 50, total: 0 },
       grandTotal: 0,
       selectedEntry: null,
+      selectedJobDetail: null,
+      loadingJobDetail: false,
       companyName: 'QUALITY CARTONS (PVT.) LTD.',
       companyAddress: 'Plot# 46, Sector 24, Korangi Industrial Area Karachi',
       companyLogo: window.location.origin + '/images/quality-cartons-logo.svg',
@@ -619,9 +732,34 @@ export default {
     showDetail(d) {
       this.selectedEntry = d;
     },
+    openJobMovement(d) {
+      if (!d.job_number) return;
+
+      this.loadingJobDetail = true;
+      this.selectedJobDetail = {
+        job_number: d.job_number,
+        customer: d.customer || null,
+        product: d.product || null,
+        movements: [],
+        total_produced: 0,
+        total_dispatched: 0,
+        remaining_balance: 0,
+      };
+
+      axios.get('/api/fg-dispatches/job-movement/detail', {
+        params: { job_number: d.job_number, product_id: d.product_id }
+      }).then(r => {
+        this.selectedJobDetail = r.data;
+      }).catch(err => {
+        this.selectedJobDetail = null;
+        this.$message.error(err.response?.data?.error || 'Unable to fetch job movement.');
+      }).finally(() => {
+        this.loadingJobDetail = false;
+      });
+    },
     debouncedFetch() { clearTimeout(this.searchTimeout); this.searchTimeout = setTimeout(() => this.fetchDispatches(), 400); },
     goToPage(p) { if (p >= 1 && p <= this.pagination.last_page) this.fetchDispatches(p); },
-    clearFilters() { this.filters = { customer_id: '', job_number: '', dc_number: '', date_from: '', date_to: '', per_page: 50 }; this.fetchDispatches(); },
+    clearFilters() { this.filters = { customer_id: '', job_number: '', item_search: '', dc_number: '', date_from: '', date_to: '', per_page: 50 }; this.fetchDispatches(); },
     
     resetForm() { 
       this.originalQty = null;
@@ -678,6 +816,101 @@ export default {
     formatDate(d) { if (!d) return '-'; return new Date(d).toLocaleDateString('en-GB'); },
     formatNumber(v) { return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 }); },
     formatRate(v) { return Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
+    escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    },
+    printJobMovement() {
+      if (!this.selectedJobDetail) return;
+
+      const detail = this.selectedJobDetail;
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        alert('Please allow pop-ups to print.');
+        return;
+      }
+
+      const rows = (detail.movements || []).map(movement => `
+        <tr>
+          <td>${this.escapeHtml(this.formatDate(movement.date))}</td>
+          <td>${movement.type === 'receipt' ? 'Receipt' : 'Dispatch'}</td>
+          <td>${this.escapeHtml(movement.customer_name || '-')}</td>
+          <td>${this.escapeHtml(movement.item_code || '-')} - ${this.escapeHtml(movement.item_name || '-')}</td>
+          <td class="text-center">${this.escapeHtml(movement.dc_number || '-')}</td>
+          <td class="text-end">${movement.receipt_qty ? this.escapeHtml(this.formatNumber(movement.receipt_qty)) : '-'}</td>
+          <td class="text-end">${movement.dispatch_qty ? this.escapeHtml(this.formatNumber(movement.dispatch_qty)) : '-'}</td>
+          <td class="text-end">${this.escapeHtml(this.formatNumber(movement.balance))}</td>
+        </tr>
+      `).join('');
+
+      const now = new Date();
+      const timestamp = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Selected Job Report ${this.escapeHtml(detail.job_number)} - ${this.escapeHtml(this.companyName)}</title>
+            <style>
+              @page { size: A4 landscape; margin: 10mm; }
+              body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 10px; color: #000; }
+              .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
+              .company-name { font-size: 22px; font-weight: bold; }
+              .report-title { font-size: 16px; margin-top: 5px; text-transform: uppercase; font-weight: bold; }
+              .meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; font-size: 11px; }
+              .meta-box { border: 1px solid #000; padding: 6px; }
+              .label { font-size: 9px; text-transform: uppercase; color: #444; }
+              .value { font-weight: bold; margin-top: 2px; }
+              table { width: 100%; border-collapse: collapse; font-size: 10px; table-layout: fixed; }
+              th, td { border: 1px solid #000; padding: 5px 6px; word-wrap: break-word; }
+              th { background: #f2f2f2; text-align: center; text-transform: uppercase; }
+              .text-end { text-align: right; }
+              .text-center { text-align: center; }
+              .footer { margin-top: 12px; font-size: 9px; text-align: center; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <div class="company-name">${this.escapeHtml(this.companyName)}</div>
+              <div class="report-title">FG Selected Job Report</div>
+            </div>
+            <div class="meta">
+              <div class="meta-box"><div class="label">Job #</div><div class="value">${this.escapeHtml(detail.job_number)}</div></div>
+              <div class="meta-box"><div class="label">Customer</div><div class="value">${this.escapeHtml(detail.customer?.name || '-')}</div></div>
+              <div class="meta-box"><div class="label">Item</div><div class="value">${this.escapeHtml(detail.product?.item_code || '-')} - ${this.escapeHtml(detail.product?.item_name || '-')}</div></div>
+              <div class="meta-box"><div class="label">Balance</div><div class="value">${this.escapeHtml(this.formatNumber(detail.remaining_balance))}</div></div>
+            </div>
+            <div class="meta">
+              <div class="meta-box"><div class="label">Total Receipt</div><div class="value">${this.escapeHtml(this.formatNumber(detail.total_produced))}</div></div>
+              <div class="meta-box"><div class="label">Total Dispatch</div><div class="value">${this.escapeHtml(this.formatNumber(detail.total_dispatched))}</div></div>
+              <div class="meta-box"><div class="label">Remaining</div><div class="value">${this.escapeHtml(this.formatNumber(detail.remaining_balance))}</div></div>
+              <div class="meta-box"><div class="label">Printed</div><div class="value">${this.escapeHtml(timestamp)}</div></div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th width="70">Date</th>
+                  <th width="65">Type</th>
+                  <th width="130">Customer</th>
+                  <th>Item</th>
+                  <th width="70">DC #</th>
+                  <th width="85">Receipt Qty</th>
+                  <th width="85">Dispatch Qty</th>
+                  <th width="85">Balance</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+            <div class="footer">Printed on: ${this.escapeHtml(timestamp)}</div>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+    },
     printDispatch(d) {
       const printWindow = window.open('', '_blank');
       if (!printWindow) {
@@ -866,6 +1099,55 @@ export default {
 .btn-purple:hover { background: #5f3dc4; color: white; transform: translateY(-1px); }
 .btn-white { background: white; border: 1px solid #eee; }
 .btn-white:hover { background: #f8f9fa; }
+.dispatch-filter-grid {
+  align-items: end;
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns:
+    minmax(170px, 1.2fr)
+    minmax(150px, 1fr)
+    minmax(170px, 1.15fr)
+    minmax(95px, 0.55fr)
+    minmax(150px, 0.85fr)
+    minmax(150px, 0.85fr)
+    minmax(95px, 0.55fr)
+    42px;
+}
+.dispatch-filter-grid .form-control,
+.dispatch-filter-grid .form-select {
+  font-size: 0.88rem;
+  min-height: 38px;
+  padding-bottom: 0.35rem;
+  padding-top: 0.35rem;
+}
+.dispatch-clear-filter {
+  align-self: end;
+  display: flex;
+  justify-content: flex-end;
+}
+.dispatch-clear-filter .btn-clear-filters {
+  align-items: center;
+  display: inline-flex;
+  height: 38px;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0;
+  width: 38px;
+}
+.job-link { cursor: pointer; font: inherit; line-height: 1.2; }
+.job-link:hover { text-decoration: underline; }
+.job-summary-box {
+  align-items: center;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  padding: 0.65rem 0.8rem;
+}
+.job-summary-box span { color: #64748b; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+.job-summary-box strong { color: #0f172a; font-size: 1.05rem; }
+.job-movement-table th { font-size: 0.7rem; text-transform: uppercase; }
+.job-movement-table td { font-size: 0.82rem; }
 
 .dispatch-header { background: #00BCD4; border-radius: 12px 12px 0 0 !important; }
 .bg-cyan-light { background-color: #E0F7FA; }
@@ -881,6 +1163,22 @@ export default {
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 .form-control:focus, .form-select:focus { box-shadow: 0 0 0 0.25rem rgba(112, 72, 232, 0.15); border-color: #7048e8; }
+
+@media (max-width: 1199.98px) {
+  .dispatch-filter-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767.98px) {
+  .dispatch-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dispatch-clear-filter {
+    justify-content: flex-start;
+  }
+}
 
 [data-theme="dark"] .page-title {
   color: #e2e8f0;

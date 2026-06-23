@@ -1976,7 +1976,7 @@
                                 <i class="bi" :class="pendingCartageCount > 0 ? 'bi-shield-check text-warning animate__animated animate__pulse animate__infinite' : 'bi-shield-check'"></i>
                             </el-button>
                         </el-badge>
-                        <el-button circle @click="setView('reconciliation')" title="Stock Reconciliation">
+                        <el-button circle v-if="canView('reconciliation')" @click="setView('reconciliation')" title="Stock Reconciliation">
                             <i class="bi bi-arrow-repeat"></i>
                         </el-button>
                         <theme-selector-component></theme-selector-component>

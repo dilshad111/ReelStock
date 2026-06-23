@@ -186,6 +186,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('fg-receipts', FGReceiptController::class);
     Route::apiResource('fg-dispatches', FGDispatchController::class);
+    Route::get('fg-dispatches/job-movement/detail', [FGDispatchController::class, 'getJobMovementDetail']);
     Route::get('fg-dispatches/available-stock/{productId}', [FGDispatchController::class, 'getAvailableStock']);
     Route::get('fg-dispatches/job-details/{jobNumber}', [FGDispatchController::class, 'getJobDetails']);
     Route::get('fg-dispatches/product-details/{productId}', [FGDispatchController::class, 'getProductDetails']);

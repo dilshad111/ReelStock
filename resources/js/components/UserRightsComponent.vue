@@ -163,6 +163,7 @@ export default {
           { key: 'reel-stock-count', name: 'Stock Count', hasAmounts: true },
           { key: 'usage-intelligence', name: 'Usage Intel.', hasAmounts: true },
           { key: 'old-reels', name: 'Old Reels Report', hasAmounts: true },
+          { key: 'reconciliation', name: 'Stock Reconciliation', hasAmounts: false },
         ]
       },
       {
@@ -361,6 +362,7 @@ export default {
             'reel-stock-count': 'bi bi-list-check',
             'usage-intelligence': 'bi bi-cpu',
             'old-reels': 'bi bi-hourglass-split',
+            reconciliation: 'bi bi-arrow-repeat',
             customers: 'bi bi-people',
             transporters: 'bi bi-signpost-split',
             vehicles: 'bi bi-truck-flatbed',

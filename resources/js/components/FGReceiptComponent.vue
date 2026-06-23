@@ -88,14 +88,18 @@
         <input v-model="filters.job_number" @input="debouncedFetch" type="text" class="form-control form-control-sm" placeholder="Search...">
       </div>
       <div class="col-md-2">
+        <label class="small text-muted">Item / Code</label>
+        <input v-model="filters.item_search" @input="debouncedFetch" type="text" class="form-control form-control-sm" placeholder="Code or name...">
+      </div>
+      <div class="col-md-auto fg-filter-date">
         <label class="small text-muted">From</label>
         <input v-model="filters.date_from" type="date" class="form-control form-control-sm" @change="fetchReceipts">
       </div>
-      <div class="col-md-2">
+      <div class="col-md-auto fg-filter-date">
         <label class="small text-muted">To</label>
         <input v-model="filters.date_to" type="date" class="form-control form-control-sm" @change="fetchReceipts">
       </div>
-      <div class="col-md-1">
+      <div class="col-md-1 fg-filter-show">
         <label class="small text-muted">Show</label>
         <select v-model="filters.per_page" @change="fetchReceipts(1)" class="form-control form-control-sm">
           <option value="50">50</option>
@@ -249,7 +253,7 @@ export default {
       receipts: [], customers: [], allProducts: [], filteredProducts: [], activeJobCards: [],
       showForm: false, editing: false,
       form: { id: null, date: today, customer_id: '', product_id: '', job_card_id: '', job_number: '', production_date: today, quantity_produced: '', carton_price: '', wastage: 0, remarks: '' },
-      filters: { customer_id: '', job_number: '', date_from: '', date_to: '', per_page: 50 },
+      filters: { customer_id: '', job_number: '', item_search: '', date_from: '', date_to: '', per_page: 50 },
       searchTimeout: null,
       pagination: { current_page: 1, last_page: 1, per_page: 50, total: 0 },
       grandTotals: { quantity_produced: 0, wastage: 0 },
@@ -331,7 +335,7 @@ export default {
     },
     debouncedFetch() { clearTimeout(this.searchTimeout); this.searchTimeout = setTimeout(() => this.fetchReceipts(), 400); },
     goToPage(p) { if (p >= 1 && p <= this.pagination.last_page) this.fetchReceipts(p); },
-    clearFilters() { this.filters = { customer_id: '', job_number: '', date_from: '', date_to: '', per_page: 50 }; this.fetchReceipts(); },
+    clearFilters() { this.filters = { customer_id: '', job_number: '', item_search: '', date_from: '', date_to: '', per_page: 50 }; this.fetchReceipts(); },
     resetForm() { const t = new Date().toISOString().substr(0, 10); this.form = { id: null, date: t, customer_id: '', product_id: '', job_card_id: '', job_number: '', production_date: t, quantity_produced: '', carton_price: '', wastage: 0, remarks: '' }; this.filteredProducts = []; },
     saveReceipt() {
       if (!this.form.customer_id || !this.form.product_id || !this.form.job_number || !this.form.quantity_produced) { this.$message.error('Fill required fields.'); return; }
@@ -362,3 +366,23 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.fg-filter-date {
+  flex: 0 0 150px;
+  max-width: 150px;
+}
+
+.fg-filter-show {
+  flex: 0 0 95px;
+  max-width: 95px;
+}
+
+@media (max-width: 767.98px) {
+  .fg-filter-date,
+  .fg-filter-show {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}
+</style>
