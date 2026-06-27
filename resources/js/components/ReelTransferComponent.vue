@@ -51,7 +51,7 @@
 
             <div class="rt-field">
               <label>To Location <span>*</span></label>
-              <select v-model="form.to_location" class="rt-input" required>
+              <select v-model="form.to_location" class="rt-input" required :disabled="saving || !reel || Number(reel.balance_weight) <= 0">
                 <option value="">Select destination</option>
                 <option v-for="location in destinationLocations" :key="location" :value="location">
                   {{ location }}
@@ -99,7 +99,7 @@
 
           <div class="rt-actions">
             <button class="btn btn-secondary" type="button" :disabled="saving" @click="resetForm">Discard</button>
-            <button class="btn btn-primary" type="submit" :disabled="saving">
+            <button class="btn btn-primary" type="submit" :disabled="saving || !reel || Number(reel.balance_weight) <= 0">
               <span v-if="saving" class="spinner-border spinner-border-sm me-2"></span>
               Save Transfer
             </button>
@@ -244,6 +244,10 @@ export default {
         .then(({ data }) => {
           this.reel = data.data;
           this.form.to_location = this.destinationLocations[0] || '';
+          if (this.reel && Number(this.reel.balance_weight) <= 0) {
+            this.form.to_location = '';
+            alert('this reel weight is 0kg no balance to move the reel to other location.');
+          }
         })
         .catch(error => {
           this.reel = null;

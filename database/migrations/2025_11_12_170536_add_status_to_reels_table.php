@@ -23,6 +23,10 @@ return new class extends Migration
             return;
         }
 
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         $statusList = "'" . implode("','", $newStatuses) . "'";
         DB::statement("ALTER TABLE reels MODIFY COLUMN status ENUM({$statusList}) NOT NULL DEFAULT 'in_stock'");
     }
@@ -35,6 +39,10 @@ return new class extends Migration
     public function down()
     {
         if (!Schema::hasColumn('reels', 'status')) {
+            return;
+        }
+
+        if (DB::getDriverName() === 'sqlite') {
             return;
         }
 

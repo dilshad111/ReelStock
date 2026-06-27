@@ -27,7 +27,16 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
+            'password' => [
+                'required',
+                'string',
+                \Illuminate\Validation\Rules\Password::min(12)
+                    ->letters()
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols()
+                    ->uncompromised(),
+            ],
             'role_id' => 'required|exists:roles,id',
         ]);
 
@@ -62,7 +71,16 @@ class UserController extends Controller
 
         if ($request->filled('password')) {
             $request->validate([
-                'password' => 'required|string|min:8',
+                'password' => [
+                    'required',
+                    'string',
+                    \Illuminate\Validation\Rules\Password::min(12)
+                        ->letters()
+                        ->mixedCase()
+                        ->numbers()
+                        ->symbols()
+                        ->uncompromised(),
+                ],
             ]);
             $user->update(['password' => Hash::make($request->password)]);
         }

@@ -109,7 +109,7 @@ class SetupController extends Controller
 
         // Check if table exists
         $dbName = DB::getDatabaseName();
-        $tableExists = DB::select("SHOW TABLES LIKE '{$table}'");
+        $tableExists = DB::select("SHOW TABLES LIKE ?", [$table]);
 
         if (empty($tableExists)) {
             return response()->json(['message' => "Table '{$table}' does not exist in the database."], 404);

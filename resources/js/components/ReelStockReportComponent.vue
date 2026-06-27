@@ -67,6 +67,14 @@
             </select>
           </div>
           <div class="col-md-1">
+            <label class="small text-muted mb-1 ps-1">Location</label>
+            <select v-model="selectedLocation" @change="handleLocationChange" class="form-select form-select-sm filter-control">
+              <option value="">All</option>
+              <option value="Warehouse">Warehouse</option>
+              <option value="Factory">Factory</option>
+            </select>
+          </div>
+          <div class="col-md-1">
             <label class="small text-muted mb-1 ps-1">Size</label>
             <select v-model="selectedSize" @change="handleSizeChange" class="form-select form-select-sm filter-control">
               <option value="">All</option>
@@ -81,7 +89,7 @@
             <label class="small text-muted mb-1 ps-1">Max Wt</label>
             <input v-model="balanceMax" type="number" step="0.01" class="form-control form-control-sm filter-control" placeholder="Max">
           </div>
-          <div class="col-md-3 d-flex gap-1 justify-content-end">
+          <div class="col-md-2 d-flex gap-1 justify-content-end">
             <button @click="fetchReport" class="btn btn-primary btn-sm px-3 filter-btn">Apply</button>
             <button @click="clearAllFilters" class="btn btn-clear-filters btn-sm filter-btn reel-clear-btn">Clear</button>
           </div>
@@ -92,13 +100,14 @@
       <thead class="table-light">
         <tr>
           <th style="width: 3%; text-align: center; font-size: 0.75rem;">Reel No.</th>
-          <th style="width: 24%; text-align: center; font-size: 0.75rem;">Supplier</th>
-          <th style="width: 39%; text-align: center; font-size: 0.75rem;">Quality</th>
+          <th style="width: 20%; text-align: center; font-size: 0.75rem;">Supplier</th>
+          <th style="width: 33%; text-align: center; font-size: 0.75rem;">Quality</th>
           <th style="width: 4%; text-align: center; font-size: 0.75rem;">Reel Size</th>
           <th style="width: 8%; text-align: center; font-size: 0.75rem;">Original Weight Kg</th>
           <th style="width: 7%; text-align: center; font-size: 0.75rem;">Consumed Weight Kg</th>
           <th style="width: 8%; text-align: center; font-size: 0.75rem;">Balance Weight Kg</th>
           <th v-if="canSeeAmounts" style="width: 5%; text-align: center; font-size: 0.75rem;">Amount PKR</th>
+          <th style="width: 6%; text-align: center; font-size: 0.75rem;">Location</th>
           <th style="width: 2%; text-align: center; font-size: 0.75rem;">Status</th>
         </tr>
       </thead>
@@ -116,6 +125,11 @@
           <td class="text-center fw-bold">{{ formatWholeNumber(item.consumed_weight) }}</td>
           <td class="text-center fw-bold">{{ formatWholeNumber(item.balance_weight) }}</td>
           <td v-if="canSeeAmounts" class="text-end">{{ formatAmount(item.amount, false) }}</td>
+          <td class="text-center">
+            <span class="badge" :class="item.current_location === 'Factory' ? 'bg-warning text-dark' : 'bg-info text-dark'">
+              {{ item.current_location }}
+            </span>
+          </td>
           <td class="text-center status-cell">{{ item.status }}</td>
         </tr>
         <!-- Subtotal Row -->
@@ -125,7 +139,7 @@
           <td class="text-center">{{ formatWholeNumberWithSeparators(totalConsumedWeight) }}</td>
           <td class="text-center">{{ formatWholeNumberWithSeparators(totalBalanceWeight) }}</td>
           <td v-if="canSeeAmounts" class="text-end">{{ formatAmount(totalAmount, false) }}</td>
-          <td class="text-center">{{ report.length }}<br>reels</td>
+          <td class="text-center" colspan="2">{{ report.length }}<br>reels</td>
         </tr>
       </tbody>
     </table>
@@ -158,6 +172,7 @@ export default {
       selectedSize: '',
       selectedSupplier: '',
       selectedStatus: '',
+      selectedLocation: '',
       qualitySearch: '',
       supplierSearch: '',
       showQualityDrop: false,
@@ -263,6 +278,7 @@ export default {
       if (this.selectedSupplier) params.push('supplier=' + this.selectedSupplier);
       if (this.selectedSize) params.push('size=' + this.selectedSize);
       if (this.selectedStatus) params.push('status=' + this.selectedStatus);
+      if (this.selectedLocation) params.push('location=' + this.selectedLocation);
       if (params.length > 0) url += '?' + params.join('&');
 
       axios.get(url).then(response => {
@@ -277,6 +293,7 @@ export default {
       if (this.selectedQuality) params.push('quality=' + this.selectedQuality);
       if (this.selectedSize) params.push('size=' + this.selectedSize);
       if (this.selectedStatus) params.push('status=' + this.selectedStatus);
+      if (this.selectedLocation) params.push('location=' + this.selectedLocation);
       if (params.length > 0) url += '?' + params.join('&');
 
       axios.get(url).then(response => {
@@ -291,6 +308,7 @@ export default {
       if (this.selectedSupplier) params.push('supplier=' + this.selectedSupplier);
       if (this.selectedQuality) params.push('quality=' + this.selectedQuality);
       if (this.selectedStatus) params.push('status=' + this.selectedStatus);
+      if (this.selectedLocation) params.push('location=' + this.selectedLocation);
       
       if (params.length > 0) url += '?' + params.join('&');
 
@@ -314,6 +332,9 @@ export default {
       }
       if (this.selectedStatus) {
         params.push('status=' + this.selectedStatus);
+      }
+      if (this.selectedLocation) {
+        params.push('location=' + this.selectedLocation);
       }
       if (this.balanceMin !== '') {
         params.push('balance_min=' + this.balanceMin);
@@ -367,6 +388,12 @@ export default {
       this.fetchSizes();
       this.fetchReport();
     },
+    handleLocationChange() {
+      this.fetchQualities();
+      this.fetchSuppliers();
+      this.fetchSizes();
+      this.fetchReport();
+    },
     handleBlur(type) {
       // Use timeout to allow click event on dropdown items to fire first
       setTimeout(() => {
@@ -397,6 +424,7 @@ export default {
       this.supplierSearch = '';
       this.selectedSize = '';
       this.selectedStatus = '';
+      this.selectedLocation = '';
       this.balanceMin = '';
       this.balanceMax = '';
       this.fetchQualities();
@@ -504,6 +532,9 @@ export default {
         };
         filters.push(`Status: ${statusMap[this.selectedStatus] || this.selectedStatus}`);
       }
+      if (this.selectedLocation) {
+        filters.push(`Location: ${this.selectedLocation}`);
+      }
 
       printWindow.document.write(`
         <html>
@@ -586,7 +617,7 @@ export default {
       printWindow.print();
     },
     generateCSV() {
-      const headers = ['Reel No.', 'Supplier', 'Quality', 'Reel Size', 'Original Weight Kg', 'Consumed Weight Kg', 'Balance Weight Kg', 'Amount PKR', 'Status'];
+      const headers = ['Reel No.', 'Supplier', 'Quality', 'Reel Size', 'Original Weight Kg', 'Consumed Weight Kg', 'Balance Weight Kg', 'Amount PKR', 'Location', 'Status'];
       const rows = this.report.map(item => {
         const row = [
           item.reel_no,
@@ -600,6 +631,7 @@ export default {
         if (this.canSeeAmounts) {
           row.push(this.formatAmount(item.amount, false));
         }
+        row.push(item.current_location || 'Warehouse');
         row.push(item.status);
         return row;
       });
@@ -617,20 +649,21 @@ export default {
       if (this.canSeeAmounts) {
         totalRow.push(this.formatAmount(this.totalAmount, false));
       }
+      totalRow.push(''); // Empty value for Location total cell
       totalRow.push(this.report.length + ' reels');
       rows.push(totalRow);
 
       const csvHeaders = this.canSeeAmounts
         ? headers
-        : ['Reel No.', 'Supplier', 'Quality', 'Reel Size', 'Original Weight Kg', 'Consumed Weight Kg', 'Balance Weight Kg', 'Status'];
+        : ['Reel No.', 'Supplier', 'Quality', 'Reel Size', 'Original Weight Kg', 'Consumed Weight Kg', 'Balance Weight Kg', 'Location', 'Status'];
 
       const csvRows = [csvHeaders, ...rows];
       return csvRows.map(row => row.map(field => `"${field}"`).join(',')).join('\n');
     },
     generateHTMLTable() {
       const headers = this.canSeeAmounts
-        ? '<th>Reel No.</th><th>Supplier</th><th>Quality</th><th>Reel Size</th><th>Original Wt.</th><th>Consumed Wt.</th><th>Balance Wt.</th><th>Amount PKR</th><th>Status</th>'
-        : '<th>Reel No.</th><th>Supplier</th><th>Quality</th><th>Reel Size</th><th>Original Wt.</th><th>Consumed Wt.</th><th>Balance Wt.</th><th>Status</th>';
+        ? '<th>Reel No.</th><th>Supplier</th><th>Quality</th><th>Reel Size</th><th>Original Wt.</th><th>Consumed Wt.</th><th>Balance Wt.</th><th>Amount PKR</th><th>Location</th><th>Status</th>'
+        : '<th>Reel No.</th><th>Supplier</th><th>Quality</th><th>Reel Size</th><th>Original Wt.</th><th>Consumed Wt.</th><th>Balance Wt.</th><th>Location</th><th>Status</th>';
 
       const rows = this.report.map(item => {
         const reelNo = item.reel_no;
@@ -651,13 +684,14 @@ export default {
             <td style="text-align: center; font-weight: 700;">${this.formatWholeNumber(item.consumed_weight)}</td>
             <td style="text-align: center; font-weight: 700;">${this.formatWholeNumber(item.balance_weight)}</td>
             ${amountCell}
+            <td style="text-align: center;">${item.current_location || 'Warehouse'}</td>
             <td style="text-align: center;">${item.status}</td>
           </tr>`;
       }).join('');
 
       const totalRow = `
         <tr class="total-row">
-          <td colspan="${this.canSeeAmounts ? 9 : 8}">
+          <td colspan="${this.canSeeAmounts ? 10 : 9}">
             <strong>
               TOTAL Reels: ${this.report.length}&nbsp;&nbsp;&nbsp;&nbsp;
               Total Original Wt: ${this.formatWholeNumberWithSeparators(this.totalOriginalWeight)} kg&nbsp;&nbsp;&nbsp;&nbsp;
@@ -676,7 +710,7 @@ export default {
             ${rows}
             ${totalRow}
           </tbody>
-        </table>`;
+         </table>`;
     },
     openHistoryInNewTab(reel, history) {
       if (!reel) {
@@ -687,13 +721,58 @@ export default {
         alert('Please allow pop-ups to open the reel history.');
         return;
       }
+
+      const getTypeBadge = (type) => {
+        switch (type) {
+          case 'Receipt':
+            return '<span class="badge badge-success">Receipt</span>';
+          case 'Issue':
+            return '<span class="badge badge-warning">Issue</span>';
+          case 'Return':
+            return '<span class="badge badge-info">Return</span>';
+          case 'Return to Supplier':
+            return '<span class="badge badge-danger">Supplier Return</span>';
+          case 'Location Transfer':
+            return '<span class="badge badge-purple">Transfer</span>';
+          default:
+            return `<span class="badge badge-secondary">${type}</span>`;
+        }
+      };
+
+      const formatWeightChange = (weight) => {
+        const val = parseFloat(weight);
+        if (Number.isNaN(val)) return '<span class="weight-zero">-</span>';
+        const formatted = val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' kg';
+        if (val > 0) {
+          return `<span class="weight-plus">+${formatted}</span>`;
+        } else if (val < 0) {
+          return `<span class="weight-minus">${formatted}</span>`;
+        } else {
+          return `<span class="weight-zero">${formatted}</span>`;
+        }
+      };
+
+      const formatRunningBalance = (balance) => {
+        const val = parseFloat(balance);
+        if (Number.isNaN(val)) return '0.00 kg';
+        return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' kg';
+      };
+
+      const getQCBadge = (status) => {
+        const s = (status || '').toLowerCase();
+        if (s === 'pass' || s === 'approved') return '<span class="badge badge-success">Pass</span>';
+        if (s === 'fail' || s === 'rejected') return '<span class="badge badge-danger">Fail</span>';
+        if (s === 'pending') return '<span class="badge badge-warning">Pending</span>';
+        return `<span class="badge badge-secondary">${status || 'N/A'}</span>`;
+      };
+
       const historyRows = (history || []).map(h => `
           <tr>
-            <td>${this.formatDate(h.date)}</td>
-            <td>${h.type}</td>
-            <td>${h.details}</td>
-            <td>${h.weight} kg</td>
-            <td>${h.balance} kg</td>
+            <td style="font-weight: 500;">${this.formatDate(h.date)}</td>
+            <td>${getTypeBadge(h.type)}</td>
+            <td style="color: #475569;">${h.details}</td>
+            <td style="text-align: right;">${formatWeightChange(h.weight)}</td>
+            <td style="text-align: right; font-weight: 600; color: #1e293b;">${formatRunningBalance(h.balance)}</td>
           </tr>
         `).join('');
 
@@ -701,65 +780,359 @@ export default {
         <html>
           <head>
             <title>Reel History - ${reel.reel_no}</title>
-            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" />
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
             <style>
-              body { font-family: Arial, sans-serif; margin: 20px; }
-              .reel-metadata { margin-bottom: 20px; }
-              .reel-metadata dt { font-weight: 600; }
-              .qc-section { background-color: #f8f9fa; padding: 15px; border-radius: 5px; }
-              .qc-section h5 { margin-top: 0; color: #333; }
+              :root {
+                --primary: #6366f1;
+                --primary-hover: #4f46e5;
+                --bg-main: #f8fafc;
+                --bg-card: #ffffff;
+                --border: #e2e8f0;
+                --text-main: #0f172a;
+                --text-muted: #64748b;
+                --success: #10b981;
+                --success-bg: #ecfdf5;
+                --warning: #f59e0b;
+                --warning-bg: #fffbeb;
+                --danger: #ef4444;
+                --danger-bg: #fef2f2;
+                --info: #0ea5e9;
+                --info-bg: #f0f9ff;
+                --purple: #8b5cf6;
+                --purple-bg: #f5f3ff;
+              }
+
+              body {
+                font-family: 'Inter', system-ui, -apple-system, sans-serif;
+                background-color: var(--bg-main);
+                color: var(--text-main);
+                padding: 30px 20px;
+                line-height: 1.5;
+                margin: 0;
+              }
+
+              .container {
+                max-width: 1200px;
+                margin: 0 auto;
+              }
+
+              .header-bar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 24px;
+                border-bottom: 1px solid var(--border);
+                padding-bottom: 16px;
+              }
+
+              .title-section h1 {
+                font-size: 24px;
+                font-weight: 700;
+                color: var(--text-main);
+                margin: 0;
+                letter-spacing: -0.02em;
+              }
+
+              .title-section p {
+                color: var(--text-muted);
+                margin: 4px 0 0 0;
+                font-size: 14px;
+              }
+
+              .btn-print {
+                background-color: var(--primary);
+                color: white;
+                border: none;
+                padding: 10px 18px;
+                border-radius: 8px;
+                font-weight: 600;
+                font-size: 14px;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                transition: all 0.2s ease;
+                box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.15);
+              }
+
+              .btn-print:hover {
+                background-color: var(--primary-hover);
+                transform: translateY(-1px);
+              }
+
+              .row-layout {
+                display: flex;
+                gap: 24px;
+                margin-bottom: 24px;
+              }
+
+              .col-left {
+                flex: 8;
+                display: flex;
+                flex-direction: column;
+              }
+
+              .col-right {
+                flex: 4;
+              }
+
+              .card {
+                background-color: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+                padding: 24px;
+                margin-bottom: 24px;
+              }
+
+              .card-title {
+                font-size: 16px;
+                font-weight: 700;
+                margin: 0 0 16px 0;
+                color: var(--text-main);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+              }
+
+              .grid-metadata {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
+              }
+
+              .meta-item {
+                display: flex;
+                flex-direction: column;
+              }
+
+              .meta-label {
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: var(--text-muted);
+                font-weight: 600;
+                margin-bottom: 4px;
+              }
+
+              .meta-value {
+                font-size: 14px;
+                font-weight: 600;
+                color: var(--text-main);
+              }
+
+              .badge {
+                display: inline-flex;
+                align-items: center;
+                padding: 4px 10px;
+                border-radius: 9999px;
+                font-size: 12px;
+                font-weight: 600;
+                text-transform: capitalize;
+                width: fit-content;
+              }
+
+              .badge-success { background-color: var(--success-bg); color: var(--success); }
+              .badge-warning { background-color: var(--warning-bg); color: var(--warning); }
+              .badge-danger { background-color: var(--danger-bg); color: var(--danger); }
+              .badge-info { background-color: var(--info-bg); color: var(--info); }
+              .badge-purple { background-color: var(--purple-bg); color: var(--purple); }
+              .badge-secondary { background-color: #f1f5f9; color: #475569; }
+
+              .table-responsive {
+                overflow-x: auto;
+              }
+
+              table.modern-table {
+                width: 100%;
+                border-collapse: collapse;
+                text-align: left;
+              }
+
+              table.modern-table th {
+                padding: 12px 16px;
+                background-color: #f8fafc;
+                border-bottom: 1px solid var(--border);
+                font-weight: 600;
+                font-size: 12px;
+                color: var(--text-muted);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+              }
+
+              table.modern-table td {
+                padding: 14px 16px;
+                border-bottom: 1px solid var(--border);
+                font-size: 14px;
+                color: var(--text-main);
+              }
+
+              table.modern-table tr:hover td {
+                background-color: #f8fafc;
+              }
+
+              table.modern-table tr:last-child td {
+                border-bottom: none;
+              }
+
+              .weight-plus {
+                color: var(--success);
+                font-weight: 600;
+              }
+
+              .weight-minus {
+                color: var(--danger);
+                font-weight: 600;
+              }
+
+              .weight-zero {
+                color: var(--text-muted);
+                font-weight: 500;
+              }
+
+              @media (max-width: 992px) {
+                .row-layout {
+                  flex-direction: column;
+                }
+              }
+
               @media print {
-                @page { margin: 5mm; }
-                body { margin: 0; }
+                body {
+                  background-color: white;
+                  padding: 0;
+                }
+                .btn-print {
+                  display: none;
+                }
+                .card {
+                  border: 1px solid #000;
+                  box-shadow: none;
+                  margin-bottom: 20px;
+                  page-break-inside: avoid;
+                }
+                table.modern-table th {
+                  background-color: #f8fafc !important;
+                  color: #000 !important;
+                  border-bottom: 2px solid #000 !important;
+                  -webkit-print-color-adjust: exact;
+                  print-color-adjust: exact;
+                }
+                .badge {
+                  border: 1px solid #ccc;
+                  -webkit-print-color-adjust: exact;
+                  print-color-adjust: exact;
+                }
               }
             </style>
           </head>
           <body>
             <div class="container">
-              <h2 class="mb-4">Reel History - ${reel.reel_no}</h2>
-              <div class="row">
-                <div class="col-md-8">
-                  <dl class="row reel-metadata">
-                    <dt class="col-sm-4">Reel No.</dt>
-                    <dd class="col-sm-8">${reel.reel_no}</dd>
-                    <dt class="col-sm-4">Reel Size</dt>
-                    <dd class="col-sm-8">${this.formatReelSizeValue(reel.reel_size)}</dd>
-                    <dt class="col-sm-4">Quality</dt>
-                    <dd class="col-sm-8">${reel.quality}</dd>
-                    <dt class="col-sm-4">Supplier</dt>
-                    <dd class="col-sm-8">${reel.supplier}</dd>
-                    <dt class="col-sm-4">Original Weight</dt>
-                    <dd class="col-sm-8">${reel.original_weight} kg</dd>
-                    <dt class="col-sm-4">Current Balance</dt>
-                    <dd class="col-sm-8">${reel.current_balance} kg</dd>
-                  </dl>
-                  <h4>Transaction History</h4>
-                  <table class="table table-striped table-bordered">
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th>Type</th>
-                        <th>Details</th>
-                        <th>Weight Change</th>
-                        <th>Running Balance</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${historyRows || '<tr><td colspan="5" class="text-center">No history found.</td></tr>'}
-                    </tbody>
-                  </table>
+              <div class="header-bar">
+                <div class="title-section">
+                  <h1>Reel History Explorer</h1>
+                  <p>Comprehensive transaction log for Reel <strong>${reel.reel_no}</strong></p>
                 </div>
-                <div class="col-md-4">
-                  <div class="qc-section">
-                    <h5>QC Record</h5>
-                    <dl class="row">
-                      <dt class="col-sm-6">GSM</dt>
-                      <dd class="col-sm-6">${reel.gsm || 'N/A'}</dd>
-                      <dt class="col-sm-6">Bursting Strength</dt>
-                      <dd class="col-sm-6">${reel.bursting_strength || 'N/A'}</dd>
-                      <dt class="col-sm-6">QC Status</dt>
-                      <dd class="col-sm-6">${reel.qc_status || 'N/A'}</dd>
-                    </dl>
+                <div>
+                  <button onclick="window.print()" class="btn-print">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;">
+                      <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
+                    </svg>
+                    Print Record
+                  </button>
+                </div>
+              </div>
+
+              <div class="row-layout">
+                <div class="col-left">
+                  <div class="card">
+                    <div class="card-title">
+                      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                      </svg>
+                      Reel Identity & Specifications
+                    </div>
+                    <div class="grid-metadata">
+                      <div class="meta-item">
+                        <span class="meta-label">Reel Number</span>
+                        <span class="meta-value" style="font-size: 16px; color: var(--primary);">${reel.reel_no}</span>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-label">Paper Quality</span>
+                        <span class="meta-value">${reel.quality}</span>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-label">Reel Size</span>
+                        <span class="meta-value">${this.formatReelSizeValue(reel.reel_size)}</span>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-label">Supplier Partner</span>
+                        <span class="meta-value">${reel.supplier}</span>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-label">Original Weight</span>
+                        <span class="meta-value">${parseFloat(reel.original_weight).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</span>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-label">Current Balance</span>
+                        <span class="meta-value" style="color: ${parseFloat(reel.current_balance) > 0 ? 'var(--success)' : 'var(--text-muted)'};">
+                          ${parseFloat(reel.current_balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
+                        </span>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-label">Current Location</span>
+                        <span class="meta-value">${reel.current_location || 'Warehouse'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card">
+                    <div class="card-title">
+                      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                      </svg>
+                      Transaction Ledger
+                    </div>
+                    <div class="table-responsive">
+                      <table class="modern-table">
+                        <thead>
+                          <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Details</th>
+                            <th style="text-align: right;">Weight Change</th>
+                            <th style="text-align: right;">Running Balance</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${historyRows || '<tr><td colspan="5" class="text-center" style="color: var(--text-muted); padding: 30px;">No transaction history found for this reel.</td></tr>'}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-right">
+                  <div class="card">
+                    <div class="card-title">
+                      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-13.332 9-8.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                      </svg>
+                      Quality Control (QC) Certificate
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 14px;">
+                      <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
+                        <span style="color: var(--text-muted); font-size: 13px;">Target GSM</span>
+                        <span style="font-weight: 600;">${reel.gsm || 'N/A'}</span>
+                      </div>
+                      <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
+                        <span style="color: var(--text-muted); font-size: 13px;">Bursting Strength</span>
+                        <span style="font-weight: 600;">${reel.bursting_strength || 'N/A'}</span>
+                      </div>
+                      <div style="display: flex; justify-content: space-between; padding-top: 4px; align-items: center;">
+                        <span style="color: var(--text-muted); font-size: 13px;">Approval Status</span>
+                        <span>${getQCBadge(reel.qc_status)}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

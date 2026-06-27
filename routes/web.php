@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\JobCardController;
+use App\Http\Controllers\JobIssueController;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,12 +23,11 @@ Route::get('/login', function () {
     return redirect('/');
 })->name('login');
 
-use App\Http\Controllers\JobCardController;
-use App\Http\Controllers\JobIssueController;
-
-Route::get('/job-cards/{id}/print', [JobCardController::class, 'print']);
-Route::get('/job-cards/{id}/versions/{versionId}/print', [JobCardController::class, 'printVersion']);
-Route::get('/job-issues/{jobIssue}/print', [JobIssueController::class, 'print']);
+Route::middleware('auth')->group(function () {
+    Route::get('/job-cards/{id}/print', [JobCardController::class, 'print']);
+    Route::get('/job-cards/{id}/versions/{versionId}/print', [JobCardController::class, 'printVersion']);
+    Route::get('/job-issues/{jobIssue}/print', [JobIssueController::class, 'print']);
+});
 
 Route::get('/{any}', function () {
     return view('welcome');

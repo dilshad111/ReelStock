@@ -132,6 +132,18 @@ class ReelStockReportController extends Controller
             $query->where('supplier_id', $request->supplier);
         }
 
+        if ($request->has('location') && $request->location !== '') {
+            if ($request->location === 'Warehouse') {
+                $query->where(function ($q) {
+                    $q->where('current_location', 'Warehouse')
+                      ->orWhereNull('current_location')
+                      ->orWhere('current_location', '');
+                });
+            } else {
+                $query->where('current_location', $request->location);
+            }
+        }
+
         if ($request->has('status') && $request->status !== '') {
             $query->where('status', $request->status);
         } else {
@@ -203,7 +215,7 @@ class ReelStockReportController extends Controller
         try {
             $reel = Reel::with(['paperQuality', 'supplier', 'receipts' => function ($q) {
                 $q->orderByDesc('receiving_date');
-            }, 'issues', 'returns', 'transfers'])->where('reel_no', $reel_no)->first();
+            }, 'issues', 'returns.returnToSupplier', 'transfers'])->where('reel_no', $reel_no)->first();
 
             if (!$reel) {
                 return response()->json(['message' => 'Reel not found'], 404);
@@ -214,51 +226,70 @@ class ReelStockReportController extends Controller
 
             // Receipt history
             foreach ($reel->receipts as $receipt) {
+                $detailsParts = [];
+                if ($receipt->grn_number) $detailsParts[] = "GRN: {$receipt->grn_number}";
+                if ($receipt->lot_number) $detailsParts[] = "Lot: {$receipt->lot_number}";
+                if ($receipt->po_number) $detailsParts[] = "PO: {$receipt->po_number}";
+                $detailsStr = !empty($detailsParts) ? implode(" | ", $detailsParts) : "Initial Stock Receipt";
+                if ($receipt->remarks) $detailsStr .= " ({$receipt->remarks})";
+
                 $history[] = [
                     'date' => $receipt->receiving_date,
                     'type' => 'Receipt',
-                    'details' => 'Received ' . $reel->original_weight . ' kg',
-                    'weight' => $reel->original_weight,
+                    'details' => $detailsStr,
+                    'weight' => (float)$reel->original_weight,
                 ];
             }
 
             // Issue history
             foreach ($reel->issues as $issue) {
+                $detailsStr = "Issued to: " . ($issue->issued_to ?: 'Production');
+                if ($issue->remarks) {
+                    $detailsStr .= " ({$issue->remarks})";
+                }
                 $history[] = [
                     'date' => $issue->issue_date,
                     'type' => 'Issue',
-                    'details' => 'Issued ' . $issue->quantity_issued . ' kg',
-                    'weight' => -$issue->quantity_issued, // Negative for issues
+                    'details' => $detailsStr,
+                    'weight' => -(float)$issue->quantity_issued, // Negative for issues
                 ];
             }
 
             // Return history
             foreach ($reel->returns as $return) {
                 $isSupplierReturn = $return->returned_to === 'supplier';
-                $weight = $isSupplierReturn ? -$return->remaining_weight : $return->remaining_weight;
+                $weight = $isSupplierReturn ? -(float)$return->remaining_weight : (float)$return->remaining_weight;
                 $displayType = $isSupplierReturn ? 'Return to Supplier' : 'Return';
-                $details = $isSupplierReturn 
-                    ? 'Returned to Supplier ' . $return->remaining_weight . ' kg' 
-                    : 'Returned ' . $return->remaining_weight . ' kg';
-
-                if (!$isSupplierReturn && $return->return_location) {
-                    $details .= " (Location: {$return->return_location})";
+                
+                if ($isSupplierReturn) {
+                    $supplierName = $return->returnToSupplier->name ?? 'Supplier';
+                    $detailsStr = "Returned to Supplier: {$supplierName}";
+                } else {
+                    $loc = $return->return_location ?: 'Warehouse';
+                    $detailsStr = "Returned to stock (Location: {$loc})";
+                }
+                if ($return->remarks) {
+                    $detailsStr .= " ({$return->remarks})";
                 }
 
                 $history[] = [
                     'date' => $return->return_date,
                     'type' => $displayType,
-                    'details' => $details,
+                    'details' => $detailsStr,
                     'weight' => $weight, // Negative for supplier returns, positive for stock returns
                 ];
             }
 
             foreach ($reel->transfers as $transfer) {
+                $detailsStr = "Moved from {$transfer->from_location} to {$transfer->to_location}";
+                if ($transfer->remarks) {
+                    $detailsStr .= " ({$transfer->remarks})";
+                }
                 $history[] = [
                     'date' => $transfer->transfer_date,
                     'type' => 'Location Transfer',
-                    'details' => "Moved from {$transfer->from_location} to {$transfer->to_location}",
-                    'weight' => 0,
+                    'details' => $detailsStr,
+                    'weight' => 0.0,
                 ];
             }
 

@@ -14,6 +14,9 @@ return new class extends Migration
      */
     public function up()
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
         // Add 'returned_to_supplier' to the status enum
         DB::statement("ALTER TABLE reels MODIFY COLUMN status ENUM('in_stock', 'partially_used', 'fully_used', 'returned_to_supplier') NOT NULL DEFAULT 'in_stock'");
     }
@@ -25,6 +28,9 @@ return new class extends Migration
      */
     public function down()
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
         // Remove 'returned_to_supplier' from the status enum
         // First, reset any returned_to_supplier status to fully_used
         DB::statement("UPDATE reels SET status = 'fully_used' WHERE status = 'returned_to_supplier'");

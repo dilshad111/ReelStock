@@ -21,7 +21,7 @@ return new class extends Migration
             $table->decimal('reel_size', 8, 2);
             $table->decimal('original_weight', 10, 2);
             $table->decimal('balance_weight', 10, 2);
-            $table->enum('status', ['in_stock', 'partially_used', 'fully_used'])->default('in_stock');
+            $table->enum('status', ['in_stock', 'partially_used', 'fully_used', 'issued', 'returned', 'returned_to_supplier'])->default('in_stock');
             $table->timestamps();
         });
     }

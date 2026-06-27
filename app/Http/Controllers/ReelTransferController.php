@@ -68,7 +68,7 @@ class ReelTransferController extends Controller
                 }
 
                 if ((float) ($reel->balance_weight ?? 0) <= 0) {
-                    abort(422, 'Fully consumed reels cannot be transferred.');
+                    abort(422, 'this reel weight is 0kg no balance to move the reel to other location.');
                 }
 
                 $transfer = ReelTransfer::create([

@@ -34,19 +34,32 @@ class FGReportController extends Controller
         $products = $query->orderBy('customer_id')->orderBy('item_name')->get();
 
         $data = $products->map(function ($product) use ($request) {
-            $receiptQuery = FGReceipt::where('product_id', $product->id);
-            $dispatchQuery = FGDispatch::where('product_id', $product->id);
-
-            if ($request->filled('date_from') && $request->filled('date_to')) {
-                $receiptQuery->whereBetween('date', [$request->date_from, $request->date_to]);
-                $dispatchQuery->whereBetween('date', [$request->date_from, $request->date_to]);
+            // 1. Calculate opening balance as of date_from (or opening_balance of product)
+            $openingBalance = (float)$product->opening_balance;
+            if ($request->filled('date_from')) {
+                $openingLedger = FGStockLedger::where('product_id', $product->id)
+                    ->where('transaction_date', '<', $request->date_from)
+                    ->orderBy('id', 'desc')
+                    ->first();
+                if ($openingLedger) {
+                    $openingBalance = (float)$openingLedger->balance_after;
+                }
             }
 
-            $totalProduced = $receiptQuery->sum('quantity_produced');
-            $totalDispatched = $dispatchQuery->sum('quantity_dispatched');
+            // 2. Sum quantity_in and quantity_out within the date range from the ledger
+            $ledgerQuery = FGStockLedger::where('product_id', $product->id);
+            if ($request->filled('date_from')) {
+                $ledgerQuery->where('transaction_date', '>=', $request->date_from);
+            }
+            if ($request->filled('date_to')) {
+                $ledgerQuery->where('transaction_date', '<=', $request->date_to);
+            }
 
-            $lastLedger = FGStockLedger::where('product_id', $product->id)->latest('id')->first();
-            $currentBalance = $lastLedger ? (float)$lastLedger->balance_after : (float)$product->opening_balance;
+            $totalProduced = (float)$ledgerQuery->sum('quantity_in');
+            $totalDispatched = (float)$ledgerQuery->sum('quantity_out');
+
+            // 3. Closing balance: openingBalance + totalProduced - totalDispatched
+            $currentBalance = $openingBalance + $totalProduced - $totalDispatched;
 
             return [
                 'customer_id' => $product->customer_id,
@@ -54,15 +67,16 @@ class FGReportController extends Controller
                 'product_id' => $product->id,
                 'item_code' => $product->item_code,
                 'item_name' => $product->item_name,
-                'opening_balance' => (float)$product->opening_balance,
-                'total_produced' => (float)$totalProduced,
-                'total_dispatched' => (float)$totalDispatched,
+                'opening_balance' => $openingBalance,
+                'total_produced' => $totalProduced,
+                'total_dispatched' => $totalDispatched,
                 'current_balance' => $currentBalance,
                 'rate' => (float)$product->rate,
                 'amount' => (float)($currentBalance * $product->rate)
             ];
         })->filter(function ($item) {
-            return $item['current_balance'] > 0;
+            // Keep items with either stock transactions or non-zero balance in the period
+            return $item['current_balance'] > 0 || $item['total_produced'] > 0 || $item['total_dispatched'] > 0 || $item['opening_balance'] > 0;
         })->values();
 
         // Group by customer
@@ -85,12 +99,21 @@ class FGReportController extends Controller
      */
     public function jobReport(Request $request)
     {
+        $dispatchSql = 'SELECT SUM(quantity_dispatched) FROM fg_dispatches 
+                        WHERE fg_dispatches.job_number = fg_receipts.job_number 
+                        AND fg_dispatches.product_id = fg_receipts.product_id';
+
+        if ($request->filled('date_from')) {
+            $dispatchSql .= " AND fg_dispatches.date >= '" . $request->date_from . "'";
+        }
+        if ($request->filled('date_to')) {
+            $dispatchSql .= " AND fg_dispatches.date <= '" . $request->date_to . "'";
+        }
+
         $query = FGReceipt::with(['customer', 'product'])
             ->select('job_number', 'customer_id', 'product_id',
                 DB::raw('SUM(quantity_produced) as total_produced'),
-                DB::raw('(SELECT SUM(quantity_dispatched) FROM fg_dispatches 
-                         WHERE fg_dispatches.job_number = fg_receipts.job_number 
-                         AND fg_dispatches.product_id = fg_receipts.product_id) as total_dispatched'))
+                DB::raw('(' . $dispatchSql . ') as total_dispatched'))
             ->groupBy('job_number', 'customer_id', 'product_id');
 
         if ($request->filled('customer_id')) {
@@ -102,8 +125,11 @@ class FGReportController extends Controller
         if ($request->filled('job_number')) {
             $query->where('job_number', 'like', '%' . $request->job_number . '%');
         }
-        if ($request->filled('date_from') && $request->filled('date_to')) {
-            $query->whereBetween('date', [$request->date_from, $request->date_to]);
+        if ($request->filled('date_from')) {
+            $query->where('date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->where('date', '<=', $request->date_to);
         }
 
         // Only show jobs with remaining balance > 0
