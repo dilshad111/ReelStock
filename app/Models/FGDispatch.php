@@ -14,7 +14,7 @@ class FGDispatch extends Model implements Auditable
     protected $table = 'fg_dispatches';
 
     protected $fillable = [
-        'date', 'customer_id', 'product_id', 'fg_product_customer_link_id',
+        'date', 'customer_id', 'product_id', 'warehouse_id', 'fg_product_customer_link_id',
         'dispatch_item_code', 'dispatch_item_name', 'job_number',
         'dc_number', 'quantity_dispatched', 'dispatch_rate', 'dispatch_amount',
         'remarks', 'created_by'

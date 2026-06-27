@@ -8,7 +8,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "Reel Stock Report Location Added."
+git commit -m "Finished Good Inventory Qty Issue Resolved."
 
 echo.
 echo Pushing to origin main...

@@ -10,6 +10,10 @@ class UserPermissionController extends Controller
 {
     public function getPermissions($userId)
     {
+        $currentUser = auth()->user();
+        if ($currentUser->id != $userId && $currentUser->role?->name !== 'Admin' && $currentUser->email !== 'superadmin@qc.com') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         return UserPermission::where('user_id', $userId)->get();
     }
 

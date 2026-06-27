@@ -48,7 +48,12 @@
                   <td class="text-end">{{ fmt(p.opening_balance) }}</td>
                   <td class="text-end text-success">{{ fmt(p.total_produced) }}</td>
                   <td class="text-end text-danger">{{ fmt(p.total_dispatched) }}</td>
-                  <td class="text-end fw-bold" :class="p.current_balance > 0 ? 'text-primary' : 'text-danger'">{{ fmt(p.current_balance) }}</td>
+                  <td class="text-end fw-bold">
+                    <a v-if="p.current_balance > 0" href="#" @click.prevent="showProductJobs(p)" class="text-decoration-none" :class="p.current_balance > 0 ? 'text-primary' : 'text-danger'">
+                      {{ fmt(p.current_balance) }}
+                    </a>
+                    <span v-else class="text-danger">{{ fmt(p.current_balance) }}</span>
+                  </td>
                   <td v-if="canSeeAmounts" class="text-end fw-bold text-dark">{{ fmt(p.amount) }}</td>
                 </tr>
                 <tr class="table-secondary fw-bold">
@@ -167,6 +172,51 @@
       </div>
     </el-dialog>
 
+    <!-- Product Jobs Modal (Drilldown from Balance) -->
+    <el-dialog v-model="showProductJobsModal" :title="'Active Jobs Balance for ' + (selectedProductForJobs?.item_name || 'Product')" width="850px" :close-on-click-modal="false">
+      <div v-if="loadingProductJobs" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="text-muted mt-2">Fetching active jobs breakdown...</p>
+      </div>
+      <div v-else-if="productJobsData">
+        <div class="mb-3 small">
+          <strong>Item Code:</strong> {{ selectedProductForJobs?.item_code }} &nbsp;|&nbsp;
+          <strong>Total Balance:</strong> <span class="fw-bold text-primary">{{ fmt(selectedProductForJobs?.current_balance) }}</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-striped table-bordered small mb-0">
+            <thead>
+              <tr class="table-dark">
+                <th>Job #</th>
+                <th>Customer</th>
+                <th class="text-end">Produced</th>
+                <th class="text-end">Dispatched</th>
+                <th class="text-end">Balance Contribution</th>
+                <th class="text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="job in productJobsData" :key="job.job_number + '-' + job.product_id">
+                <td class="fw-bold text-primary">{{ job.job_number }}</td>
+                <td>{{ job.customer?.name || 'Unknown' }}</td>
+                <td class="text-end text-success fw-bold">{{ fmt(job.total_produced) }}</td>
+                <td class="text-end text-danger">{{ fmt(job.total_dispatched) }}</td>
+                <td class="text-end fw-bold text-primary">{{ fmt(job.remaining_balance) }}</td>
+                <td class="text-center">
+                  <button @click="showJobDetail(job); showProductJobsModal = false" class="btn btn-sm btn-outline-primary py-0 px-2">
+                    <i class="bi bi-eye"></i> View Detail
+                  </button>
+                </td>
+              </tr>
+              <tr v-if="productJobsData.length === 0">
+                <td colspan="6" class="text-center text-muted py-3">No active jobs contributing to this balance (might be opening balance stock).</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </el-dialog>
+
   </div>
 </template>
 
@@ -187,6 +237,10 @@ export default {
       jobData: [], jobFilters: { customer_id: '', job_number: '', date_from: '', date_to: '' },
       auditData: [], auditFilters: { customer_id: '', transaction_type: '', date_from: '', date_to: '', item_search: '' },
       showJobModal: false, jobDetail: null,
+      showProductJobsModal: false,
+      productJobsData: null,
+      loadingProductJobs: false,
+      selectedProductForJobs: null,
       searchTimeout: null,
       stockSearchTimeout: null,
       auditSearchTimeout: null,
@@ -317,6 +371,22 @@ export default {
     typeBadge(type) {
       const map = { opening: 'bg-info', receipt: 'bg-success', dispatch: 'bg-danger', adjustment: 'bg-warning' };
       return map[type] || 'bg-secondary';
+    },
+    showProductJobs(product) {
+      if (!product) return;
+      this.selectedProductForJobs = product;
+      this.loadingProductJobs = true;
+      this.showProductJobsModal = true;
+      this.productJobsData = null;
+      axios.get('/api/fg-reports/job', { params: { product_id: product.product_id } })
+        .then(r => {
+          this.productJobsData = r.data.data || r.data;
+          this.loadingProductJobs = false;
+        })
+        .catch(err => {
+          this.loadingProductJobs = false;
+          this.$message.error(err.response?.data?.error || err.response?.data?.message || 'Error fetching active jobs.');
+        });
     },
     formatDate(d) { if (!d) return '-'; return new Date(d).toLocaleDateString('en-GB'); },
     fmt(v) { return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 }); },

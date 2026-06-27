@@ -344,6 +344,7 @@ class JobIssueController extends Controller
                 'date' => now()->toDateString(),
                 'customer_id' => $jobIssue->customer_id,
                 'product_id' => $jobIssue->product_id,
+                'warehouse_id' => 1,
                 'job_card_id' => $jobIssue->job_card_id,
                 'job_number' => $jobIssue->job_no,
                 'production_date' => now()->toDateString(),
@@ -351,27 +352,10 @@ class JobIssueController extends Controller
                 'carton_price' => $jobIssue->product?->rate,
                 'wastage' => $data['rejected_cartons_qty'] ?? 0,
                 'remarks' => $data['completion_remarks'] ?? 'Auto receipt from Job Issue completion',
-                'created_by' => optional($request->user())->id,
+                'created_by' => optional($request->user())->id ?? 1,
             ]);
 
-            $lastLedger = FGStockLedger::where('product_id', $jobIssue->product_id)
-                ->latest('id')
-                ->lockForUpdate()
-                ->first();
-
-            $balance = (float) ($lastLedger?->balance_after ?? 0) + (float) $data['final_finished_qty'];
-
-            FGStockLedger::create([
-                'transaction_type' => 'receipt',
-                'reference_id' => $receipt->id,
-                'product_id' => $jobIssue->product_id,
-                'customer_id' => $jobIssue->customer_id,
-                'job_number' => $jobIssue->job_no,
-                'quantity_in' => $data['final_finished_qty'],
-                'quantity_out' => 0,
-                'balance_after' => $balance,
-                'transaction_date' => now()->toDateString(),
-            ]);
+            FGStockLedger::recalculateForProduct($jobIssue->product_id);
 
             $jobIssue->update([
                 'current_stage' => 'Completed',

@@ -164,9 +164,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('transport-dashboard', [DashboardController::class, 'transportIndex']);
     });
 
-    // User Permissions (Admin only)
+    // User Permissions
+    Route::get('user-permissions/{userId}', [UserPermissionController::class, 'getPermissions']);
     Route::middleware('check.admin')->group(function () {
-        Route::get('user-permissions/{userId}', [UserPermissionController::class, 'getPermissions']);
         Route::post('user-permissions/{userId}', [UserPermissionController::class, 'updatePermissions']);
     });
 
@@ -258,11 +258,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Finished Goods Module - Receipts
     Route::middleware('check.permission:fg-receipts')->group(function () {
+        Route::post('fg-receipts/{id}/reverse', [FGReceiptController::class, 'reverse']);
         Route::apiResource('fg-receipts', FGReceiptController::class);
     });
 
     // Finished Goods Module - Dispatches
     Route::middleware('check.permission:fg-dispatches')->group(function () {
+        Route::post('fg-dispatches/{id}/reverse', [FGDispatchController::class, 'reverse']);
         Route::apiResource('fg-dispatches', FGDispatchController::class);
         Route::get('fg-dispatches/job-movement/detail', [FGDispatchController::class, 'getJobMovementDetail']);
         Route::get('fg-dispatches/available-stock/{productId}', [FGDispatchController::class, 'getAvailableStock']);
@@ -272,6 +274,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Finished Goods Module - Reports
     Route::middleware('check.permission:fg-reports')->group(function () {
+        Route::get('fg-reports/reconciliation/check', [FGReportController::class, 'checkReconciliation']);
+        Route::post('fg-reports/reconciliation/rebuild', [FGReportController::class, 'rebuildCache']);
         Route::get('fg-reports/stock', [FGReportController::class, 'stockReport']);
         Route::get('fg-reports/job', [FGReportController::class, 'jobReport']);
         Route::get('fg-reports/job-detail', [FGReportController::class, 'jobDetail']);

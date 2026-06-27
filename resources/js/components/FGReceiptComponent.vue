@@ -134,7 +134,11 @@
           <td>{{ formatDate(r.date) }}</td>
           <td>{{ r.customer?.name }}</td>
           <td>{{ r.product?.item_code }} - {{ r.product?.item_name }}</td>
-          <td class="fw-bold text-primary">{{ r.job_number }}</td>
+          <td class="fw-bold text-primary">
+            <a href="#" @click.prevent="showJobDispatches(r.job_number)" class="text-decoration-none">
+              {{ r.job_number }}
+            </a>
+          </td>
           <td>{{ formatDate(r.production_date) }}</td>
           <td class="text-end fw-bold text-success">{{ formatNumber(r.quantity_produced) }}</td>
           <td class="text-end fw-bold text-dark">{{ formatRate(r.carton_price) }}</td>
@@ -240,6 +244,106 @@
         </div>
       </div>
     </div>
+
+    <!-- Dispatches Modal -->
+    <div v-if="showDispatchesModal" class="modal fade show d-block" style="background: rgba(0,0,0,0.5); z-index: 1050;">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content border-0 shadow">
+          <div class="modal-header bg-primary text-white py-2">
+            <h5 class="modal-title small fw-bold">Dispatch History for Job: {{ selectedJobDispatches?.job_number || 'Loading...' }}</h5>
+            <button type="button" class="btn-close btn-close-white" @click="showDispatchesModal = false"></button>
+          </div>
+          <div class="modal-body p-4">
+            <div v-if="loadingDispatches" class="text-center py-5">
+              <div class="spinner-border text-primary" role="status"></div>
+              <p class="text-muted mt-2">Fetching dispatch history...</p>
+            </div>
+            <div v-else-if="selectedJobDispatches">
+              <!-- Summary Cards -->
+              <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                  <div class="card bg-light border-0 p-3">
+                    <span class="small text-muted fw-bold">Total Produced</span>
+                    <span class="fs-5 text-success fw-bold">{{ formatNumber(selectedJobDispatches.total_produced) }}</span>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="card bg-light border-0 p-3">
+                    <span class="small text-muted fw-bold">Total Dispatched</span>
+                    <span class="fs-5 text-primary fw-bold">{{ formatNumber(selectedJobDispatches.total_dispatched) }}</span>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="card bg-light border-0 p-3">
+                    <span class="small text-muted fw-bold">Remaining Balance</span>
+                    <span class="fs-5 text-warning fw-bold">{{ formatNumber(selectedJobDispatches.balance) }}</span>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="card bg-light border-0 p-3">
+                    <span class="small text-muted fw-bold">Dispatch Policy</span>
+                    <span class="badge bg-secondary mt-1 align-self-start">{{ selectedJobDispatches.product?.dispatch_policy === 'shared_product' ? 'Shared Product' : 'Restricted' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Product Details -->
+              <div class="mb-4 small border-bottom pb-3">
+                <div class="row">
+                  <div class="col-md-6">
+                    <strong>Product:</strong> {{ selectedJobDispatches.product?.item_code }} - {{ selectedJobDispatches.product?.item_name }}
+                  </div>
+                  <div class="col-md-6">
+                    <strong>Default Customer:</strong> {{ selectedJobDispatches.customer?.name }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Dispatches Table -->
+              <h6 class="fw-bold mb-3"><i class="bi bi-truck"></i> Dispatch Entries</h6>
+              <div class="table-responsive">
+                <table class="table table-striped table-sm text-nowrap small mb-0">
+                  <thead>
+                    <tr class="table-dark">
+                      <th>S.No.</th>
+                      <th>Date</th>
+                      <th>DC Number</th>
+                      <th>Dispatched To</th>
+                      <th>Item Delivered</th>
+                      <th class="text-end">Qty Dispatched</th>
+                      <th class="text-end">Rate</th>
+                      <th class="text-end">Amount</th>
+                      <th>Remarks</th>
+                      <th>Dispatched By</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(disp, dIdx) in selectedJobDispatches.history" :key="disp.id">
+                      <td>{{ dIdx + 1 }}</td>
+                      <td>{{ formatDate(disp.date) }}</td>
+                      <td class="fw-bold text-primary">{{ disp.dc_number }}</td>
+                      <td>{{ disp.customer?.name || selectedJobDispatches.customer?.name }}</td>
+                      <td>{{ disp.dispatch_item_code || selectedJobDispatches.product?.item_code }} - {{ disp.dispatch_item_name || selectedJobDispatches.product?.item_name }}</td>
+                      <td class="text-end fw-bold text-success">{{ formatNumber(disp.quantity_dispatched) }}</td>
+                      <td class="text-end">{{ formatRate(disp.dispatch_rate || selectedJobDispatches.product?.rate) }}</td>
+                      <td class="text-end fw-bold text-dark">{{ formatRate(disp.dispatch_amount || (disp.quantity_dispatched * (disp.dispatch_rate || selectedJobDispatches.product?.rate))) }}</td>
+                      <td>{{ disp.remarks || '-' }}</td>
+                      <td>{{ disp.creator?.name || 'Unknown' }}</td>
+                    </tr>
+                    <tr v-if="!selectedJobDispatches.history || selectedJobDispatches.history.length === 0">
+                      <td colspan="10" class="text-center text-muted py-4">No dispatches found for this job.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer py-2">
+            <button type="button" class="btn btn-secondary btn-sm" @click="showDispatchesModal = false">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -257,7 +361,10 @@ export default {
       searchTimeout: null,
       pagination: { current_page: 1, last_page: 1, per_page: 50, total: 0 },
       grandTotals: { quantity_produced: 0, wastage: 0 },
-      selectedEntry: null
+      selectedEntry: null,
+      selectedJobDispatches: null,
+      showDispatchesModal: false,
+      loadingDispatches: false
     };
   },
   computed: {
@@ -359,6 +466,21 @@ export default {
       if (!confirm('Delete this receipt?')) return;
       axios.delete(`/api/fg-receipts/${r.id}`).then(() => { this.$message.success('Deleted.'); this.fetchReceipts(); })
         .catch(err => { this.$message.error(err.response?.data?.error || 'Cannot delete.'); });
+    },
+    showJobDispatches(jobNumber) {
+      if (!jobNumber) return;
+      this.loadingDispatches = true;
+      this.selectedJobDispatches = null;
+      this.showDispatchesModal = true;
+      axios.get(`/api/fg-dispatches/job-details/${encodeURIComponent(jobNumber)}`)
+        .then(r => {
+          this.selectedJobDispatches = r.data;
+          this.loadingDispatches = false;
+        })
+        .catch(err => {
+          this.loadingDispatches = false;
+          this.$message.error(err.response?.data?.error || 'Failed to fetch dispatch history.');
+        });
     },
     formatDate(d) { if (!d) return '-'; const dt = new Date(d); return dt.toLocaleDateString('en-GB'); },
     formatNumber(v) { return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 }); },

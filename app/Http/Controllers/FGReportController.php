@@ -7,6 +7,8 @@ use App\Models\Product;
 use App\Models\FGReceipt;
 use App\Models\FGDispatch;
 use App\Models\FGStockLedger;
+use App\Models\CurrentFGStock;
+use App\Services\FGReconciliationService;
 use Illuminate\Support\Facades\DB;
 
 class FGReportController extends Controller
@@ -32,34 +34,69 @@ class FGReportController extends Controller
         }
 
         $products = $query->orderBy('customer_id')->orderBy('item_name')->get();
+        $warehouseId = $request->input('warehouse_id');
 
-        $data = $products->map(function ($product) use ($request) {
-            // 1. Calculate opening balance as of date_from (or opening_balance of product)
-            $openingBalance = (float)$product->opening_balance;
-            if ($request->filled('date_from')) {
-                $openingLedger = FGStockLedger::where('product_id', $product->id)
-                    ->where('transaction_date', '<', $request->date_from)
-                    ->orderBy('id', 'desc')
-                    ->first();
-                if ($openingLedger) {
-                    $openingBalance = (float)$openingLedger->balance_after;
+        $data = $products->map(function ($product) use ($request, $warehouseId) {
+            $totalProduced = 0.0;
+            $totalDispatched = 0.0;
+
+            if ($request->filled('date_from') || $request->filled('date_to')) {
+                // 1. Calculate opening balance as of date_from segmenting by warehouse
+                $openingBalance = 0.0;
+                if (!$warehouseId || (int)$warehouseId === 1) {
+                    $openingBalance = (float)$product->opening_balance;
+                }
+
+                if ($request->filled('date_from')) {
+                    $openingLedgerQuery = FGStockLedger::where('product_id', $product->id)
+                        ->where('transaction_date', '<', $request->date_from);
+                    if ($warehouseId) {
+                        $openingLedgerQuery->where('warehouse_id', $warehouseId);
+                    }
+                    $openingLedger = $openingLedgerQuery->orderBy('transaction_date', 'desc')
+                        ->orderBy('id', 'desc')
+                        ->first();
+                    if ($openingLedger) {
+                        $openingBalance = (float)$openingLedger->balance_after;
+                    }
+                }
+
+                // 2. Sum quantity_in and quantity_out within the date range from the ledger
+                $ledgerQuery = FGStockLedger::where('product_id', $product->id);
+                if ($warehouseId) {
+                    $ledgerQuery->where('warehouse_id', $warehouseId);
+                }
+                if ($request->filled('date_from')) {
+                    $ledgerQuery->where('transaction_date', '>=', $request->date_from);
+                }
+                if ($request->filled('date_to')) {
+                    $ledgerQuery->where('transaction_date', '<=', $request->date_to);
+                }
+
+                $totalProduced = (float)$ledgerQuery->sum('quantity_in');
+                $totalDispatched = (float)$ledgerQuery->sum('quantity_out');
+                $currentBalance = $openingBalance + $totalProduced - $totalDispatched;
+            } else {
+                // Read directly from current stock cache
+                $stockQuery = CurrentFGStock::where('product_id', $product->id);
+                if ($warehouseId) {
+                    $stockQuery->where('warehouse_id', $warehouseId);
+                }
+                $currentBalance = (float)$stockQuery->sum('quantity');
+                
+                // For default report totals without date filters, sum history for these totals
+                $ledgerQuery = FGStockLedger::where('product_id', $product->id);
+                if ($warehouseId) {
+                    $ledgerQuery->where('warehouse_id', $warehouseId);
+                }
+                $totalProduced = (float)$ledgerQuery->sum('quantity_in');
+                $totalDispatched = (float)$ledgerQuery->sum('quantity_out');
+                
+                $openingBalance = 0.0;
+                if (!$warehouseId || (int)$warehouseId === 1) {
+                    $openingBalance = (float)$product->opening_balance;
                 }
             }
-
-            // 2. Sum quantity_in and quantity_out within the date range from the ledger
-            $ledgerQuery = FGStockLedger::where('product_id', $product->id);
-            if ($request->filled('date_from')) {
-                $ledgerQuery->where('transaction_date', '>=', $request->date_from);
-            }
-            if ($request->filled('date_to')) {
-                $ledgerQuery->where('transaction_date', '<=', $request->date_to);
-            }
-
-            $totalProduced = (float)$ledgerQuery->sum('quantity_in');
-            $totalDispatched = (float)$ledgerQuery->sum('quantity_out');
-
-            // 3. Closing balance: openingBalance + totalProduced - totalDispatched
-            $currentBalance = $openingBalance + $totalProduced - $totalDispatched;
 
             return [
                 'customer_id' => $product->customer_id,
@@ -75,7 +112,6 @@ class FGReportController extends Controller
                 'amount' => (float)($currentBalance * $product->rate)
             ];
         })->filter(function ($item) {
-            // Keep items with either stock transactions or non-zero balance in the period
             return $item['current_balance'] > 0 || $item['total_produced'] > 0 || $item['total_dispatched'] > 0 || $item['opening_balance'] > 0;
         })->values();
 
@@ -214,6 +250,9 @@ class FGReportController extends Controller
         if ($request->filled('product_id')) {
             $query->where('product_id', $request->product_id);
         }
+        if ($request->filled('warehouse_id')) {
+            $query->where('warehouse_id', $request->warehouse_id);
+        }
         if ($request->filled('transaction_type')) {
             $query->where('transaction_type', $request->transaction_type);
         }
@@ -241,6 +280,7 @@ class FGReportController extends Controller
         return response()->json([
             'customers' => \App\Models\Customer::orderBy('name')->get(['id', 'name']),
             'products' => Product::with('customer:id,name')->orderBy('item_name')->get(['id', 'customer_id', 'item_code', 'item_name']),
+            'warehouses' => \App\Models\Warehouse::orderBy('code')->get(['id', 'code', 'name']),
         ]);
     }
 
@@ -267,8 +307,7 @@ class FGReportController extends Controller
         $products = $query->orderBy('item_name')->get();
 
         $data = $products->map(function ($product) {
-            $lastLedger = FGStockLedger::where('product_id', $product->id)->latest('id')->first();
-            $currentBalance = $lastLedger ? (float)$lastLedger->balance_after : (float)$product->opening_balance;
+            $currentBalance = (float)CurrentFGStock::where('product_id', $product->id)->sum('quantity');
 
             return [
                 'customer_name' => $product->customer->name ?? 'Unknown',
@@ -304,19 +343,21 @@ class FGReportController extends Controller
 
         // Total current stock across all products
         $products = Product::all();
+        $stockMap = CurrentFGStock::select('product_id', DB::raw('SUM(quantity) as qty'))
+            ->groupBy('product_id')
+            ->pluck('qty', 'product_id');
+
         $totalStock = 0;
         $totalStockAmount = 0;
         foreach ($products as $product) {
-            $lastLedger = FGStockLedger::where('product_id', $product->id)->latest('id')->first();
-            $balance = $lastLedger ? (float)$lastLedger->balance_after : (float)$product->opening_balance;
+            $balance = (float)($stockMap[$product->id] ?? 0.0000);
             $totalStock += $balance;
             $totalStockAmount += ($balance * (float)$product->rate);
         }
 
         // Top 10 products by stock
-        $topProducts = $products->map(function ($p) {
-            $lastLedger = FGStockLedger::where('product_id', $p->id)->latest('id')->first();
-            $balance = $lastLedger ? (float)$lastLedger->balance_after : (float)$p->opening_balance;
+        $topProducts = $products->map(function ($p) use ($stockMap) {
+            $balance = (float)($stockMap[$p->id] ?? 0.0000);
             return [
                 'id' => $p->id,
                 'item_name' => $p->item_name,
@@ -340,7 +381,7 @@ class FGReportController extends Controller
             $prodQty = (float)$receipts->sum('quantity_produced');
             $dispQty = (float)$dispatches->sum('quantity_dispatched');
 
-            // Calculate amounts - need to join with products to get rates
+            // Calculate amounts
             $prodAmount = 0;
             foreach ($receipts as $r) {
                 $prodAmount += ($r->quantity_produced * (float)($r->product->rate ?? 0));
@@ -372,5 +413,36 @@ class FGReportController extends Controller
             'monthly_trend' => $monthlyTrend,
             'last_updated' => now()->toISOString(),
         ]);
+    }
+
+    /**
+     * Check for discrepancies between documents, ledger, and cache
+     */
+    public function checkReconciliation()
+    {
+        try {
+            $discrepancies = FGReconciliationService::checkDiscrepancies();
+            return response()->json([
+                'success' => true,
+                'total_discrepancies' => count($discrepancies),
+                'discrepancies' => $discrepancies
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Rebuild cache table and correct running ledger balances
+     */
+    public function rebuildCache(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $result = FGReconciliationService::rebuildCacheFromLedger($user ? $user->id : 1);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
     }
 }

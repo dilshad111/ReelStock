@@ -86,7 +86,7 @@ export default {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
         axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-        this.$emit('loggedIn', response.data.user);
+        this.$emit('logged-in', response.data.user);
         this.loading = false;
       }).catch(error => {
         this.error = 'Invalid credentials';
