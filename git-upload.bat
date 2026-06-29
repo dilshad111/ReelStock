@@ -8,7 +8,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "Finished Good Inventory Qty Issue Resolved."
+git commit -m "User Permission Corrected."
 
 echo.
 echo Pushing to origin main...

@@ -310,6 +310,7 @@ class FGReportController extends Controller
             $currentBalance = (float)CurrentFGStock::where('product_id', $product->id)->sum('quantity');
 
             return [
+                'product_id' => $product->id,
                 'customer_name' => $product->customer->name ?? 'Unknown',
                 'item_code' => $product->item_code,
                 'item_name' => $product->item_name,

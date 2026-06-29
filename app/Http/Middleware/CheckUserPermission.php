@@ -49,12 +49,13 @@ class CheckUserPermission
             }
         }
 
-        // Get matching permission for the user and menu
-        $permission = \App\Models\UserPermission::where('user_id', $user->id)
-            ->where('menu', $menu)
-            ->first();
+        // Get matching permission for the user and menu (supports pipe delimiter for multiple menus)
+        $menus = explode('|', $menu);
+        $permissions = \App\Models\UserPermission::where('user_id', $user->id)
+            ->whereIn('menu', $menus)
+            ->get();
 
-        if (!$permission) {
+        if ($permissions->isEmpty()) {
             // Default check if user is Admin and no custom permissions exist to avoid lock-outs
             if ($user->role?->name === 'Admin') {
                 return $next($request);
@@ -62,24 +63,29 @@ class CheckUserPermission
             return response()->json(['message' => 'Unauthorized access (no permissions defined).'], 403);
         }
 
-        // Check matching action permission
+        // Check matching action permission across matched menus
         $isAllowed = false;
-        switch ($action) {
-            case 'view':
-                $isAllowed = $permission->can_view;
+        foreach ($permissions as $permission) {
+            switch ($action) {
+                case 'view':
+                    if ($permission->can_view) $isAllowed = true;
+                    break;
+                case 'add':
+                    if ($permission->can_add) $isAllowed = true;
+                    break;
+                case 'edit':
+                    if ($permission->can_edit) $isAllowed = true;
+                    break;
+                case 'delete':
+                    if ($permission->can_delete) $isAllowed = true;
+                    break;
+                case 'amounts':
+                    if ($permission->can_see_amounts) $isAllowed = true;
+                    break;
+            }
+            if ($isAllowed) {
                 break;
-            case 'add':
-                $isAllowed = $permission->can_add;
-                break;
-            case 'edit':
-                $isAllowed = $permission->can_edit;
-                break;
-            case 'delete':
-                $isAllowed = $permission->can_delete;
-                break;
-            case 'amounts':
-                $isAllowed = $permission->can_see_amounts;
-                break;
+            }
         }
 
         if (!$isAllowed) {

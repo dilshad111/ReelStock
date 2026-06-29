@@ -170,14 +170,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('user-permissions/{userId}', [UserPermissionController::class, 'updatePermissions']);
     });
 
-    // Setup (Admin only)
-    Route::prefix('setup')->middleware('check.admin')->group(function () {
+    // Setup
+    Route::prefix('setup')->group(function () {
         Route::get('settings', [SetupController::class, 'getSettings']);
-        Route::post('settings', [SetupController::class, 'updateSetting']);
-        Route::post('reset-all', [SetupController::class, 'resetAllData']);
-        Route::post('delete-table', [SetupController::class, 'deleteTable']);
-        Route::get('tables', [SetupController::class, 'getTables']);
-        Route::post('upload-logo', [SetupController::class, 'uploadLogo']);
+        
+        Route::middleware('check.admin')->group(function () {
+            Route::post('settings', [SetupController::class, 'updateSetting']);
+            Route::post('reset-all', [SetupController::class, 'resetAllData']);
+            Route::post('delete-table', [SetupController::class, 'deleteTable']);
+            Route::get('tables', [SetupController::class, 'getTables']);
+            Route::post('upload-logo', [SetupController::class, 'uploadLogo']);
+        });
     });
 
     // Stock Alerts
@@ -273,14 +276,18 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Finished Goods Module - Reports
+    Route::get('fg-reports/filters', [FGReportController::class, 'getFilters']);
+
+    Route::middleware('check.permission:fg-reports|fg-inventory-email')->group(function () {
+        Route::get('fg-reports/job', [FGReportController::class, 'jobReport']);
+        Route::get('fg-reports/job-detail', [FGReportController::class, 'jobDetail']);
+    });
+
     Route::middleware('check.permission:fg-reports')->group(function () {
         Route::get('fg-reports/reconciliation/check', [FGReportController::class, 'checkReconciliation']);
         Route::post('fg-reports/reconciliation/rebuild', [FGReportController::class, 'rebuildCache']);
         Route::get('fg-reports/stock', [FGReportController::class, 'stockReport']);
-        Route::get('fg-reports/job', [FGReportController::class, 'jobReport']);
-        Route::get('fg-reports/job-detail', [FGReportController::class, 'jobDetail']);
         Route::get('fg-reports/audit', [FGReportController::class, 'auditReport']);
-        Route::get('fg-reports/filters', [FGReportController::class, 'getFilters']);
     });
     Route::middleware('check.permission:fg-inventory-email')->group(function () {
         Route::get('fg-reports/inventory-email', [FGReportController::class, 'inventoryEmailReport']);
