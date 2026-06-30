@@ -131,6 +131,38 @@
           </tbody>
         </table>
       </el-tab-pane>
+      
+      <!-- D. Reversal Entries Report -->
+      <el-tab-pane label="Reversal Report" name="reversal">
+        <div class="row mb-3 g-2 align-items-end">
+          <div class="col-md-2"><label class="small text-muted">Customer</label>
+            <select v-model="reversalFilters.customer_id" @change="fetchReversalReport" class="form-control form-control-sm"><option value="">All</option><option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option></select></div>
+          <div class="col-md-2"><label class="small text-muted">Item / Code</label><input v-model="reversalFilters.item_search" @input="debouncedReversalFetch" type="text" class="form-control form-control-sm" placeholder="Search..."></div>
+          <div class="col-md-2"><label class="small text-muted">Type</label>
+            <select v-model="reversalFilters.reversal_type" @change="fetchReversalReport" class="form-control form-control-sm"><option value="">All Reversals</option><option value="receipt_reversal">Receipt Reversal</option><option value="dispatch_reversal">Dispatch Reversal</option><option value="damage_reversal">Damage Reversal</option></select></div>
+          <div class="col-md-2"><label class="small text-muted">From</label><input v-model="reversalFilters.date_from" type="date" class="form-control form-control-sm" @change="fetchReversalReport"></div>
+          <div class="col-md-2"><label class="small text-muted">To</label><input v-model="reversalFilters.date_to" type="date" class="form-control form-control-sm" @change="fetchReversalReport"></div>
+          <div class="col-md-1"><button @click="reversalFilters = { customer_id: '', reversal_type: '', date_from: '', date_to: '', item_search: '' }; fetchReversalReport()" class="btn btn-sm btn-clear-filters w-100">Clear</button></div>
+        </div>
+
+        <table class="table table-striped table-sm text-nowrap small table-sticky-header">
+          <thead><tr><th>Date</th><th>Document #</th><th>Product</th><th>Job #</th><th>Type</th><th class="text-end">Qty Restored</th><th>Remarks</th></tr></thead>
+          <tbody>
+            <tr v-for="a in reversalData" :key="a.id">
+              <td>{{ formatDate(a.transaction_date) }}</td>
+              <td class="fw-bold">{{ a.document_number }}</td>
+              <td>{{ a.product?.item_code }} - {{ a.product?.item_name }}</td>
+              <td>{{ a.job_number || '-' }}</td>
+              <td><span class="badge" :class="typeBadge(a.transaction_type)">{{ a.transaction_type }}</span></td>
+              <td class="text-end fw-bold" :class="a.quantity_in > 0 ? 'text-success' : 'text-danger'">
+                {{ a.quantity_in > 0 ? fmt(a.quantity_in) : fmt(a.quantity_out) }}
+              </td>
+              <td>{{ a.remarks || '-' }}</td>
+            </tr>
+            <tr v-if="reversalData.length === 0"><td colspan="7" class="text-center text-muted py-4">No records found.</td></tr>
+          </tbody>
+        </table>
+      </el-tab-pane>
     </el-tabs>
 
     <!-- Job Detail Modal -->
@@ -261,6 +293,7 @@ export default {
       stockData: [], stockFilters: { customer_id: '', date_from: '', date_to: '', item_search: '' },
       jobData: [], jobFilters: { customer_id: '', job_number: '', date_from: '', date_to: '' },
       auditData: [], auditFilters: { customer_id: '', transaction_type: '', date_from: '', date_to: '', item_search: '' },
+      reversalData: [], reversalFilters: { customer_id: '', reversal_type: '', date_from: '', date_to: '', item_search: '' },
       showJobModal: false, jobDetail: null,
       showProductJobsModal: false,
       productJobsData: null,
@@ -269,6 +302,7 @@ export default {
       searchTimeout: null,
       stockSearchTimeout: null,
       auditSearchTimeout: null,
+      reversalSearchTimeout: null,
       companyName: 'QUALITY CARTONS (PVT.) LTD.',
       companyAddress: 'Plot# 46, Sector 24, Korangi Industrial Area Karachi',
       companyLogo: window.location.origin + '/images/quality-cartons-logo.svg'
@@ -279,10 +313,16 @@ export default {
       if (this.activeTab === 'stock') return this.stockData.length > 0;
       if (this.activeTab === 'job') return this.jobData.length > 0;
       if (this.activeTab === 'audit') return this.auditData.length > 0;
+      if (this.activeTab === 'reversal') return this.reversalData.length > 0;
       return false;
     },
     printTitle() {
-      const titles = { stock: 'Finished Goods Stock Report', job: 'Job-wise Report', audit: 'Inventory Ledger Report' };
+      const titles = { 
+        stock: 'Finished Goods Stock Report', 
+        job: 'Job-wise Report', 
+        audit: 'Inventory Ledger Report',
+        reversal: 'Finished Goods Reversals Report'
+      };
       return titles[this.activeTab] || 'FG Report';
     },
     printFilterSummary() {
@@ -291,6 +331,7 @@ export default {
       if (this.activeTab === 'stock') filters = this.stockFilters;
       else if (this.activeTab === 'job') filters = this.jobFilters;
       else if (this.activeTab === 'audit') filters = this.auditFilters;
+      else if (this.activeTab === 'reversal') filters = this.reversalFilters;
 
       if (filters.customer_id) {
         const c = this.customers.find(x => x.id == filters.customer_id);
@@ -301,6 +342,9 @@ export default {
       }
       if (filters.transaction_type) {
         parts.push(`Type: <strong>${filters.transaction_type}</strong>`);
+      }
+      if (filters.reversal_type) {
+        parts.push(`Reversal Type: <strong>${filters.reversal_type}</strong>`);
       }
       if (filters.job_number) {
         parts.push(`Job: <strong>${filters.job_number}</strong>`);
@@ -336,6 +380,7 @@ export default {
       if (this.activeTab === 'stock') this.fetchStockReport();
       else if (this.activeTab === 'job') this.fetchJobReport();
       else if (this.activeTab === 'audit') this.fetchAuditReport();
+      else if (this.activeTab === 'reversal') this.fetchReversalReport();
     },
     fetchStockReport() {
       const params = { ...this.stockFilters };
@@ -370,6 +415,7 @@ export default {
     debouncedJobFetch() { clearTimeout(this.searchTimeout); this.searchTimeout = setTimeout(() => this.fetchJobReport(), 400); },
     debouncedStockFetch() { clearTimeout(this.stockSearchTimeout); this.stockSearchTimeout = setTimeout(() => this.fetchStockReport(), 400); },
     debouncedAuditFetch() { clearTimeout(this.auditSearchTimeout); this.auditSearchTimeout = setTimeout(() => this.fetchAuditReport(), 400); },
+    debouncedReversalFetch() { clearTimeout(this.reversalSearchTimeout); this.reversalSearchTimeout = setTimeout(() => this.fetchReversalReport(), 400); },
     showJobDetail(job) {
       axios.get('/api/fg-reports/job-detail', { params: { job_number: job.job_number, product_id: job.product_id } })
         .then(r => { this.jobDetail = r.data; this.showJobModal = true; })
@@ -390,6 +436,21 @@ export default {
             this.$message.error(msgs);
           } else {
             this.$message.error(err.response?.data?.error || err.response?.data?.message || 'Error fetching ledger report.');
+          }
+        });
+    },
+    fetchReversalReport(page = 1) {
+      const params = { page, ...this.reversalFilters };
+      Object.keys(params).forEach(k => { if (!params[k]) delete params[k]; });
+      axios.get('/api/fg-reports/reversals', { params })
+        .then(r => { this.reversalData = r.data.data || r.data; })
+        .catch(err => {
+          if (axios.isCancel(err)) return;
+          if (err.response?.data?.errors) {
+            const msgs = Object.values(err.response.data.errors).flat().join('\n');
+            this.$message.error(msgs);
+          } else {
+            this.$message.error(err.response?.data?.error || err.response?.data?.message || 'Error fetching reversals report.');
           }
         });
     },
@@ -688,6 +749,22 @@ export default {
           </tr>`;
         });
         html += `</tbody></table>`;
+      } else if (this.activeTab === 'reversal') {
+        html += `<table>
+          <thead><tr><th>Date</th><th>Document #</th><th>Product</th><th>Job #</th><th>Type</th><th class="text-end">Qty Restored</th><th>Remarks</th></tr></thead>
+          <tbody>`;
+        this.reversalData.forEach(a => {
+          html += `<tr>
+            <td>${this.formatDate(a.transaction_date)}</td>
+            <td><strong>${a.document_number}</strong></td>
+            <td>${a.product?.item_code || ''} - ${a.product?.item_name || ''}</td>
+            <td>${a.job_number || '-'}</td>
+            <td>${a.transaction_type}</td>
+            <td class="text-end" style="font-weight: bold;">${a.quantity_in > 0 ? this.fmt(a.quantity_in) : this.fmt(a.quantity_out)}</td>
+            <td>${a.remarks || '-'}</td>
+          </tr>`;
+        });
+        html += `</tbody></table>`;
       }
       return html;
     },
@@ -744,6 +821,20 @@ export default {
             'Qty In': Number(a.quantity_in),
             'Qty Out': Number(a.quantity_out),
             'Balance': Number(a.balance_after)
+          });
+        });
+      } else if (this.activeTab === 'reversal') {
+        sheetName = 'Reversals';
+        fileName = 'FG_Reversals_Report';
+        this.reversalData.forEach(a => {
+          data.push({
+            'Date': this.formatDate(a.transaction_date),
+            'Document #': a.document_number,
+            'Product': (a.product?.item_code || '') + ' - ' + (a.product?.item_name || ''),
+            'Job #': a.job_number || '',
+            'Type': a.transaction_type,
+            'Qty Restored': a.quantity_in > 0 ? Number(a.quantity_in) : Number(a.quantity_out),
+            'Remarks/Reason': a.remarks || ''
           });
         });
       }

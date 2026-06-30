@@ -8,7 +8,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "Carton Sampling Module Added."
+git commit -m "Reversal Entry error Resolved."
 
 echo.
 echo Pushing to origin main...

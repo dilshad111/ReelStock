@@ -9,7 +9,7 @@
         <button @click="printPage" class="btn btn-outline-danger shadow-sm px-3">
           <i class="bi bi-file-earmark-pdf-fill me-1"></i> PDF
         </button>
-        <button @click="showForm = true; editing = false; resetForm(); $nextTick(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); })" class="btn btn-purple shadow-sm px-4 py-2">
+        <button @click="showForm = true; editing = false; resetForm(); $nextTick(() => { if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') window.scrollTo({ top: 0, behavior: 'smooth' }); })" class="btn btn-purple shadow-sm px-4 py-2">
           <i class="bi bi-plus-circle-fill me-1"></i> Add Dispatch
         </button>
       </div>

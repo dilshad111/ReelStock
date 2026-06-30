@@ -158,9 +158,12 @@ class FGReportController extends Controller
      */
     public function jobReport(Request $request)
     {
-        $dispatchSql = 'SELECT SUM(quantity_dispatched) FROM fg_dispatches 
+        $dispatchSql = "SELECT SUM(quantity_dispatched) FROM fg_dispatches 
                         WHERE fg_dispatches.job_number = fg_receipts.job_number 
-                        AND fg_dispatches.product_id = fg_receipts.product_id';
+                        AND fg_dispatches.product_id = fg_receipts.product_id
+                        AND fg_dispatches.id NOT IN (
+                            SELECT reference_id FROM fg_stock_ledger WHERE transaction_type = 'dispatch_reversal'
+                        )";
 
         $damageSql = "SELECT SUM(quantity) FROM fg_damages 
                       WHERE fg_damages.job_number = fg_receipts.job_number 
@@ -178,8 +181,8 @@ class FGReportController extends Controller
 
         $query = FGReceipt::with(['customer', 'product'])
             ->select('job_number', 'customer_id', 'product_id',
-                DB::raw('SUM(quantity_produced) as total_produced'),
-                DB::raw('SUM(wastage) as total_wastage'),
+                DB::raw("SUM(CASE WHEN fg_receipts.id NOT IN (SELECT reference_id FROM fg_stock_ledger WHERE transaction_type = 'receipt_reversal') THEN quantity_produced ELSE 0 END) as total_produced"),
+                DB::raw("SUM(CASE WHEN fg_receipts.id NOT IN (SELECT reference_id FROM fg_stock_ledger WHERE transaction_type = 'receipt_reversal') THEN wastage ELSE 0 END) as total_wastage"),
                 DB::raw('(' . $dispatchSql . ') as total_dispatched'),
                 DB::raw('IFNULL((' . $damageSql . '), 0) as total_damaged'))
             ->groupBy('job_number', 'customer_id', 'product_id');
@@ -233,12 +236,22 @@ class FGReportController extends Controller
         $receipts = FGReceipt::with(['customer', 'product'])
             ->where('job_number', $jobNumber)
             ->where('product_id', $productId)
+            ->whereNotIn('id', function($q) {
+                $q->select('reference_id')
+                  ->from('fg_stock_ledger')
+                  ->where('transaction_type', 'receipt_reversal');
+            })
             ->orderBy('date')
             ->get();
 
         $dispatches = FGDispatch::with(['customer', 'product'])
             ->where('job_number', $jobNumber)
             ->where('product_id', $productId)
+            ->whereNotIn('id', function($q) {
+                $q->select('reference_id')
+                  ->from('fg_stock_ledger')
+                  ->where('transaction_type', 'dispatch_reversal');
+            })
             ->orderBy('date')
             ->get();
 
@@ -391,15 +404,28 @@ class FGReportController extends Controller
     public function dashboard(Request $request)
     {
         $totalProducts = Product::count();
-        $totalReceipts = FGReceipt::count();
-        $totalDispatches = FGDispatch::count();
+        $totalReceipts = FGReceipt::whereNotIn('id', function($q) {
+            $q->select('reference_id')->from('fg_stock_ledger')->where('transaction_type', 'receipt_reversal');
+        })->count();
+
+        $totalDispatches = FGDispatch::whereNotIn('id', function($q) {
+            $q->select('reference_id')->from('fg_stock_ledger')->where('transaction_type', 'dispatch_reversal');
+        })->count();
+
         $totalDamages = \App\Models\FGDamage::where('status', 'posted')->count();
 
         $startOfMonth = now()->startOfMonth();
         $today = now()->toDateString();
 
-        $monthlyProducedQuery = FGReceipt::where('date', '>=', $startOfMonth);
-        $monthlyDispatchedQuery = FGDispatch::where('date', '>=', $startOfMonth);
+        $monthlyProducedQuery = FGReceipt::where('date', '>=', $startOfMonth)
+            ->whereNotIn('id', function($q) {
+                $q->select('reference_id')->from('fg_stock_ledger')->where('transaction_type', 'receipt_reversal');
+            });
+
+        $monthlyDispatchedQuery = FGDispatch::where('date', '>=', $startOfMonth)
+            ->whereNotIn('id', function($q) {
+                $q->select('reference_id')->from('fg_stock_ledger')->where('transaction_type', 'dispatch_reversal');
+            });
 
         $monthlyProduced = (float)$monthlyProducedQuery->sum('quantity_produced');
         $monthlyDispatched = (float)$monthlyDispatchedQuery->sum('quantity_dispatched');
@@ -522,9 +548,6 @@ class FGReportController extends Controller
         }
     }
 
-    /**
-     * Rebuild cache table and correct running ledger balances
-     */
     public function rebuildCache(Request $request)
     {
         try {
@@ -534,5 +557,41 @@ class FGReportController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * E. Reversal Entries Report
+     */
+    public function reversalReport(Request $request)
+    {
+        $query = FGStockLedger::with(['product', 'customer'])
+            ->whereIn('transaction_type', ['receipt_reversal', 'dispatch_reversal', 'damage_reversal']);
+
+        if ($request->filled('customer_id')) {
+            $query->where('customer_id', $request->customer_id);
+        }
+        if ($request->filled('product_id')) {
+            $query->where('product_id', $request->product_id);
+        }
+        if ($request->filled('warehouse_id')) {
+            $query->where('warehouse_id', $request->warehouse_id);
+        }
+        if ($request->filled('reversal_type')) {
+            $query->where('transaction_type', $request->reversal_type);
+        }
+        if ($request->filled('item_search')) {
+            $search = $request->item_search;
+            $query->whereHas('product', function($q) use ($search) {
+                $q->where('item_name', 'like', "%{$search}%")
+                  ->orWhere('item_code', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('transaction_date', [$request->date_from, $request->date_to]);
+        }
+
+        return response()->json(
+            $query->orderBy('id', 'desc')->paginate(50)
+        );
     }
 }

@@ -298,6 +298,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('fg-reports/reconciliation/rebuild', [FGReportController::class, 'rebuildCache']);
         Route::get('fg-reports/stock', [FGReportController::class, 'stockReport']);
         Route::get('fg-reports/audit', [FGReportController::class, 'auditReport']);
+        Route::get('fg-reports/reversals', [FGReportController::class, 'reversalReport']);
     });
     Route::middleware('check.permission:fg-inventory-email')->group(function () {
         Route::get('fg-reports/inventory-email', [FGReportController::class, 'inventoryEmailReport']);

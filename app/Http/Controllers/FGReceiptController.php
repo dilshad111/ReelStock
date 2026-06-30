@@ -13,7 +13,12 @@ class FGReceiptController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = FGReceipt::with(['customer', 'product', 'creator']);
+            $query = FGReceipt::with(['customer', 'product', 'creator'])
+                ->whereNotIn('id', function($q) {
+                    $q->select('reference_id')
+                      ->from('fg_stock_ledger')
+                      ->where('transaction_type', 'receipt_reversal');
+                });
 
             if ($request->filled('customer_id')) {
                 $query->where('customer_id', $request->customer_id);
@@ -163,7 +168,7 @@ class FGReceiptController extends Controller
                     $receipt->job_number,
                     0.0,
                     (float)$receipt->quantity_produced,
-                    now()->toDateString(),
+                    $dateStr,
                     $request->user()->id,
                     'Reversal of Receipt #' . $receipt->id . '. Reason: ' . ($request->input('reason') ?? 'User correction.')
                 );

@@ -163,6 +163,8 @@ class FGDamageController extends Controller
                     'reversal_reason' => $request->input('reason') ?? 'User correction.',
                 ]);
 
+                $dateStr = ($damage->date instanceof \DateTimeInterface) ? $damage->date->format('Y-m-d') : substr((string)$damage->date, 0, 10);
+
                 // 2. Record the reversal movement (increases stock)
                 FGInventoryService::recordMovement(
                     'damage_reversal',
@@ -174,7 +176,7 @@ class FGDamageController extends Controller
                     $damage->job_number,
                     $qty,
                     0.0,
-                    now()->toDateString(),
+                    $dateStr,
                     $request->user()->id,
                     'Reversal of Damage #' . $damage->id . '. Reason: ' . ($request->input('reason') ?? 'User correction.')
                 );

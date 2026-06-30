@@ -16,7 +16,12 @@ class FGDispatchController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = FGDispatch::with(['customer', 'product', 'customerLink', 'creator']);
+            $query = FGDispatch::with(['customer', 'product', 'customerLink', 'creator'])
+                ->whereNotIn('id', function($q) {
+                    $q->select('reference_id')
+                      ->from('fg_stock_ledger')
+                      ->where('transaction_type', 'dispatch_reversal');
+                });
 
             if ($request->filled('customer_id')) {
                 $query->where('customer_id', $request->customer_id);
@@ -180,7 +185,7 @@ class FGDispatchController extends Controller
                     $dispatch->job_number,
                     (float)$dispatch->quantity_dispatched,
                     0.0,
-                    now()->toDateString(),
+                    $dateStr,
                     $request->user()->id,
                     'Reversal of Dispatch #' . $dispatch->id . '. Reason: ' . ($request->input('reason') ?? 'User correction.')
                 );
@@ -207,10 +212,20 @@ class FGDispatchController extends Controller
             $productId = $request->product_id;
 
             $receiptQuery = FGReceipt::with(['customer', 'product'])
-                ->where('job_number', $jobNumber);
+                ->where('job_number', $jobNumber)
+                ->whereNotIn('id', function($q) {
+                    $q->select('reference_id')
+                      ->from('fg_stock_ledger')
+                      ->where('transaction_type', 'receipt_reversal');
+                });
 
             $dispatchQuery = FGDispatch::with(['customer', 'product'])
-                ->where('job_number', $jobNumber);
+                ->where('job_number', $jobNumber)
+                ->whereNotIn('id', function($q) {
+                    $q->select('reference_id')
+                      ->from('fg_stock_ledger')
+                      ->where('transaction_type', 'dispatch_reversal');
+                });
 
             if ($productId) {
                 $receiptQuery->where('product_id', $productId);
@@ -303,6 +318,11 @@ class FGDispatchController extends Controller
         try {
             $jobReceipts = FGReceipt::with(['customer', 'product.customerLinks.customer'])
                 ->where('job_number', $jobNumber)
+                ->whereNotIn('id', function($q) {
+                    $q->select('reference_id')
+                      ->from('fg_stock_ledger')
+                      ->where('transaction_type', 'receipt_reversal');
+                })
                 ->get();
 
             if ($jobReceipts->isEmpty()) {
@@ -316,11 +336,21 @@ class FGDispatchController extends Controller
 
             $totalProduced = FGReceipt::where('job_number', $jobNumber)
                 ->where('product_id', $productId)
+                ->whereNotIn('id', function($q) {
+                    $q->select('reference_id')
+                      ->from('fg_stock_ledger')
+                      ->where('transaction_type', 'receipt_reversal');
+                })
                 ->sum('quantity_produced');
 
             $dispatches = FGDispatch::with(['creator'])
                 ->where('job_number', $jobNumber)
                 ->where('product_id', $productId)
+                ->whereNotIn('id', function($q) {
+                    $q->select('reference_id')
+                      ->from('fg_stock_ledger')
+                      ->where('transaction_type', 'dispatch_reversal');
+                })
                 ->orderBy('date', 'desc')
                 ->get();
 
@@ -350,6 +380,11 @@ class FGDispatchController extends Controller
 
             $dispatches = \App\Models\FGDispatch::with(['creator'])
                 ->where('product_id', $productId)
+                ->whereNotIn('id', function($q) {
+                    $q->select('reference_id')
+                      ->from('fg_stock_ledger')
+                      ->where('transaction_type', 'dispatch_reversal');
+                })
                 ->orderBy('date', 'desc')
                 ->limit(10)
                 ->get();

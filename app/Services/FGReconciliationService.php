@@ -41,15 +41,24 @@ class FGReconciliationService
                     ->where('warehouse_id', $warehouseId)
                     ->sum(DB::raw('quantity_in - quantity_out'));
 
-                // 3. Get original document sum (for default warehouse WH001 or where warehouse matches)
                 $receiptsSum = (float)DB::table('fg_receipts')
                     ->where('product_id', $productId)
                     ->where('warehouse_id', $warehouseId)
+                    ->whereNotIn('id', function($q) {
+                        $q->select('reference_id')
+                          ->from('fg_stock_ledger')
+                          ->where('transaction_type', 'receipt_reversal');
+                    })
                     ->sum('quantity_produced');
 
                 $dispatchesSum = (float)DB::table('fg_dispatches')
                     ->where('product_id', $productId)
                     ->where('warehouse_id', $warehouseId)
+                    ->whereNotIn('id', function($q) {
+                        $q->select('reference_id')
+                          ->from('fg_stock_ledger')
+                          ->where('transaction_type', 'dispatch_reversal');
+                    })
                     ->sum('quantity_dispatched');
 
                 $damagesSum = (float)DB::table('fg_damages')
