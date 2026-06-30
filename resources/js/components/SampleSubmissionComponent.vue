@@ -123,6 +123,26 @@
           </div>
         </div>
 
+        <!-- Row: Sample Made By, Joinery Technique -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label fw-bold">Sample Made By</label>
+              <input v-model="form.sample_made_by" type="text" class="form-control" placeholder="e.g. John Doe">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label fw-bold">Joinery Technique</label>
+              <select v-model="form.joinery_technique" class="form-control">
+                <option value="N/A">N/A</option>
+                <option value="Stapling">Stapling</option>
+                <option value="Side-Pasting">Side-Pasting</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         <!-- Row 4: Remarks -->
         <div class="row g-3 mb-3">
           <div class="col-12">
@@ -444,6 +464,16 @@
           </template>
         </el-table-column>
         <el-table-column prop="quantity" label="Qty" width="80" align="center" />
+        <el-table-column label="Made By" width="130" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ row.sample_made_by || '—' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="Joinery" width="120" align="center">
+          <template #default="{ row }">
+            <span class="badge bg-light text-dark border">{{ row.joinery_technique || 'N/A' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="Add-ons" width="160" align="center">
           <template #default="{ row }">
             <template v-if="row.addons && row.addons.length">
@@ -493,6 +523,10 @@
           <div class="col-4"><label class="fw-bold text-muted small">Dimensions</label><p class="mb-0 fw-semibold">{{ detailRow.length }} × {{ detailRow.width }} × {{ detailRow.height }} {{ detailRow.uom }}</p></div>
           <div class="col-4"><label class="fw-bold text-muted small">Ply / Type</label><p class="mb-0">{{ detailRow.ply }}-Ply &middot; {{ detailRow.print_type === 'printed' ? 'Printed' : 'Un-Print' }}</p></div>
           <div class="col-4"><label class="fw-bold text-muted small">Size Approval Only</label><p class="mb-0">{{ detailRow.size_approval_only ? 'Yes' : 'No' }}</p></div>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-6"><label class="fw-bold text-muted small">Sample Made By</label><p class="mb-0">{{ detailRow.sample_made_by || '—' }}</p></div>
+          <div class="col-6"><label class="fw-bold text-muted small">Joinery Technique</label><p class="mb-0">{{ detailRow.joinery_technique || 'N/A' }}</p></div>
         </div>
         <div v-if="detailRow.remarks" class="mb-3">
           <label class="fw-bold text-muted small">Remarks</label>
@@ -615,6 +649,8 @@ const getDefaultForm = () => ({
   ply: '3',
   size_approval_only: false,
   remarks: '',
+  sample_made_by: 'Zain Ul Abideen',
+  joinery_technique: 'N/A',
   paper_layers: generateLayers('3'),
 });
 
@@ -774,6 +810,8 @@ const submitForm = async () => {
       ply: form.ply,
       size_approval_only: form.size_approval_only,
       remarks: form.remarks,
+      sample_made_by: form.sample_made_by,
+      joinery_technique: form.joinery_technique,
       paper_layers: form.size_approval_only ? [] : form.paper_layers,
       addons: [],
     };

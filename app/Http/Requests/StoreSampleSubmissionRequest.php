@@ -26,6 +26,8 @@ class StoreSampleSubmissionRequest extends FormRequest
             'ply'                => 'required|in:3,5,7',
             'size_approval_only' => 'required|boolean',
             'remarks'            => 'nullable|string|max:1000',
+            'sample_made_by'     => 'nullable|string|max:255',
+            'joinery_technique'  => 'nullable|in:Stapling,Side-Pasting,N/A',
 
             // Paper layers — required only when NOT size-approval-only
             'paper_layers'                 => 'exclude_if:size_approval_only,true|required|array|min:1',

@@ -22,6 +22,8 @@ class SampleSubmission extends Model
         'size_approval_only',
         'remarks',
         'created_by',
+        'sample_made_by',
+        'joinery_technique',
     ];
 
     protected $casts = [

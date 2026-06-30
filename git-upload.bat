@@ -8,7 +8,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "Reversal Entry error Resolved."
+git commit -m "Sample Form updated"
 
 echo.
 echo Pushing to origin main...

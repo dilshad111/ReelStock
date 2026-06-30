@@ -64,6 +64,8 @@ class SampleSubmissionController extends Controller
                 'ply'                => $request->ply,
                 'size_approval_only' => $request->size_approval_only,
                 'remarks'            => $request->remarks,
+                'sample_made_by'     => $request->sample_made_by,
+                'joinery_technique'  => $request->joinery_technique,
                 'created_by'         => $request->user()->id,
             ]);
 
