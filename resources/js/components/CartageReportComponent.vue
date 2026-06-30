@@ -1,5 +1,5 @@
 <template>
-    <div class="cartage-report">
+    <div class="cartage-report transport-fg-page">
         <el-card class="box-card shadow-lg professional-card mb-4">
             <template #header>
                 <div class="card-header d-flex justify-content-between align-items-center py-2">
@@ -7,8 +7,7 @@
                         <span class="fs-4 fw-800 text-slate-800"><i class="bi bi-file-earmark-bar-graph-fill me-2 text-primary"></i>Cartage Performance Report</span>
                         <p class="text-muted mb-0 small">Analyze transport history and costs with multi-dimensional filters</p>
                     </div>
-                    <div class="d-flex gap-2">
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 transport-action-group">
                         <el-button type="success" @click="exportToExcel" :disabled="!reportData.length">
                             <i class="bi bi-file-earmark-excel me-2"></i> Export Excel
                         </el-button>
@@ -19,7 +18,6 @@
                             <i class="bi bi-printer me-2"></i> Print Report
                         </el-button>
                     </div>
-                    </div>
                 </div>
             </template>
 
@@ -29,26 +27,12 @@
                     <div class="row w-100 g-3">
                         <div class="col-md-2">
                             <el-form-item label="From Date" class="w-100">
-                                <el-date-picker
-                                    v-model="filters.start_date"
-                                    type="date"
-                                    placeholder="Start Date"
-                                    class="w-100"
-                                    format="DD/MM/YYYY"
-                                    value-format="YYYY-MM-DD"
-                                />
+                                <input v-model="filters.start_date" type="date" class="form-control transport-date-input" />
                             </el-form-item>
                         </div>
                         <div class="col-md-2">
                             <el-form-item label="To Date" class="w-100">
-                                <el-date-picker
-                                    v-model="filters.end_date"
-                                    type="date"
-                                    placeholder="End Date"
-                                    class="w-100"
-                                    format="DD/MM/YYYY"
-                                    value-format="YYYY-MM-DD"
-                                />
+                                <input v-model="filters.end_date" type="date" class="form-control transport-date-input" />
                             </el-form-item>
                         </div>
                         <div class="col-md-2">
@@ -426,23 +410,6 @@ onMounted(() => {
 .report-table th {
     background: #f0f0f0;
     text-transform: uppercase;
-}
-
-/* Increase DatePicker Cell Size */
-:deep(.el-picker-panel__content) {
-    width: 320px !important;
-}
-:deep(.el-date-table td) {
-    padding: 8px 0 !important;
-}
-:deep(.el-date-table td .el-date-table-cell) {
-    height: 45px !important;
-    line-height: 45px !important;
-    width: 45px !important;
-    font-size: 14px !important;
-}
-:deep(.el-date-picker__header) {
-    margin: 15px 15px 10px !important;
 }
 
 @media print {

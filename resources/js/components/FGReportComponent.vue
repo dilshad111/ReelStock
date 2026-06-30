@@ -41,13 +41,14 @@
           <div class="card-header bg-light fw-bold"><i class="bi bi-person-circle me-2"></i>{{ group.customer }}</div>
           <div class="card-body p-0">
             <table class="table table-sm table-striped mb-0 small">
-              <thead><tr><th class="text-center">Item Code</th><th class="text-center" style="width: 35%;">Item Name</th><th class="text-center">Opening</th><th class="text-center">Produced</th><th class="text-center">Dispatched</th><th class="text-center fw-bold">Balance</th><th v-if="canSeeAmounts" class="text-center">Amount</th></tr></thead>
+              <thead><tr><th class="text-center">Item Code</th><th class="text-center" style="width: 35%;">Item Name</th><th class="text-center">Opening</th><th class="text-center">Produced</th><th class="text-center">Dispatched</th><th class="text-center text-warning">Damaged</th><th class="text-center fw-bold">Balance</th><th v-if="canSeeAmounts" class="text-center">Amount</th></tr></thead>
               <tbody>
                 <tr v-for="p in group.products" :key="p.product_id">
                   <td class="fw-bold">{{ p.item_code }}</td><td>{{ p.item_name }}</td>
                   <td class="text-end">{{ fmt(p.opening_balance) }}</td>
                   <td class="text-end text-success">{{ fmt(p.total_produced) }}</td>
                   <td class="text-end text-danger">{{ fmt(p.total_dispatched) }}</td>
+                  <td class="text-end text-warning">{{ fmt(p.total_damaged) }}</td>
                   <td class="text-end fw-bold">
                     <a v-if="p.current_balance > 0" href="#" @click.prevent="showProductJobs(p)" class="text-decoration-none" :class="p.current_balance > 0 ? 'text-primary' : 'text-danger'">
                       {{ fmt(p.current_balance) }}
@@ -60,6 +61,7 @@
                   <td colspan="3">Total</td>
                   <td class="text-end text-success">{{ fmt(group.total_produced) }}</td>
                   <td class="text-end text-danger">{{ fmt(group.total_dispatched) }}</td>
+                  <td class="text-end text-warning">{{ fmt(group.total_damaged) }}</td>
                   <td class="text-end text-primary">{{ fmt(group.total_balance) }}</td>
                   <td v-if="canSeeAmounts" class="text-end text-success">{{ fmt(group.total_amount) }}</td>
                 </tr>
@@ -82,7 +84,7 @@
         </div>
 
         <table class="table table-striped table-sm text-nowrap small table-sticky-header">
-          <thead><tr><th>Job #</th><th>Customer</th><th>Product</th><th class="text-end">Produced</th><th class="text-end">Dispatched</th><th class="text-end">Remaining</th><th>Detail</th></tr></thead>
+          <thead><tr><th>Job #</th><th>Customer</th><th>Product</th><th class="text-end">Produced</th><th class="text-end">Dispatched</th><th class="text-end text-warning">Damaged</th><th class="text-end text-danger-emphasis">Waste</th><th class="text-end">Remaining</th><th>Detail</th></tr></thead>
           <tbody>
             <tr v-for="j in jobData" :key="j.job_number + '-' + j.product_id">
               <td class="fw-bold text-primary">{{ j.job_number }}</td>
@@ -90,10 +92,12 @@
               <td>{{ j.product?.item_code }} - {{ j.product?.item_name }}</td>
               <td class="text-end text-success fw-bold">{{ fmt(j.total_produced) }}</td>
               <td class="text-end text-danger">{{ fmt(j.total_dispatched) }}</td>
+              <td class="text-end text-warning">{{ fmt(j.total_damaged) }}</td>
+              <td class="text-end text-danger-emphasis">{{ fmt(j.total_wastage) }}</td>
               <td class="text-end fw-bold" :class="j.remaining_balance > 0 ? 'text-primary' : 'text-muted'">{{ fmt(j.remaining_balance) }}</td>
               <td><button @click="showJobDetail(j)" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> View</button></td>
             </tr>
-            <tr v-if="jobData.length === 0"><td colspan="7" class="text-center text-muted py-4">No jobs found.</td></tr>
+            <tr v-if="jobData.length === 0"><td colspan="9" class="text-center text-muted py-4">No jobs found.</td></tr>
           </tbody>
         </table>
       </el-tab-pane>
@@ -105,7 +109,7 @@
             <select v-model="auditFilters.customer_id" @change="fetchAuditReport" class="form-control form-control-sm"><option value="">All</option><option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option></select></div>
           <div class="col-md-2"><label class="small text-muted">Item / Code</label><input v-model="auditFilters.item_search" @input="debouncedAuditFetch" type="text" class="form-control form-control-sm" placeholder="Search..."></div>
           <div class="col-md-2"><label class="small text-muted">Type</label>
-            <select v-model="auditFilters.transaction_type" @change="fetchAuditReport" class="form-control form-control-sm"><option value="">All</option><option value="opening">Opening</option><option value="receipt">Receipt</option><option value="dispatch">Dispatch</option><option value="adjustment">Adjustment</option></select></div>
+            <select v-model="auditFilters.transaction_type" @change="fetchAuditReport" class="form-control form-control-sm"><option value="">All</option><option value="opening">Opening</option><option value="receipt">Receipt</option><option value="dispatch">Dispatch</option><option value="damage">Damage</option><option value="receipt_reversal">Receipt Reversal</option><option value="dispatch_reversal">Dispatch Reversal</option><option value="damage_reversal">Damage Reversal</option><option value="adjustment">Adjustment</option></select></div>
           <div class="col-md-2"><label class="small text-muted">From</label><input v-model="auditFilters.date_from" type="date" class="form-control form-control-sm" @change="fetchAuditReport"></div>
           <div class="col-md-2"><label class="small text-muted">To</label><input v-model="auditFilters.date_to" type="date" class="form-control form-control-sm" @change="fetchAuditReport"></div>
           <div class="col-md-1"><button @click="auditFilters = { customer_id: '', transaction_type: '', date_from: '', date_to: '', item_search: '' }; fetchAuditReport()" class="btn btn-sm btn-clear-filters w-100">Clear</button></div>
@@ -132,15 +136,22 @@
     <!-- Job Detail Modal -->
     <el-dialog v-model="showJobModal" title="Job Detail" width="800px" :close-on-click-modal="false">
       <div v-if="jobDetail">
+        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+          <h5 class="mb-0 fw-bold text-secondary"><i class="bi bi-info-circle-fill me-1"></i> Job Summary</h5>
+          <el-button type="primary" size="small" @click="printJobDetail">
+            <i class="bi bi-printer me-1"></i> Print Job Report
+          </el-button>
+        </div>
         <div class="row mb-3">
           <div class="col-md-4"><strong>Job #:</strong> {{ jobDetail.job_number }}</div>
           <div class="col-md-4"><strong>Customer:</strong> {{ jobDetail.customer?.name }}</div>
           <div class="col-md-4"><strong>Product:</strong> {{ jobDetail.product?.item_code }} - {{ jobDetail.product?.item_name }}</div>
         </div>
         <div class="row mb-3">
-          <div class="col-md-4"><span class="badge bg-success fs-6">Produced: {{ fmt(jobDetail.total_produced) }}</span></div>
-          <div class="col-md-4"><span class="badge bg-danger fs-6">Dispatched: {{ fmt(jobDetail.total_dispatched) }}</span></div>
-          <div class="col-md-4"><span class="badge bg-primary fs-6">Remaining: {{ fmt(jobDetail.remaining_balance) }}</span></div>
+          <div class="col-md-3"><span class="badge bg-success fs-6 w-100 py-2">Produced: {{ fmt(jobDetail.total_produced) }}</span></div>
+          <div class="col-md-3"><span class="badge bg-danger fs-6 w-100 py-2">Dispatched: {{ fmt(jobDetail.total_dispatched) }}</span></div>
+          <div class="col-md-3"><span class="badge bg-warning fs-6 w-100 py-2 text-dark">Damaged: {{ fmt(jobDetail.total_damaged) }}</span></div>
+          <div class="col-md-3"><span class="badge bg-primary fs-6 w-100 py-2">Remaining: {{ fmt(jobDetail.remaining_balance) }}</span></div>
         </div>
         <h6 class="mt-3 mb-2 fw-bold">Production Entries</h6>
         <table class="table table-sm table-bordered small">
@@ -164,6 +175,16 @@
               <td class="text-end fw-bold" :class="d.running_balance > 0 ? 'text-primary' : 'text-danger'">{{ fmt(d.running_balance) }}</td><td>{{ d.remarks || '-' }}</td>
             </tr>
             <tr v-if="jobDetail.dispatches.length === 0"><td colspan="5" class="text-center text-muted">No dispatches yet.</td></tr>
+          </tbody>
+        </table>
+        <h6 class="mt-3 mb-2 fw-bold" v-if="jobDetail.damages && jobDetail.damages.length">Damage Entries</h6>
+        <table class="table table-sm table-bordered small" v-if="jobDetail.damages && jobDetail.damages.length">
+          <thead><tr><th>Date</th><th>DMG #</th><th>Reason</th><th class="text-end">Qty</th><th>Remarks</th></tr></thead>
+          <tbody>
+            <tr v-for="dmg in jobDetail.damages" :key="dmg.id">
+              <td>{{ formatDate(dmg.date) }}</td><td class="fw-bold">{{ dmg.damage_number }}</td><td>{{ dmg.reason }}</td><td class="text-end text-warning fw-bold">{{ fmt(dmg.quantity) }}</td>
+              <td>{{ dmg.remarks || '-' }}</td>
+            </tr>
           </tbody>
         </table>
         <div class="alert alert-info mt-3 mb-0 fw-bold text-center">
@@ -191,6 +212,8 @@
                 <th>Customer</th>
                 <th class="text-end">Produced</th>
                 <th class="text-end">Dispatched</th>
+                <th class="text-end text-warning">Damaged</th>
+                <th class="text-end text-danger">Waste</th>
                 <th class="text-end">Balance Contribution</th>
                 <th class="text-center">Action</th>
               </tr>
@@ -201,6 +224,8 @@
                 <td>{{ job.customer?.name || 'Unknown' }}</td>
                 <td class="text-end text-success fw-bold">{{ fmt(job.total_produced) }}</td>
                 <td class="text-end text-danger">{{ fmt(job.total_dispatched) }}</td>
+                <td class="text-end text-warning">{{ fmt(job.total_damaged) }}</td>
+                <td class="text-end text-danger-emphasis">{{ fmt(job.total_wastage) }}</td>
                 <td class="text-end fw-bold text-primary">{{ fmt(job.remaining_balance) }}</td>
                 <td class="text-center">
                   <button @click="showJobDetail(job); showProductJobsModal = false" class="btn btn-sm btn-outline-primary py-0 px-2">
@@ -209,7 +234,7 @@
                 </td>
               </tr>
               <tr v-if="productJobsData.length === 0">
-                <td colspan="6" class="text-center text-muted py-3">No active jobs contributing to this balance (might be opening balance stock).</td>
+                <td colspan="8" class="text-center text-muted py-3">No active jobs contributing to this balance (might be opening balance stock).</td>
               </tr>
             </tbody>
           </table>
@@ -369,7 +394,16 @@ export default {
         });
     },
     typeBadge(type) {
-      const map = { opening: 'bg-info', receipt: 'bg-success', dispatch: 'bg-danger', adjustment: 'bg-warning' };
+      const map = { 
+        opening: 'bg-info', 
+        receipt: 'bg-success', 
+        dispatch: 'bg-danger', 
+        damage: 'bg-warning-subtle text-warning-emphasis border border-warning', 
+        receipt_reversal: 'bg-danger-subtle text-danger-emphasis border border-danger', 
+        dispatch_reversal: 'bg-success-subtle text-success-emphasis border border-success', 
+        damage_reversal: 'bg-info-subtle text-info-emphasis border border-info', 
+        adjustment: 'bg-warning' 
+      };
       return map[type] || 'bg-secondary';
     },
     showProductJobs(product) {
@@ -447,6 +481,167 @@ export default {
       printWindow.document.close();
       printWindow.print();
     },
+    printJobDetail() {
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        alert('Please allow pop-ups to print the report.');
+        return;
+      }
+      const now = new Date();
+      const timestamp = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      let html = `
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
+          <div style="flex-shrink: 0;"><img src="${this.companyLogo}" alt="Logo" style="width: 1in; height: 1in;"></div>
+          <div style="flex-grow: 1; text-align: center;">
+            <div style="font-size: 26px; font-weight: bold; font-family: 'Georgia', serif;">${this.companyName}</div>
+            <div style="font-size: 13px; font-family: 'Georgia', serif;">${this.companyAddress}</div>
+            <div style="font-size: 18px; font-weight: bold; margin-top: 8px; text-transform: uppercase;">Job Detail Report</div>
+            <div style="font-size: 12px; margin-top: 3px;">Printed on: ${timestamp}</div>
+          </div>
+        </div>
+        
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+          <tr>
+            <td style="border: none; padding: 4px 0; font-size: 13px;"><strong>Job #:</strong> ${this.jobDetail.job_number}</td>
+            <td style="border: none; padding: 4px 0; font-size: 13px;"><strong>Customer:</strong> ${this.jobDetail.customer?.name || ''}</td>
+            <td style="border: none; padding: 4px 0; font-size: 13px;"><strong>Product:</strong> ${this.jobDetail.product?.item_code || ''} - ${this.jobDetail.product?.item_name || ''}</td>
+          </tr>
+        </table>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+          <div style="flex: 1; border: 1px solid #000; padding: 8px; text-align: center; background-color: #f8f9fa; border-radius: 4px;">
+            <div style="font-size: 11px; text-transform: uppercase; color: #555;">Produced</div>
+            <div style="font-size: 16px; font-weight: bold; color: green; margin-top: 3px;">${this.fmt(this.jobDetail.total_produced)}</div>
+          </div>
+          <div style="flex: 1; border: 1px solid #000; padding: 8px; text-align: center; background-color: #f8f9fa; border-radius: 4px;">
+            <div style="font-size: 11px; text-transform: uppercase; color: #555;">Dispatched</div>
+            <div style="font-size: 16px; font-weight: bold; color: red; margin-top: 3px;">${this.fmt(this.jobDetail.total_dispatched)}</div>
+          </div>
+          <div style="flex: 1; border: 1px solid #000; padding: 8px; text-align: center; background-color: #f8f9fa; border-radius: 4px;">
+            <div style="font-size: 11px; text-transform: uppercase; color: #555;">Damaged</div>
+            <div style="font-size: 16px; font-weight: bold; color: #d97706; margin-top: 3px;">${this.fmt(this.jobDetail.total_damaged)}</div>
+          </div>
+          <div style="flex: 1; border: 1px solid #000; padding: 8px; text-align: center; background-color: #f8f9fa; border-radius: 4px;">
+            <div style="font-size: 11px; text-transform: uppercase; color: #555;">Remaining</div>
+            <div style="font-size: 16px; font-weight: bold; color: blue; margin-top: 3px;">${this.fmt(this.jobDetail.remaining_balance)}</div>
+          </div>
+        </div>
+
+        <h4 style="margin-top: 15px; margin-bottom: 5px; font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 3px;">Production Entries</h4>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+          <thead>
+            <tr style="background-color: #f3f4f6;">
+              <th style="border: 1px solid #000; padding: 6px; font-size: 11px; text-align: left;">Date</th>
+              <th style="border: 1px solid #000; padding: 6px; font-size: 11px; text-align: right;">Qty Produced</th>
+              <th style="border: 1px solid #000; padding: 6px; font-size: 11px; text-align: right;">Wastage</th>
+              <th style="border: 1px solid #000; padding: 6px; font-size: 11px; text-align: left;">Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      this.jobDetail.receipts.forEach(r => {
+        html += `
+          <tr>
+            <td style="border: 1px solid #000; padding: 6px; font-size: 11px;">${this.formatDate(r.date)}</td>
+            <td style="border: 1px solid #000; padding: 6px; font-size: 11px; text-align: right; font-weight: bold; color: green;">${this.fmt(r.quantity_produced)}</td>
+            <td style="border: 1px solid #000; padding: 6px; font-size: 11px; text-align: right;">${this.fmt(r.wastage)}</td>
+            <td style="border: 1px solid #000; padding: 6px; font-size: 11px;">${r.remarks || '-'}</td>
+          </tr>
+        `;
+      });
+
+      html += `
+          </tbody>
+        </table>
+
+        <h4 style="margin-top: 15px; margin-bottom: 5px; font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 3px;">Dispatch Entries</h4>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+          <thead>
+            <tr style="background-color: #f3f4f6;">
+              <th style="border: 1px solid #000; padding: 6px; font-size: 11px; text-align: left;">Date</th>
+              <th style="border: 1px solid #000; padding: 6px; font-size: 11px; text-align: left;">DC #</th>
+              <th style="border: 1px solid #000; padding: 6px; font-size: 11px; text-align: right;">Qty</th>
+              <th style="border: 1px solid #000; padding: 6px; font-size: 11px; text-align: right;">Running Bal.</th>
+              <th style="border: 1px solid #000; padding: 6px; font-size: 11px; text-align: left;">Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      if (this.jobDetail.dispatches.length === 0) {
+        html += `<tr><td colspan="5" style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 11px; color: #777;">No dispatches yet.</td></tr>`;
+      } else {
+        this.jobDetail.dispatches.forEach(d => {
+          html += `
+            <tr>
+              <td style="border: 1px solid #000; padding: 6px; font-size: 11px;">${this.formatDate(d.date)}</td>
+              <td style="border: 1px solid #000; padding: 6px; font-size: 11px; font-weight: bold;">${d.dc_number}</td>
+              <td style="border: 1px solid #000; padding: 6px; font-size: 11px; text-align: right; color: red;">${this.fmt(d.quantity_dispatched)}</td>
+              <td style="border: 1px solid #000; padding: 6px; font-size: 11px; text-align: right; font-weight: bold;">${this.fmt(d.running_balance)}</td>
+              <td style="border: 1px solid #000; padding: 6px; font-size: 11px;">${d.remarks || '-'}</td>
+            </tr>
+          `;
+        });
+      }
+
+      html += `
+          </tbody>
+        </table>
+      `;
+
+      if (this.jobDetail.damages && this.jobDetail.damages.length > 0) {
+        html += `
+          <h4 style="margin-top: 15px; margin-bottom: 5px; font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 3px;">Damage Entries</h4>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <thead>
+              <tr style="background-color: #f3f4f6;">
+                <th style="border: 1px solid #000; padding: 6px; font-size: 11px; text-align: left;">Date</th>
+                <th style="border: 1px solid #000; padding: 6px; font-size: 11px; text-align: left;">DMG #</th>
+                <th style="border: 1px solid #000; padding: 6px; font-size: 11px; text-align: left;">Reason</th>
+                <th style="border: 1px solid #000; padding: 6px; font-size: 11px; text-align: right;">Qty</th>
+                <th style="border: 1px solid #000; padding: 6px; font-size: 11px; text-align: left;">Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+        this.jobDetail.damages.forEach(dmg => {
+          html += `
+            <tr>
+              <td style="border: 1px solid #000; padding: 6px; font-size: 11px;">${this.formatDate(dmg.date)}</td>
+              <td style="border: 1px solid #000; padding: 6px; font-size: 11px; font-weight: bold;">${dmg.damage_number}</td>
+              <td style="border: 1px solid #000; padding: 6px; font-size: 11px;">${dmg.reason}</td>
+              <td style="border: 1px solid #000; padding: 6px; font-size: 11px; text-align: right; color: #d97706; font-weight: bold;">${this.fmt(dmg.quantity)}</td>
+              <td style="border: 1px solid #000; padding: 6px; font-size: 11px;">${dmg.remarks || '-'}</td>
+            </tr>
+          `;
+        });
+        html += `
+            </tbody>
+          </table>
+        `;
+      }
+
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Job ${this.jobDetail.job_number} Detail - Quality Cartons</title>
+            <style>
+              @page { size: A4 portrait; margin: 10mm; }
+              body { font-family: Arial, sans-serif; margin: 0; padding: 10px; color: #000; }
+              table { font-size: 11px; }
+              th, td { border: 1px solid #000; }
+            </style>
+          </head>
+          <body>
+            ${html}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+    },
     generatePrintHTML() {
       let html = '';
       if (this.activeTab === 'stock') {
@@ -459,23 +654,23 @@ export default {
             html += `<tr>
               <td class="fw-bold">${p.item_code}</td><td>${p.item_name}</td>
               <td class="text-end">${this.fmt(p.opening_balance)}</td><td class="text-end">${this.fmt(p.total_produced)}</td>
-              <td class="text-end">${this.fmt(p.total_dispatched)}</td><td class="text-end fw-bold">${this.fmt(p.current_balance)}</td>
+              <td class="text-end">${this.fmt(p.total_dispatched)}</td><td class="text-end">${this.fmt(p.total_damaged)}</td><td class="text-end fw-bold">${this.fmt(p.current_balance)}</td>
               ${this.canSeeAmounts ? `<td class="text-end fw-bold">${this.fmt(p.amount)}</td>` : ''}
             </tr>`;
           });
-          html += `<tr class="total-row"><td colspan="3" class="fw-bold">Total</td><td class="text-end fw-bold">${this.fmt(group.total_produced)}</td><td class="text-end fw-bold">${this.fmt(group.total_dispatched)}</td><td class="text-end fw-bold">${this.fmt(group.total_balance)}</td>${this.canSeeAmounts ? `<td class="text-end fw-bold">${this.fmt(group.total_amount)}</td>` : ''}</tr>
+          html += `<tr class="total-row"><td colspan="3" class="fw-bold">Total</td><td class="text-end fw-bold">${this.fmt(group.total_produced)}</td><td class="text-end fw-bold">${this.fmt(group.total_dispatched)}</td><td class="text-end fw-bold">${this.fmt(group.total_damaged)}</td><td class="text-end fw-bold">${this.fmt(group.total_balance)}</td>${this.canSeeAmounts ? `<td class="text-end fw-bold">${this.fmt(group.total_amount)}</td>` : ''}</tr>
             </tbody></table>`;
         });
       } else if (this.activeTab === 'job') {
         html += `<table>
-          <thead><tr><th>Job #</th><th>Customer</th><th>Product</th><th class="text-end">Produced</th><th class="text-end">Dispatched</th><th class="text-end">Remaining</th></tr></thead>
+          <thead><tr><th>Job #</th><th>Customer</th><th>Product</th><th class="text-end">Produced</th><th class="text-end">Dispatched</th><th class="text-end">Damaged</th><th class="text-end">Waste</th><th class="text-end">Remaining</th></tr></thead>
           <tbody>`;
         this.jobData.forEach(j => {
           html += `<tr>
             <td class="fw-bold">${j.job_number}</td><td>${j.customer?.name || ''}</td>
             <td>${j.product?.item_code || ''} - ${j.product?.item_name || ''}</td>
             <td class="text-end">${this.fmt(j.total_produced)}</td><td class="text-end">${this.fmt(j.total_dispatched)}</td>
-            <td class="text-end fw-bold">${this.fmt(j.remaining_balance)}</td>
+            <td class="text-end">${this.fmt(j.total_damaged)}</td><td class="text-end">${this.fmt(j.total_wastage)}</td><td class="text-end fw-bold">${this.fmt(j.remaining_balance)}</td>
           </tr>`;
         });
         html += `</tbody></table>`;
@@ -516,6 +711,7 @@ export default {
               'Opening Balance': Number(p.opening_balance),
               'Total Produced': Number(p.total_produced),
               'Total Dispatched': Number(p.total_dispatched),
+              'Total Damaged': Number(p.total_damaged),
               'Current Balance': Number(p.current_balance),
               ...(this.canSeeAmounts ? { 'Amount': Number(p.amount) } : {})
             });
@@ -531,6 +727,8 @@ export default {
             'Product': (j.product?.item_code || '') + ' - ' + (j.product?.item_name || ''),
             'Total Produced': Number(j.total_produced),
             'Total Dispatched': Number(j.total_dispatched),
+            'Total Damaged': Number(j.total_damaged),
+            'Total Waste': Number(j.total_wastage || 0),
             'Remaining': Number(j.remaining_balance)
           });
         });

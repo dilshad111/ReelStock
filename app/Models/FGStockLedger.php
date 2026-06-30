@@ -69,11 +69,53 @@ class FGStockLedger extends Model
                     ];
                 });
 
-            // Combine and sort chronologically. If dates match, receipts come before dispatches, then sorted by ID.
-            $transactions = $receipts->concat($dispatches)->sort(function ($a, $b) {
+            $damages = FGDamage::where('product_id', $productId)
+                ->get()
+                ->map(function ($dmg) {
+                    $dateStr = ($dmg->date instanceof \DateTimeInterface) ? $dmg->date->format('Y-m-d') : substr((string)$dmg->date, 0, 10);
+                    return [
+                        'type' => 'damage',
+                        'id' => $dmg->id,
+                        'customer_id' => $dmg->customer_id,
+                        'warehouse_id' => $dmg->warehouse_id ?? 1,
+                        'document_number' => $dmg->damage_number,
+                        'created_by' => $dmg->created_by ?? 1,
+                        'job_number' => $dmg->job_number,
+                        'quantity_in' => 0.0,
+                        'quantity_out' => (float)$dmg->quantity,
+                        'date' => $dateStr,
+                        'remarks' => $dmg->remarks,
+                    ];
+                });
+
+            // Gathers existing reversals from ledger before deletion
+            $reversals = self::where('product_id', $productId)
+                ->whereIn('transaction_type', ['receipt_reversal', 'dispatch_reversal', 'damage_reversal'])
+                ->get()
+                ->map(function ($rev) {
+                    return [
+                        'type' => $rev->transaction_type,
+                        'id' => $rev->reference_id,
+                        'customer_id' => $rev->customer_id,
+                        'warehouse_id' => $rev->warehouse_id,
+                        'document_number' => $rev->document_number,
+                        'created_by' => $rev->created_by,
+                        'job_number' => $rev->job_number,
+                        'quantity_in' => (float)$rev->quantity_in,
+                        'quantity_out' => (float)$rev->quantity_out,
+                        'date' => $rev->transaction_date,
+                        'remarks' => $rev->remarks,
+                    ];
+                });
+
+            // Combine and sort chronologically.
+            $transactions = $receipts->concat($dispatches)->concat($damages)->concat($reversals)->sort(function ($a, $b) {
                 if ($a['date'] === $b['date']) {
-                    if ($a['type'] !== $b['type']) {
-                        return $a['type'] === 'receipt' ? -1 : 1;
+                    // Additions first (e.g. receipts or reversals that add stock back)
+                    $aIsAdd = $a['quantity_in'] > 0;
+                    $bIsAdd = $b['quantity_in'] > 0;
+                    if ($aIsAdd !== $bIsAdd) {
+                        return $aIsAdd ? -1 : 1;
                     }
                     return $a['id'] <=> $b['id'];
                 }

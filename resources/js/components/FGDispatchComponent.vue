@@ -261,6 +261,7 @@
                 <div class="btn-group shadow-sm rounded">
                   <button @click="showDetail(d)" class="btn btn-sm btn-white text-info border-end" title="View"><i class="bi bi-eye-fill"></i></button>
                   <button @click="editDispatch(d)" class="btn btn-sm btn-white text-warning border-end" title="Edit"><i class="bi bi-pencil-fill"></i></button>
+                  <button @click="initReversal(d)" class="btn btn-sm btn-white text-danger border-end" title="Reverse"><i class="bi bi-arrow-counterclockwise"></i></button>
                   <button @click="deleteDispatch(d)" class="btn btn-sm btn-white text-danger" title="Delete"><i class="bi bi-trash-fill"></i></button>
                 </div>
               </td>
@@ -350,6 +351,35 @@
               <i class="bi bi-file-earmark-pdf me-1"></i> PDF
             </button>
             <button type="button" class="btn btn-warning btn-sm" @click="editDispatch(selectedEntry); selectedEntry = null">Edit Entry</button>
+            <button type="button" class="btn btn-danger btn-sm" @click="initReversal(selectedEntry); selectedEntry = null">Reverse Entry</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reversal Modal -->
+    <div v-if="reversalTarget" class="modal fade show d-block" style="background: rgba(0,0,0,0.5); z-index: 1060;">
+      <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+          <div class="modal-header bg-danger text-white py-2">
+            <h5 class="modal-title small fw-bold">Reverse Dispatch: {{ reversalTarget.dc_number }}</h5>
+            <button type="button" class="btn-close btn-close-white" @click="reversalTarget = null"></button>
+          </div>
+          <div class="modal-body p-4">
+            <p class="text-slate-800 small mb-3">
+              This action will create a signed reversal ledger entry to restore the dispatched inventory (+{{ formatNumber(reversalTarget.quantity_dispatched) }} units).
+            </p>
+            <div class="mb-3">
+              <label class="form-label fw-bold small">Reason for Reversal <span class="text-danger">*</span></label>
+              <textarea v-model="reversalReason" class="form-control" rows="2" placeholder="e.g. Logged incorrect DC number by mistake..."></textarea>
+            </div>
+            <div class="d-flex gap-2 justify-content-end">
+              <button @click="confirmReversal" class="btn btn-danger btn-sm px-4" :disabled="reversing">
+                <span v-if="reversing" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                Confirm Reversal
+              </button>
+              <button @click="reversalTarget = null" class="btn btn-secondary btn-sm px-4">Cancel</button>
+            </div>
           </div>
         </div>
       </div>
@@ -499,7 +529,10 @@ export default {
       companyName: 'QUALITY CARTONS (PVT.) LTD.',
       companyAddress: 'Plot# 46, Sector 24, Korangi Industrial Area Karachi',
       companyLogo: window.location.origin + '/images/quality-cartons-logo.svg',
-      originalQty: null
+      originalQty: null,
+      reversalTarget: null,
+      reversalReason: '',
+      reversing: false
     };
   },
   computed: {
@@ -812,6 +845,31 @@ export default {
       if (!confirm('Are you sure you want to delete this dispatch entry?')) return;
       axios.delete(`/api/fg-dispatches/${d.id}`).then(() => { this.$message.success('Deleted.'); this.fetchDispatches(); })
         .catch(err => { this.$message.error(err.response?.data?.error || 'Cannot delete.'); });
+    },
+    initReversal(d) {
+      this.reversalTarget = d;
+      this.reversalReason = '';
+      this.reversing = false;
+    },
+    confirmReversal() {
+      if (!this.reversalReason) {
+        this.$message.warning('Please provide a reason for the reversal.');
+        return;
+      }
+      this.reversing = true;
+      axios.post(`/api/fg-dispatches/${this.reversalTarget.id}/reverse`, { reason: this.reversalReason })
+        .then(() => {
+          this.$message.success('Dispatch reversed successfully.');
+          this.reversalTarget = null;
+          this.fetchDispatches();
+        })
+        .catch(err => {
+          const msg = err.response?.data?.message || err.response?.data?.error || 'Failed to reverse dispatch.';
+          this.$message.error(msg);
+        })
+        .finally(() => {
+          this.reversing = false;
+        });
     },
     formatDate(d) { if (!d) return '-'; return new Date(d).toLocaleDateString('en-GB'); },
     formatNumber(v) { return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 }); },

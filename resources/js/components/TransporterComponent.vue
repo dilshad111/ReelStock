@@ -1,5 +1,5 @@
 <template>
-    <div class="transporter-management">
+    <div class="transporter-management transport-fg-page">
         <el-card class="box-card shadow-lg professional-card">
             <template #header>
                 <div class="card-header d-flex justify-content-between align-items-center py-2">
@@ -211,7 +211,7 @@ onMounted(fetchTransporters);
 }
 .professional-card {
     border: none;
-    border-radius: 16px;
+    border-radius: 8px;
     overflow: hidden;
 }
 .fw-800 { font-weight: 800; }
@@ -229,10 +229,10 @@ onMounted(fetchTransporters);
 }
 
 .professional-dialog :deep(.el-dialog) {
-    border-radius: 16px;
+    border-radius: 8px;
 }
 .professional-dialog :deep(.el-dialog__header) {
-    padding: 24px;
+    padding: 16px;
     margin-right: 0;
     border-bottom: 1px solid #f1f5f9;
 }
@@ -247,30 +247,30 @@ onMounted(fetchTransporters);
     padding-bottom: 8px !important;
 }
 .professional-dialog :deep(.el-form-item) {
-    margin-bottom: 22px;
+    margin-bottom: 14px;
 }
 .professional-dialog :deep(.el-input__wrapper) {
-    min-height: 44px;
-    border-radius: 12px;
+    min-height: 40px;
+    border-radius: 6px;
 }
 .professional-dialog :deep(.el-input__inner) {
     font-size: 1rem;
     line-height: 1.35;
 }
 .professional-dialog :deep(.el-textarea__inner) {
-    min-height: 132px !important;
-    border-radius: 12px;
-    font-size: 1rem;
+    min-height: 92px !important;
+    border-radius: 6px;
+    font-size: 0.95rem;
     line-height: 1.45;
     padding-top: 12px;
 }
 
 .fg-like-input {
-    height: 52px !important;
-    min-height: 52px !important;
-    border-radius: 10px !important;
-    font-size: 1.1rem !important;
-    padding: 0 16px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    border-radius: 6px !important;
+    font-size: 0.95rem !important;
+    padding: 0 12px !important;
 }
 .fg-like-input::placeholder {
     font-size: 1rem !important;
@@ -278,11 +278,11 @@ onMounted(fetchTransporters);
     opacity: 1 !important;
 }
 .fg-like-textarea {
-    min-height: 120px !important;
-    border-radius: 10px !important;
-    font-size: 1.1rem !important;
+    min-height: 92px !important;
+    border-radius: 6px !important;
+    font-size: 0.95rem !important;
     line-height: 1.45 !important;
-    padding: 14px 16px !important;
+    padding: 10px 12px !important;
     resize: vertical;
 }
 .fg-like-textarea::placeholder {

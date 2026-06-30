@@ -1,5 +1,5 @@
 <template>
-    <div class="vehicle-type-setup">
+    <div class="vehicle-type-setup transport-fg-page">
         <el-card class="box-card shadow-lg professional-card">
             <template #header>
                 <div class="card-header d-flex justify-content-between align-items-center py-2">
@@ -158,7 +158,7 @@ onMounted(() => {
 }
 .professional-card {
     border: none;
-    border-radius: 16px;
+    border-radius: 8px;
     overflow: hidden;
     background: var(--surface-card, #ffffff);
 }
@@ -171,19 +171,19 @@ onMounted(() => {
 }
 
 .professional-dialog :deep(.el-form-item) {
-    margin-bottom: 22px;
+    margin-bottom: 14px;
 }
 
 .professional-dialog :deep(.el-input__wrapper) {
-    min-height: 52px;
-    height: 52px;
-    border-radius: 10px;
+    min-height: 40px;
+    height: 40px;
+    border-radius: 6px;
 }
 
 .professional-dialog :deep(.el-input__inner) {
-    height: 50px;
-    line-height: 50px;
-    font-size: 1.05rem;
+    height: 38px;
+    line-height: 38px;
+    font-size: 0.95rem;
 }
 
 [data-theme="dark"] .vehicle-type-setup {

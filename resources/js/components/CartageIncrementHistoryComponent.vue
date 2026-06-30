@@ -1,5 +1,5 @@
 <template>
-    <div class="cartage-history-page">
+    <div class="cartage-history-page transport-fg-page">
         <el-card class="box-card shadow-lg professional-card mb-4 no-print" v-loading="loading">
             <template #header>
                 <div class="card-header d-flex justify-content-between align-items-center py-2">
@@ -310,7 +310,7 @@ onMounted(() => {
 }
 .professional-card {
     border: none;
-    border-radius: 16px;
+    border-radius: 8px;
 }
 .fw-800 { font-weight: 800; }
 .print-table {

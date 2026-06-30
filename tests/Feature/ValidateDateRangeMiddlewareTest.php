@@ -12,7 +12,7 @@ class ValidateDateRangeMiddlewareTest extends TestCase
 
     public function test_it_allows_valid_date_ranges()
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['email' => 'superadmin@qc.com']);
 
         $response = $this->actingAs($user)
             ->getJson('/api/reports/reel-receipt?date_from=2026-05-01&date_to=2026-05-19');
@@ -23,7 +23,7 @@ class ValidateDateRangeMiddlewareTest extends TestCase
 
     public function test_it_validates_invalid_date_from_and_date_to()
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['email' => 'superadmin@qc.com']);
 
         $response = $this->actingAs($user)
             ->getJson('/api/reports/reel-receipt?date_from=2026-05-19&date_to=2026-05-01');
@@ -37,7 +37,7 @@ class ValidateDateRangeMiddlewareTest extends TestCase
 
     public function test_it_validates_invalid_start_date_and_end_date()
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['email' => 'superadmin@qc.com']);
 
         $response = $this->actingAs($user)
             ->getJson('/api/reports/reports/cartage?start_date=2026-05-19&end_date=2026-05-01'); // using the cartage route or any valid one

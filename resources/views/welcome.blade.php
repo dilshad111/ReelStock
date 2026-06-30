@@ -1867,7 +1867,7 @@
                         <el-menu-item index="cartage-increment-history" v-if="canView('cartage-increment-history')">Increment History</el-menu-item>
                     </el-sub-menu>
 
-                    <el-sub-menu index="finished-goods" v-if="canView('fg-dashboard') || canView('fg-products') || canView('fg-receipts') || canView('fg-dispatches') || canView('fg-reports') || canView('fg-inventory-email')">
+                    <el-sub-menu index="finished-goods" v-if="canView('fg-dashboard') || canView('fg-products') || canView('fg-receipts') || canView('fg-dispatches') || canView('fg-reports') || canView('fg-inventory-email') || canView('sample-submissions') || canView('fg-damages')">
                         <template #title>
                             <i class="bi bi-box-seam-fill me-2 icon-fg"></i>
                             <span>Finished Goods</span>
@@ -1878,6 +1878,8 @@
                         <el-menu-item index="fg-dispatches" v-if="canView('fg-dispatches')">Dispatch Entry</el-menu-item>
                         <el-menu-item index="fg-reports" v-if="canView('fg-reports')">FG Reports</el-menu-item>
                         <el-menu-item index="fg-inventory-email" v-if="canView('fg-inventory-email')">Inventory Email</el-menu-item>
+                        <el-menu-item index="sample-submissions" v-if="canView('sample-submissions')">Sample Submissions</el-menu-item>
+                        <el-menu-item index="fg-damages" v-if="canView('fg-damages')">Damage / Wastage</el-menu-item>
                     </el-sub-menu>
 
                     <el-sub-menu index="raw-materials" v-if="canView('rm-dashboard') || canView('rm-categories') || canView('rm-items') || canView('unit-of-measures') || canView('rm-receipts') || canView('rm-consumptions') || canView('rm-reports')">
@@ -2028,6 +2030,8 @@
                 <fg-report-component v-else-if="currentView === 'fg-reports'" :user="user" :can-see-amounts="canSeeAmounts('fg-reports')"></fg-report-component>
                 <fg-inventory-email-component v-else-if="currentView === 'fg-inventory-email'" :user="user"></fg-inventory-email-component>
                 <qc-inspection-component v-else-if="currentView === 'qc-inspection'" :user="user"></qc-inspection-component>
+                <sample-submission-component v-else-if="currentView === 'sample-submissions'" :user="user"></sample-submission-component>
+                <fg-damage-component v-else-if="currentView === 'fg-damages'" :user="user"></fg-damage-component>
                 
                 <rm-dashboard-component v-else-if="currentView === 'rm-dashboard'" :user="user"></rm-dashboard-component>
                 <rm-category-component v-else-if="currentView === 'rm-categories'" :user="user"></rm-category-component>

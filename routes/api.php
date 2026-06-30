@@ -49,6 +49,8 @@ use App\Http\Controllers\JobIssueController;
 use App\Http\Controllers\ProductionConfigurationController;
 use App\Http\Controllers\CartonTypeController;
 use App\Http\Controllers\ProductEngineeringController;
+use App\Http\Controllers\SampleSubmissionController;
+use App\Http\Controllers\FGDamageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -275,6 +277,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('fg-dispatches/product-details/{productId}', [FGDispatchController::class, 'getProductDetails']);
     });
 
+    // Finished Goods Module - Damages
+    Route::middleware('check.permission:fg-damages')->group(function () {
+        Route::post('fg-damages/{id}/reverse', [FGDamageController::class, 'reverse']);
+        Route::get('fg-damages/available-stock/{productId}/{warehouseId}', [FGDamageController::class, 'getWarehouseStock']);
+        Route::apiResource('fg-damages', FGDamageController::class);
+    });
+
+
     // Finished Goods Module - Reports
     Route::get('fg-reports/filters', [FGReportController::class, 'getFilters']);
 
@@ -427,5 +437,11 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('optimization-rules/{rule}', [ProductionConfigurationController::class, 'destroyOptimizationRule']);
             Route::post('optimization-rules/apply', [ProductionConfigurationController::class, 'applyOptimizationRules']);
         });
+    });
+
+    // Sample Submission Module
+    Route::middleware('check.permission:sample-submissions')->group(function () {
+        Route::apiResource('sample-submissions', SampleSubmissionController::class)
+            ->only(['index', 'store', 'show', 'destroy']);
     });
 });

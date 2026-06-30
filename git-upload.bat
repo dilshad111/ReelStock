@@ -8,7 +8,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "User Permission Corrected."
+git commit -m "Carton Sampling Module Added."
 
 echo.
 echo Pushing to origin main...

@@ -1,5 +1,5 @@
 <template>
-    <div class="cartage-rate-setup">
+    <div class="cartage-rate-setup transport-fg-page">
         <el-card class="box-card shadow-lg professional-card">
             <template #header>
                 <div class="card-header d-flex justify-content-between align-items-center py-2">
@@ -310,7 +310,7 @@ onMounted(() => {
 }
 .professional-card {
     border: none;
-    border-radius: 16px;
+    border-radius: 8px;
     overflow: hidden;
 }
 .fw-800 { font-weight: 800; }
@@ -329,10 +329,10 @@ onMounted(() => {
 }
 
 .professional-dialog :deep(.el-dialog) {
-    border-radius: 16px;
+    border-radius: 8px;
 }
 .professional-dialog :deep(.el-dialog__header) {
-    padding: 24px;
+    padding: 16px;
     margin-right: 0;
     border-bottom: 1px solid #f1f5f9;
 }
@@ -347,24 +347,24 @@ onMounted(() => {
     padding-bottom: 8px !important;
 }
 .professional-dialog :deep(.el-form-item) {
-    margin-bottom: 20px;
+    margin-bottom: 14px;
 }
 .professional-dialog :deep(.el-input__wrapper),
 .professional-dialog :deep(.el-select__wrapper),
 .professional-dialog :deep(.el-input-number) {
-    min-height: 52px;
-    height: 52px;
-    border-radius: 10px;
+    min-height: 40px;
+    height: 40px;
+    border-radius: 6px;
 }
 .filters-bar :deep(.el-input__wrapper),
 .filters-bar :deep(.el-select__wrapper) {
-    min-height: 52px;
-    height: 52px;
-    border-radius: 10px;
+    min-height: 40px;
+    height: 40px;
+    border-radius: 6px;
 }
 
 .filters-bar {
-    border-radius: 12px;
+    border-radius: 8px;
 }
 
 [data-theme="dark"] .cartage-rate-setup {

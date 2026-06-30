@@ -1,5 +1,5 @@
 <template>
-    <div class="cartage-increment-page">
+    <div class="cartage-increment-page transport-fg-page">
         <el-card class="box-card shadow-lg professional-card mb-4 no-print" v-loading="loading">
             <template #header>
                 <div class="card-header d-flex justify-content-between align-items-center py-2">
@@ -44,7 +44,7 @@
                     </div>
                     <div class="col-md-2">
                         <label class="form-label fw-bold small text-muted text-uppercase mb-2">Effective Date</label>
-                        <el-date-picker v-model="effectiveDate" type="date" placeholder="Implementation Date" class="w-100" format="YYYY-MM-DD" value-format="YYYY-MM-DD" />
+                        <input v-model="effectiveDate" type="date" class="form-control transport-date-input" />
                     </div>
                     <div class="col-md-2" v-if="incrementType === 'percentage'">
                         <label class="form-label fw-bold small text-muted text-uppercase mb-2">Bulk % Increase</label>

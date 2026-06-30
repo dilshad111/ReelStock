@@ -52,10 +52,16 @@ class FGReconciliationService
                     ->where('warehouse_id', $warehouseId)
                     ->sum('quantity_dispatched');
 
+                $damagesSum = (float)DB::table('fg_damages')
+                    ->where('product_id', $productId)
+                    ->where('warehouse_id', $warehouseId)
+                    ->where('status', 'posted')
+                    ->sum('quantity');
+
                 // Adjust for opening balance in calculations (if it is recorded as an 'opening' type in ledger)
                 // If ledger has an 'opening' type record, that's already in the ledger sum.
                 // But the raw document tables don't have the opening balance. So raw document sum needs it added.
-                $docSum = (float)$product->opening_balance + $receiptsSum - $dispatchesSum;
+                $docSum = (float)$product->opening_balance + $receiptsSum - $dispatchesSum - $damagesSum;
 
                 // Check for differences
                 $cacheVsLedger = abs($cacheQty - $ledgerSum);

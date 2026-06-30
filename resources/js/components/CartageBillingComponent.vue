@@ -1,5 +1,5 @@
 <template>
-    <div class="cartage-billing">
+    <div class="cartage-billing transport-fg-page">
         <el-card class="box-card shadow-sm" v-if="!printing">
             <template #header>
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -93,7 +93,13 @@
                         </el-table-column>
                         <el-table-column label="Amount (Rs.)" width="130">
                             <template #default="scope">
-                                <el-input-number v-model="scope.row.amount" :min="0" :controls="false" size="small" class="w-100 amount-input" />
+                                <input
+                                    v-model.number="scope.row.amount"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    class="form-control form-control-sm w-100 amount-input text-end fw-bold"
+                                />
                             </template>
                         </el-table-column>
                         <el-table-column label="Action" width="60" align="center">
@@ -1088,7 +1094,7 @@ input[type="date"]:focus {
     color: #e2e8f0 !important;
 }
 
-[data-theme="dark"] .amount-input :deep(input) {
+[data-theme="dark"] .amount-input {
     color: #34d399 !important; /* Brighter emerald green for stunning dark contrast */
 }
 
@@ -1133,10 +1139,14 @@ input[type="date"]:focus {
 .entry-table :deep(.sub-row) td {
     border-top: 1px dashed #cbd5e1;
 }
-.amount-input :deep(input) {
+.entry-table .amount-input {
+    height: 38px !important;
+    min-height: 38px !important;
+    line-height: 1.5 !important;
+    padding: 0.25rem 0.5rem !important;
     text-align: right;
     font-weight: 800;
-    font-size: 15px;
+    font-size: 14px !important;
     color: #059669;
 }
 .grand-total-text {

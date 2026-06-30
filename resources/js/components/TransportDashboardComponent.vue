@@ -1,5 +1,5 @@
 <template>
-    <div class="transport-dashboard">
+    <div class="transport-dashboard transport-fg-page">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h2 class="fw-bold text-slate-800 mb-0">Transport Analytics</h2>

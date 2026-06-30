@@ -86,7 +86,9 @@ return new class extends Migration
         DB::table('fg_receipts')->whereNull('warehouse_id')->update(['warehouse_id' => $defaultWarehouseId]);
 
         // ALTER to not null
-        DB::statement('ALTER TABLE fg_receipts MODIFY warehouse_id BIGINT UNSIGNED NOT NULL');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE fg_receipts MODIFY warehouse_id BIGINT UNSIGNED NOT NULL');
+        }
 
         // 6. Add warehouse_id to fg_dispatches
         if (!Schema::hasColumn('fg_dispatches', 'warehouse_id')) {
@@ -103,7 +105,9 @@ return new class extends Migration
         DB::table('fg_dispatches')->whereNull('warehouse_id')->update(['warehouse_id' => $defaultWarehouseId]);
 
         // ALTER to not null
-        DB::statement('ALTER TABLE fg_dispatches MODIFY warehouse_id BIGINT UNSIGNED NOT NULL');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE fg_dispatches MODIFY warehouse_id BIGINT UNSIGNED NOT NULL');
+        }
 
         // 7. Add warehouse_id, document_number, created_by and remarks to fg_stock_ledger
         if (!Schema::hasColumn('fg_stock_ledger', 'warehouse_id')) {
@@ -159,13 +163,15 @@ return new class extends Migration
         DB::table('fg_stock_ledger')->whereNull('document_number')->update(['document_number' => 'OPENING']);
 
         // ALTER column types and nullability using raw SQL
-        DB::statement('ALTER TABLE fg_stock_ledger MODIFY warehouse_id BIGINT UNSIGNED NOT NULL');
-        DB::statement('ALTER TABLE fg_stock_ledger MODIFY document_number VARCHAR(100) NOT NULL');
-        DB::statement('ALTER TABLE fg_stock_ledger MODIFY transaction_type VARCHAR(30) NOT NULL');
-        DB::statement('ALTER TABLE fg_stock_ledger MODIFY quantity_in DECIMAL(12, 4) NOT NULL DEFAULT 0.0000');
-        DB::statement('ALTER TABLE fg_stock_ledger MODIFY quantity_out DECIMAL(12, 4) NOT NULL DEFAULT 0.0000');
-        DB::statement('ALTER TABLE fg_stock_ledger MODIFY balance_after DECIMAL(12, 4) NOT NULL DEFAULT 0.0000');
-        DB::statement('ALTER TABLE fg_stock_ledger MODIFY created_by BIGINT UNSIGNED NOT NULL');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE fg_stock_ledger MODIFY warehouse_id BIGINT UNSIGNED NOT NULL');
+            DB::statement('ALTER TABLE fg_stock_ledger MODIFY document_number VARCHAR(100) NOT NULL');
+            DB::statement('ALTER TABLE fg_stock_ledger MODIFY transaction_type VARCHAR(30) NOT NULL');
+            DB::statement('ALTER TABLE fg_stock_ledger MODIFY quantity_in DECIMAL(12, 4) NOT NULL DEFAULT 0.0000');
+            DB::statement('ALTER TABLE fg_stock_ledger MODIFY quantity_out DECIMAL(12, 4) NOT NULL DEFAULT 0.0000');
+            DB::statement('ALTER TABLE fg_stock_ledger MODIFY balance_after DECIMAL(12, 4) NOT NULL DEFAULT 0.0000');
+            DB::statement('ALTER TABLE fg_stock_ledger MODIFY created_by BIGINT UNSIGNED NOT NULL');
+        }
     }
 
     /**
@@ -190,10 +196,12 @@ return new class extends Migration
             }
         });
 
-        DB::statement('ALTER TABLE fg_stock_ledger MODIFY transaction_type ENUM("opening", "receipt", "dispatch", "adjustment") NOT NULL');
-        DB::statement('ALTER TABLE fg_stock_ledger MODIFY quantity_in DECIMAL(12, 2) NOT NULL DEFAULT 0.00');
-        DB::statement('ALTER TABLE fg_stock_ledger MODIFY quantity_out DECIMAL(12, 2) NOT NULL DEFAULT 0.00');
-        DB::statement('ALTER TABLE fg_stock_ledger MODIFY balance_after DECIMAL(12, 2) NOT NULL DEFAULT 0.00');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE fg_stock_ledger MODIFY transaction_type ENUM("opening", "receipt", "dispatch", "adjustment") NOT NULL');
+            DB::statement('ALTER TABLE fg_stock_ledger MODIFY quantity_in DECIMAL(12, 2) NOT NULL DEFAULT 0.00');
+            DB::statement('ALTER TABLE fg_stock_ledger MODIFY quantity_out DECIMAL(12, 2) NOT NULL DEFAULT 0.00');
+            DB::statement('ALTER TABLE fg_stock_ledger MODIFY balance_after DECIMAL(12, 2) NOT NULL DEFAULT 0.00');
+        }
 
         Schema::table('fg_dispatches', function (Blueprint $table) {
             if (Schema::hasColumn('fg_dispatches', 'warehouse_id')) {

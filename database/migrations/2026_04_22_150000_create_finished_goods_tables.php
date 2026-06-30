@@ -60,7 +60,7 @@ return new class extends Migration
 
         Schema::create('fg_stock_ledger', function (Blueprint $table) {
             $table->id();
-            $table->enum('transaction_type', ['opening', 'receipt', 'dispatch', 'adjustment']);
+            $table->string('transaction_type', 30);
             $table->unsignedBigInteger('reference_id')->nullable();
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
             $table->foreignId('customer_id')->constrained()->onDelete('cascade');

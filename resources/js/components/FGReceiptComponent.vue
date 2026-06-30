@@ -146,6 +146,7 @@
           <td>
             <button @click="showDetail(r)" class="btn btn-sm btn-info me-1" title="View"><i class="bi bi-eye"></i></button>
             <button @click="editReceipt(r)" class="btn btn-sm btn-warning me-1" title="Edit"><i class="bi bi-pencil"></i></button>
+            <button @click="initReversal(r)" class="btn btn-sm btn-danger me-1" title="Reverse"><i class="bi bi-arrow-counterclockwise"></i></button>
             <button @click="deleteReceipt(r)" class="btn btn-sm btn-danger" title="Delete"><i class="bi bi-trash"></i></button>
           </td>
         </tr>
@@ -240,6 +241,35 @@
           <div class="modal-footer py-2">
             <button type="button" class="btn btn-secondary btn-sm" @click="selectedEntry = null">Close</button>
             <button type="button" class="btn btn-warning btn-sm" @click="editReceipt(selectedEntry); selectedEntry = null">Edit Entry</button>
+            <button type="button" class="btn btn-danger btn-sm" @click="initReversal(selectedEntry); selectedEntry = null">Reverse Entry</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reversal Modal -->
+    <div v-if="reversalTarget" class="modal fade show d-block" style="background: rgba(0,0,0,0.5); z-index: 1060;">
+      <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+          <div class="modal-header bg-danger text-white py-2">
+            <h5 class="modal-title small fw-bold">Reverse Production Entry: {{ reversalTarget.job_number }}</h5>
+            <button type="button" class="btn-close btn-close-white" @click="reversalTarget = null"></button>
+          </div>
+          <div class="modal-body p-4">
+            <p class="text-slate-800 small mb-3">
+              This action will create a signed reversal ledger entry to reduce/negate the produced inventory (-{{ formatNumber(reversalTarget.quantity_produced) }} units).
+            </p>
+            <div class="mb-3">
+              <label class="form-label fw-bold small">Reason for Reversal <span class="text-danger">*</span></label>
+              <textarea v-model="reversalReason" class="form-control" rows="2" placeholder="e.g. Logged incorrect quantity by mistake..."></textarea>
+            </div>
+            <div class="d-flex gap-2 justify-content-end">
+              <button @click="confirmReversal" class="btn btn-danger btn-sm px-4" :disabled="reversing">
+                <span v-if="reversing" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                Confirm Reversal
+              </button>
+              <button @click="reversalTarget = null" class="btn btn-secondary btn-sm px-4">Cancel</button>
+            </div>
           </div>
         </div>
       </div>
@@ -364,7 +394,10 @@ export default {
       selectedEntry: null,
       selectedJobDispatches: null,
       showDispatchesModal: false,
-      loadingDispatches: false
+      loadingDispatches: false,
+      reversalTarget: null,
+      reversalReason: '',
+      reversing: false
     };
   },
   computed: {
@@ -466,6 +499,31 @@ export default {
       if (!confirm('Delete this receipt?')) return;
       axios.delete(`/api/fg-receipts/${r.id}`).then(() => { this.$message.success('Deleted.'); this.fetchReceipts(); })
         .catch(err => { this.$message.error(err.response?.data?.error || 'Cannot delete.'); });
+    },
+    initReversal(r) {
+      this.reversalTarget = r;
+      this.reversalReason = '';
+      this.reversing = false;
+    },
+    confirmReversal() {
+      if (!this.reversalReason) {
+        this.$message.warning('Please provide a reason for the reversal.');
+        return;
+      }
+      this.reversing = true;
+      axios.post(`/api/fg-receipts/${this.reversalTarget.id}/reverse`, { reason: this.reversalReason })
+        .then(() => {
+          this.$message.success('Receipt reversed successfully.');
+          this.reversalTarget = null;
+          this.fetchReceipts();
+        })
+        .catch(err => {
+          const msg = err.response?.data?.message || err.response?.data?.error || 'Failed to reverse receipt.';
+          this.$message.error(msg);
+        })
+        .finally(() => {
+          this.reversing = false;
+        });
     },
     showJobDispatches(jobNumber) {
       if (!jobNumber) return;

@@ -1,5 +1,5 @@
 <template>
-    <div class="fuel-cost-report cartage-report">
+    <div class="fuel-cost-report cartage-report transport-fg-page">
         <el-card class="box-card shadow-lg professional-card mb-4">
             <template #header>
                 <div class="card-header d-flex justify-content-between align-items-center py-2">
@@ -25,13 +25,13 @@
                     <div class="row w-100 g-3">
                         <div class="col-xl-2 col-md-4">
                             <el-form-item label="From Date" class="w-100" :class="{ 'is-error': errors.start_date }">
-                                <el-date-picker v-model="filters.start_date" type="date" placeholder="From Date" class="w-100" format="DD/MM/YYYY" value-format="YYYY-MM-DD" />
+                                <input v-model="filters.start_date" type="date" class="form-control transport-date-input" />
                                 <div v-if="errors.start_date" class="validation-message">{{ errors.start_date }}</div>
                             </el-form-item>
                         </div>
                         <div class="col-xl-2 col-md-4">
                             <el-form-item label="To Date" class="w-100" :class="{ 'is-error': errors.end_date }">
-                                <el-date-picker v-model="filters.end_date" type="date" placeholder="To Date" class="w-100" format="DD/MM/YYYY" value-format="YYYY-MM-DD" />
+                                <input v-model="filters.end_date" type="date" class="form-control transport-date-input" />
                                 <div v-if="errors.end_date" class="validation-message">{{ errors.end_date }}</div>
                             </el-form-item>
                         </div>

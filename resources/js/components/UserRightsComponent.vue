@@ -197,6 +197,8 @@ export default {
           { key: 'fg-dispatches', name: 'Dispatch Entry', hasAmounts: false },
           { key: 'fg-reports', name: 'FG Reports', hasAmounts: false },
           { key: 'fg-inventory-email', name: 'Inventory Email', hasAmounts: false },
+          { key: 'sample-submissions', name: 'Sample Submissions', hasAmounts: false },
+          { key: 'fg-damages', name: 'Damage / Wastage', hasAmounts: false },
         ]
       },
       {

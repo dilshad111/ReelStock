@@ -1,5 +1,5 @@
 <template>
-    <div class="customer-management">
+    <div class="customer-management transport-fg-page">
         <el-card class="box-card shadow-lg professional-card">
             <template #header>
                 <div class="card-header d-flex justify-content-between align-items-center py-2">
@@ -245,7 +245,7 @@ onMounted(fetchCustomers);
 
 .professional-card {
     border: none;
-    border-radius: 16px;
+    border-radius: 8px;
     overflow: hidden;
 }
 
@@ -356,11 +356,15 @@ onMounted(fetchCustomers);
 
 .address-row {
     background: #f8fafc;
-    padding: 15px;
+    padding: 12px;
     border: 1px solid #e2e8f0;
-    border-radius: 12px;
+    border-radius: 8px;
     margin-bottom: 12px;
     transition: all 0.3s;
+}
+
+.address-row .d-flex {
+    flex-wrap: wrap;
 }
 
 .address-row:hover {
@@ -369,11 +373,11 @@ onMounted(fetchCustomers);
 }
 
 .professional-dialog :deep(.el-dialog) {
-    border-radius: 16px;
+    border-radius: 8px;
 }
 
 .professional-dialog :deep(.el-dialog__header) {
-    padding: 24px;
+    padding: 16px;
     margin-right: 0;
     border-bottom: 1px solid #f1f5f9;
 }
@@ -391,36 +395,36 @@ onMounted(fetchCustomers);
 }
 
 .professional-dialog :deep(.el-form-item) {
-    margin-bottom: 20px;
+    margin-bottom: 14px;
 }
 
 .professional-dialog :deep(.el-input__wrapper),
 .professional-dialog :deep(.el-select__wrapper) {
-    min-height: 50px;
-    border-radius: 12px;
+    min-height: 40px;
+    border-radius: 6px;
 }
 
 .customer-manual-input {
-    height: 52px !important;
-    min-height: 52px !important;
-    border-radius: 10px !important;
-    font-size: 1.1rem !important;
-    padding: 0 16px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    border-radius: 6px !important;
+    font-size: 0.95rem !important;
+    padding: 0 12px !important;
 }
 
 .customer-manual-textarea {
-    min-height: 110px !important;
-    border-radius: 10px !important;
-    font-size: 1.1rem !important;
+    min-height: 92px !important;
+    border-radius: 6px !important;
+    font-size: 0.95rem !important;
     line-height: 1.45 !important;
-    padding: 14px 16px !important;
+    padding: 10px 12px !important;
     resize: vertical;
 }
 
 .professional-dialog :deep(.el-input__inner),
 .professional-dialog :deep(.el-textarea__inner),
 .customer-manual-input {
-    font-size: 1.05rem !important;
+    font-size: 0.95rem !important;
 }
 
 .customer-management .professional-dialog .customer-manual-input::placeholder,
@@ -444,7 +448,7 @@ onMounted(fetchCustomers);
 .customer-management .professional-dialog .customer-manual-textarea::placeholder {
     color: #8fa1bd !important;
     opacity: 1 !important;
-    font-size: 1rem !important;
+    font-size: 0.95rem !important;
     font-weight: 500 !important;
 }
 
@@ -488,19 +492,19 @@ onMounted(fetchCustomers);
 }
 
 .professional-dialog :deep(.el-textarea__inner) {
-    min-height: 130px !important;
-    border-radius: 12px;
-    font-size: 1rem;
+    min-height: 92px !important;
+    border-radius: 6px;
+    font-size: 0.95rem;
 }
 
 .address-row :deep(.el-input__wrapper) {
-    min-height: 50px;
+    min-height: 40px;
 }
 
 .save-btn {
-    border-radius: 8px;
+    border-radius: 6px;
     font-weight: 700;
-    padding: 12px 32px;
+    padding: 8px 20px;
 }
 
 .italic { font-style: italic; }

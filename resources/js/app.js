@@ -60,7 +60,9 @@ const PERMISSION_KEY_MAP = {
     'product-engineering': 'product-engineering',
     'job-issue': 'job-issue',
     'production-configuration': 'production-configuration',
-    'production-dashboard': 'production-dashboard'
+    'production-dashboard': 'production-dashboard',
+    'sample-submissions': 'sample-submissions',
+    'fg-damages': 'fg-damages'
 };
 
 const PERMISSION_KEYS = [
@@ -117,7 +119,9 @@ const PERMISSION_KEYS = [
     'product-engineering',
     'job-issue',
     'production-configuration',
-    'production-dashboard'
+    'production-dashboard',
+    'sample-submissions',
+    'fg-damages'
 ];
 
 const VIEW_ORDER = [
@@ -174,6 +178,8 @@ const VIEW_ORDER = [
     'job-issue',
     'production-configuration',
     'production-dashboard',
+    'sample-submissions',
+    'fg-damages',
     'profile'
 ];
 
@@ -233,6 +239,8 @@ const VIEW_TO_ROUTE_SEGMENT = Object.freeze({
     'job-issue': 'job-issue',
     'production-configuration': 'production-configuration',
     'production-dashboard': 'production-dashboard',
+    'sample-submissions': 'sample-submissions',
+    'fg-damages': 'fg-damages',
     profile: 'profile'
 });
 
@@ -715,6 +723,8 @@ import ProductEngineeringComponent from './components/ProductEngineeringComponen
 import JobIssueComponent from './components/JobIssueComponent.vue';
 import ProductionConfigurationComponent from './components/ProductionConfigurationComponent.vue';
 import ProductionDashboardComponent from './components/ProductionDashboardComponent.vue';
+import SampleSubmissionComponent from './components/SampleSubmissionComponent.vue';
+import FGDamageComponent from './components/FGDamageComponent.vue';
 import ThemeSelectorComponent from './components/ThemeSelectorComponent.vue';
 
 app.component('supplier-component', SupplierComponent);
@@ -774,6 +784,8 @@ app.component('product-engineering-component', ProductEngineeringComponent);
 app.component('job-issue-component', JobIssueComponent);
 app.component('production-configuration-component', ProductionConfigurationComponent);
 app.component('production-dashboard-component', ProductionDashboardComponent);
+app.component('sample-submission-component', SampleSubmissionComponent);
+app.component('fg-damage-component', FGDamageComponent);
 app.component('theme-selector-component', ThemeSelectorComponent);
 
 /**
