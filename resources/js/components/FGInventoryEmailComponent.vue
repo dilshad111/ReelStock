@@ -21,10 +21,17 @@
     <div class="report-filters">
       <div class="filter-field filter-customer">
         <label>Customer</label>
-        <select v-model="filters.customer_id" @change="fetchReport" class="form-select form-select-sm">
-          <option value="">All Customers</option>
-          <option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option>
-        </select>
+        <v-select
+          v-model="filters.customer_id"
+          :options="customers"
+          label="name"
+          :reduce="c => c.id"
+          placeholder="All Customers"
+          :clearable="true"
+          class="v-select-sm"
+          @option:selected="fetchReport"
+          @option:deselected="fetchReport"
+        ></v-select>
       </div>
       <div class="filter-field filter-search">
         <label>Item / Code</label>

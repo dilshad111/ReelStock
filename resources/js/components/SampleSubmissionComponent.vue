@@ -29,11 +29,14 @@
         <div class="row g-3 mb-3">
           <div class="col-md-4">
             <div class="mb-3">
-              <label class="form-label fw-bold">Customer <span class="text-danger">*</span></label>
-              <select v-model="form.customer_id" class="form-control" required>
-                <option :value="null">Select Customer</option>
-                <option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option>
-              </select>
+              <v-select
+                v-model="form.customer_id"
+                :options="customers"
+                label="name"
+                :reduce="c => c.id"
+                placeholder="Search Customer..."
+                :clearable="false"
+              ></v-select>
             </div>
           </div>
           <div class="col-md-4">
@@ -174,12 +177,15 @@
                 <input type="text" v-model="layer.paper_type" class="form-control fw-semibold" readonly placeholder="Layer Type">
               </div>
               <div class="col">
-                <select v-model="layer.paper_quality_id" class="form-control" required @change="onLayerQualityChange(layer)">
-                  <option :value="null">Select Paper Quality</option>
-                  <option v-for="q in paperQualities" :key="q.id" :value="q.id">
-                    {{ q.quality }} {{ q.standard_gsm ? '(' + Math.round(q.standard_gsm) + ' gsm)' : '' }}
-                  </option>
-                </select>
+                <v-select
+                  v-model="layer.paper_quality_id"
+                  :options="paperQualities"
+                  :get-option-label="q => q.quality + (q.standard_gsm ? ' (' + Math.round(q.standard_gsm) + ' gsm)' : '')"
+                  :reduce="q => q.id"
+                  placeholder="Select Paper Quality"
+                  :clearable="false"
+                  @option:selected="onLayerQualityChange(layer)"
+                ></v-select>
               </div>
               <div class="col-md-3">
                 <div class="input-group">
@@ -282,12 +288,16 @@
                   <input type="text" v-model="layer.paper_type" class="form-control form-control-sm" readonly placeholder="Paper Type">
                 </div>
                 <div class="col">
-                  <select v-model="layer.paper_quality_id" class="form-control form-control-sm" required @change="onLayerQualityChange(layer)">
-                    <option :value="null">Select Paper Quality</option>
-                    <option v-for="q in paperQualities" :key="q.id" :value="q.id">
-                      {{ q.quality }} {{ q.standard_gsm ? '(' + Math.round(q.standard_gsm) + ' gsm)' : '' }}
-                    </option>
-                  </select>
+                  <v-select
+                    v-model="layer.paper_quality_id"
+                    :options="paperQualities"
+                    :get-option-label="q => q.quality + (q.standard_gsm ? ' (' + Math.round(q.standard_gsm) + ' gsm)' : '')"
+                    :reduce="q => q.id"
+                    placeholder="Select Paper Quality"
+                    :clearable="false"
+                    class="v-select-sm"
+                    @option:selected="onLayerQualityChange(layer)"
+                  ></v-select>
                 </div>
                 <div class="col-md-3">
                   <div class="input-group input-group-sm">
@@ -360,12 +370,16 @@
                   <input type="text" v-model="layer.paper_type" class="form-control form-control-sm" readonly placeholder="Paper Type">
                 </div>
                 <div class="col">
-                  <select v-model="layer.paper_quality_id" class="form-control form-control-sm" required @change="onLayerQualityChange(layer)">
-                    <option :value="null">Select Paper Quality</option>
-                    <option v-for="q in paperQualities" :key="q.id" :value="q.id">
-                      {{ q.quality }} {{ q.standard_gsm ? '(' + Math.round(q.standard_gsm) + ' gsm)' : '' }}
-                    </option>
-                  </select>
+                  <v-select
+                    v-model="layer.paper_quality_id"
+                    :options="paperQualities"
+                    :get-option-label="q => q.quality + (q.standard_gsm ? ' (' + Math.round(q.standard_gsm) + ' gsm)' : '')"
+                    :reduce="q => q.id"
+                    placeholder="Select Paper Quality"
+                    :clearable="false"
+                    class="v-select-sm"
+                    @option:selected="onLayerQualityChange(layer)"
+                  ></v-select>
                 </div>
                 <div class="col-md-3">
                   <div class="input-group input-group-sm">
@@ -402,10 +416,17 @@
       <div class="row g-3 mb-4 align-items-end">
         <div class="col-md-4">
           <label class="form-label fw-bold small text-muted">Customer</label>
-          <select v-model="filters.customer_id" class="form-control form-control-sm" @change="fetchReport">
-            <option :value="null">All Customers</option>
-            <option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option>
-          </select>
+          <v-select
+            v-model="filters.customer_id"
+            :options="customers"
+            label="name"
+            :reduce="c => c.id"
+            placeholder="All Customers"
+            :clearable="true"
+            class="v-select-sm"
+            @option:selected="fetchReport"
+            @option:deselected="fetchReport"
+          ></v-select>
         </div>
         <div class="col-md-3">
           <label class="form-label fw-bold small text-muted">From Date</label>

@@ -27,11 +27,15 @@
             </div>
             <div class="col-md-4">
               <div class="mb-3">
-                <label class="form-label fw-semibold text-slate-700">Supplier <span class="text-danger">*</span></label>
-                <select v-model="form.supplier_id" class="form-control" required @change="onSupplierChange">
-                  <option value="">Select Supplier</option>
-                  <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
-                </select>
+                <v-select
+                  v-model="form.supplier_id"
+                  :options="suppliers"
+                  label="name"
+                  :reduce="s => s.id"
+                  placeholder="Search Supplier..."
+                  :clearable="false"
+                  @option:selected="onSupplierChange"
+                ></v-select>
               </div>
             </div>
             <div class="col-md-4">
@@ -65,10 +69,16 @@
                 <tbody>
                   <tr v-for="(row, index) in form.items" :key="index">
                     <td>
-                      <select v-model="row.rm_item_id" @change="onItemChange(row)" class="form-control form-control-sm" required>
-                        <option value="">Select Item</option>
-                        <option v-for="i in rmItems" :key="i.id" :value="i.id">{{ i.name }}</option>
-                      </select>
+                      <v-select
+                        v-model="row.rm_item_id"
+                        :options="rmItems"
+                        label="name"
+                        :reduce="i => i.id"
+                        placeholder="Search Item..."
+                        :clearable="false"
+                        class="v-select-sm"
+                        @option:selected="onItemChange(row)"
+                      ></v-select>
                     </td>
                     <td>
                       <input v-model.number="row.quantity" type="number" step="0.01" min="0.01" class="form-control form-control-sm" @input="calculateRowTotal(row)" required />
@@ -119,11 +129,17 @@
         <!-- Filters -->
         <div class="row mb-4 g-2 align-items-end">
           <div class="col-md-3">
-            <label class="small text-muted fw-bold">Supplier</label>
-            <select v-model="filters.supplier_id" @change="fetchHistory" class="form-control form-control-sm">
-              <option value="">All Suppliers</option>
-              <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
-            </select>
+            <v-select
+              v-model="filters.supplier_id"
+              :options="suppliers"
+              label="name"
+              :reduce="s => s.id"
+              placeholder="All Suppliers"
+              :clearable="true"
+              class="v-select-sm"
+              @option:selected="fetchHistory"
+              @option:deselected="fetchHistory"
+            ></v-select>
           </div>
           <div class="col-md-4">
             <label class="small text-muted fw-bold">Date Range</label>

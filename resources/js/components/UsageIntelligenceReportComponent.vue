@@ -94,10 +94,18 @@
       <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0 text-white">Predictive Analytics: Future Reel Demand</h5>
         <div class="d-flex gap-2">
-            <select v-model="filter.paper_quality_id" @change="fetchPrediction" class="form-select form-select-sm" style="width: 200px;">
-                <option :value="null">All Qualities</option>
-                <option v-for="q in qualities" :key="q.id" :value="q.id">{{ q.quality }}</option>
-            </select>
+            <v-select
+              v-model="filter.paper_quality_id"
+              :options="qualities"
+              label="quality"
+              :reduce="q => q.id"
+              placeholder="All Qualities"
+              :clearable="true"
+              class="v-select-sm"
+              style="width: 200px;"
+              @option:selected="fetchPrediction"
+              @option:deselected="fetchPrediction"
+            ></v-select>
         </div>
       </div>
       <div class="card-body">

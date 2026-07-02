@@ -2135,3 +2135,191 @@
     background: #1e293b !important;
     border-color: #475569 !important;
 }
+
+/* ================================================================
+   Vue-Select → Bootstrap Integration
+   ================================================================ */
+.v-select {
+    background: #fff;
+    position: relative;
+}
+
+.v-select.vs--open {
+    z-index: 9999;
+}
+
+.v-select .vs__dropdown-toggle {
+    border: 1px solid #ced4d6;
+    border-radius: 0.375rem;
+    padding: 0;
+    min-height: calc(1.5em + 0.75rem + 2px); /* match .form-control */
+    background: #fff;
+}
+
+.v-select .vs__search,
+.v-select .vs__search:focus {
+    margin: 0;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #212529;
+}
+
+.v-select .vs__selected {
+    margin: 0;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #212529;
+    border: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100% - 40px);
+}
+
+.v-select .vs__selected + .vs__search {
+    padding: 0;
+    margin: 0;
+    width: 0;
+    max-width: 0;
+    position: absolute;
+}
+
+.v-select.vs--open .vs__selected + .vs__search {
+    position: static;
+    width: auto;
+    max-width: 100%;
+    padding: 0.375rem 0.75rem;
+}
+
+.v-select.vs--open .vs__selected {
+    position: absolute;
+    opacity: 0.4;
+}
+
+.v-select .vs__actions {
+    padding: 0 8px 0 4px;
+}
+
+.v-select .vs__clear {
+    margin-right: 4px;
+}
+
+.v-select .vs__dropdown-menu {
+    border: 1px solid #ced4d6;
+    border-radius: 0 0 0.375rem 0.375rem;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    max-height: 250px;
+    z-index: 99999;
+    position: absolute;
+    width: 100%;
+    background: #fff;
+}
+
+.v-select .vs__dropdown-option {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.v-select .vs__dropdown-option--highlight {
+    background: #0d6efd;
+    color: #fff;
+}
+
+.v-select .vs__no-options {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.v-select.vs--disabled .vs__dropdown-toggle {
+    background-color: #e9ecef;
+    opacity: 1;
+    cursor: not-allowed;
+}
+
+.v-select.vs--disabled .vs__search {
+    background-color: transparent;
+}
+
+/* Small size variant (for filters / form-control-sm contexts) */
+.v-select.vs--sm .vs__dropdown-toggle,
+.v-select-sm .vs__dropdown-toggle {
+    min-height: calc(1.5em + 0.5rem + 2px); /* match .form-control-sm */
+}
+
+.v-select.vs--sm .vs__search,
+.v-select.vs--sm .vs__search:focus,
+.v-select-sm .vs__search,
+.v-select-sm .vs__search:focus {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.v-select.vs--sm .vs__selected,
+.v-select-sm .vs__selected {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.v-select.vs--sm .vs__dropdown-option,
+.v-select-sm .vs__dropdown-option {
+    padding: 4px 10px;
+    font-size: 0.825rem;
+}
+
+.v-select.vs--sm .vs__selected + .vs__search,
+.v-select-sm .vs__selected + .vs__search {
+    padding: 0;
+}
+
+.v-select.vs--sm.vs--open .vs__selected + .vs__search,
+.v-select-sm.vs--open .vs__selected + .vs__search {
+    padding: 0.25rem 0.5rem;
+}
+
+/* Dark theme support */
+[data-theme="dark"] .v-select {
+    background: #1e293b;
+}
+
+[data-theme="dark"] .v-select .vs__dropdown-toggle {
+    border-color: #475569;
+    background: #1e293b;
+}
+
+[data-theme="dark"] .v-select .vs__search,
+[data-theme="dark"] .v-select .vs__search:focus {
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .v-select .vs__selected {
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .v-select .vs__dropdown-menu {
+    background: #1e293b;
+    border-color: #475569;
+}
+
+[data-theme="dark"] .v-select .vs__dropdown-option {
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .v-select .vs__dropdown-option--highlight {
+    background: #3b82f6;
+    color: #fff;
+}
+
+[data-theme="dark"] .v-select .vs__actions svg {
+    fill: #94a3b8;
+}
+
+[data-theme="dark"] .v-select.vs--disabled .vs__dropdown-toggle {
+    background-color: #334155;
+}
+

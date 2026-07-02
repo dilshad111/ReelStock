@@ -16,11 +16,15 @@
         <form @submit.prevent="saveAlert">
           <div class="row g-3">
             <div class="col-md-5">
-              <label class="form-label small fw-bold">Paper Quality</label>
-              <select v-model="form.paper_quality_id" class="form-select" required @change="fetchAvailableDetails">
-                <option value="">Select Quality</option>
-                <option v-for="q in qualities" :key="q.id" :value="q.id">{{ q.quality }} ({{ q.gsm_range }})</option>
-              </select>
+              <v-select
+                v-model="form.paper_quality_id"
+                :options="qualities"
+                :get-option-label="q => q.quality + ' (' + q.gsm_range + ')'"
+                :reduce="q => q.id"
+                placeholder="Search Quality..."
+                :clearable="false"
+                @option:selected="fetchAvailableDetails"
+              ></v-select>
             </div>
             <div class="col-md-2">
               <label class="form-label small fw-bold">Reel Size (inches)</label>

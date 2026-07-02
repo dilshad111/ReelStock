@@ -54,11 +54,14 @@
           <div class="row">
             <div class="col-md-6">
               <div class="mb-3">
-                <label class="form-label fw-semibold text-slate-700">Job Card Link <span class="text-muted small">(Optional)</span></label>
-                <select v-model="form.job_card_id" class="form-control">
-                  <option value="">Link with Job Card</option>
-                  <option v-for="jc in activeJobCards" :key="jc.id" :value="jc.id">{{ jc.job_card_no }} - {{ jc.product?.item_name }}</option>
-                </select>
+                <v-select
+                  v-model="form.job_card_id"
+                  :options="activeJobCards"
+                  :get-option-label="jc => jc.job_card_no + ' - ' + jc.product?.item_name"
+                  :reduce="jc => jc.id"
+                  placeholder="Link with Job Card"
+                  :clearable="true"
+                ></v-select>
               </div>
             </div>
           </div>
@@ -85,10 +88,16 @@
                 <tbody>
                   <tr v-for="(row, index) in form.items" :key="index">
                     <td>
-                      <select v-model="row.rm_item_id" @change="onItemChange(row)" class="form-control form-control-sm" required>
-                        <option value="">Select Item</option>
-                        <option v-for="i in rmItems" :key="i.id" :value="i.id">{{ i.name }} (Current: {{ formatQty(i.balance) }} {{ i.unit }})</option>
-                      </select>
+                      <v-select
+                        v-model="row.rm_item_id"
+                        :options="rmItems"
+                        :get-option-label="i => i.name + ' (Current: ' + formatQty(i.balance) + ' ' + i.unit + ')'"
+                        :reduce="i => i.id"
+                        placeholder="Search Item..."
+                        :clearable="false"
+                        class="v-select-sm"
+                        @option:selected="onItemChange(row)"
+                      ></v-select>
                     </td>
                     <td class="text-end fw-semibold">
                       <span :class="row.available > 0 ? 'text-success' : 'text-danger'">

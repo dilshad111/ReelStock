@@ -79,12 +79,14 @@
             </div>
             <div class="col-lg-4 col-md-6">
               <label class="form-label">Return to Supplier</label>
-              <select v-model.number="formData.return_to_supplier_id" class="form-select">
-                <option :value="null">-- Select Supplier (Optional) --</option>
-                <option v-for="supplier in suppliers" :key="supplier.id" :value="supplier.id">
-                  {{ supplier.name }}
-                </option>
-              </select>
+              <v-select
+                v-model="formData.return_to_supplier_id"
+                :options="suppliers"
+                label="name"
+                :reduce="supplier => supplier.id"
+                placeholder="Select Supplier (Optional)"
+                :clearable="true"
+              ></v-select>
               <div class="form-text" v-if="reel && reel.supplier">Original supplier: {{ reel.supplier.name }}</div>
             </div>
             <div class="col-12">

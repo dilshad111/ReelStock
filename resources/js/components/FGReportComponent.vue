@@ -23,10 +23,17 @@
         <div class="row mb-3 g-2 align-items-end">
           <div class="col-md-3">
             <label class="small text-muted">Customer</label>
-            <select v-model="stockFilters.customer_id" @change="fetchStockReport" class="form-control form-control-sm">
-              <option value="">All Customers</option>
-              <option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option>
-            </select>
+            <v-select
+              v-model="stockFilters.customer_id"
+              :options="customers"
+              label="name"
+              :reduce="c => c.id"
+              placeholder="All Customers"
+              :clearable="true"
+              class="v-select-sm"
+              @option:selected="fetchStockReport"
+              @option:deselected="fetchStockReport"
+            ></v-select>
           </div>
           <div class="col-md-2">
             <label class="small text-muted">Item / Code</label>
@@ -76,7 +83,7 @@
       <el-tab-pane label="Job-wise Report" name="job">
         <div class="row mb-3 g-2 align-items-end">
           <div class="col-md-2"><label class="small text-muted">Customer</label>
-            <select v-model="jobFilters.customer_id" @change="fetchJobReport" class="form-control form-control-sm"><option value="">All</option><option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option></select></div>
+            <v-select v-model="jobFilters.customer_id" :options="customers" label="name" :reduce="c => c.id" placeholder="All" :clearable="true" class="v-select-sm" @option:selected="fetchJobReport" @option:deselected="fetchJobReport"></v-select></div>
           <div class="col-md-2"><label class="small text-muted">Job #</label><input v-model="jobFilters.job_number" @input="debouncedJobFetch" type="text" class="form-control form-control-sm" placeholder="Search..."></div>
           <div class="col-md-2"><label class="small text-muted">From</label><input v-model="jobFilters.date_from" type="date" class="form-control form-control-sm" @change="fetchJobReport"></div>
           <div class="col-md-2"><label class="small text-muted">To</label><input v-model="jobFilters.date_to" type="date" class="form-control form-control-sm" @change="fetchJobReport"></div>
@@ -106,7 +113,7 @@
       <el-tab-pane label="Inventory Ledger" name="audit">
         <div class="row mb-3 g-2 align-items-end">
           <div class="col-md-2"><label class="small text-muted">Customer</label>
-            <select v-model="auditFilters.customer_id" @change="fetchAuditReport" class="form-control form-control-sm"><option value="">All</option><option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option></select></div>
+            <v-select v-model="auditFilters.customer_id" :options="customers" label="name" :reduce="c => c.id" placeholder="All" :clearable="true" class="v-select-sm" @option:selected="fetchAuditReport" @option:deselected="fetchAuditReport"></v-select></div>
           <div class="col-md-2"><label class="small text-muted">Item / Code</label><input v-model="auditFilters.item_search" @input="debouncedAuditFetch" type="text" class="form-control form-control-sm" placeholder="Search..."></div>
           <div class="col-md-2"><label class="small text-muted">Type</label>
             <select v-model="auditFilters.transaction_type" @change="fetchAuditReport" class="form-control form-control-sm"><option value="">All</option><option value="opening">Opening</option><option value="receipt">Receipt</option><option value="dispatch">Dispatch</option><option value="damage">Damage</option><option value="receipt_reversal">Receipt Reversal</option><option value="dispatch_reversal">Dispatch Reversal</option><option value="damage_reversal">Damage Reversal</option><option value="adjustment">Adjustment</option></select></div>
@@ -136,7 +143,7 @@
       <el-tab-pane label="Reversal Report" name="reversal">
         <div class="row mb-3 g-2 align-items-end">
           <div class="col-md-2"><label class="small text-muted">Customer</label>
-            <select v-model="reversalFilters.customer_id" @change="fetchReversalReport" class="form-control form-control-sm"><option value="">All</option><option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option></select></div>
+            <v-select v-model="reversalFilters.customer_id" :options="customers" label="name" :reduce="c => c.id" placeholder="All" :clearable="true" class="v-select-sm" @option:selected="fetchReversalReport" @option:deselected="fetchReversalReport"></v-select></div>
           <div class="col-md-2"><label class="small text-muted">Item / Code</label><input v-model="reversalFilters.item_search" @input="debouncedReversalFetch" type="text" class="form-control form-control-sm" placeholder="Search..."></div>
           <div class="col-md-2"><label class="small text-muted">Type</label>
             <select v-model="reversalFilters.reversal_type" @change="fetchReversalReport" class="form-control form-control-sm"><option value="">All Reversals</option><option value="receipt_reversal">Receipt Reversal</option><option value="dispatch_reversal">Dispatch Reversal</option><option value="damage_reversal">Damage Reversal</option></select></div>

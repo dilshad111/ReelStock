@@ -25,17 +25,25 @@
                 <h6>Common Information (Shared by all reels)</h6>
                 <div class="mb-3">
                   <label>Paper Quality</label>
-                  <select v-model="bulkData.common.paper_quality_id" class="form-control" required>
-                    <option value="">Select Quality</option>
-                    <option v-for="q in qualities" :key="q.id" :value="q.id">{{ q.quality }} - {{ q.gsm_range }}</option>
-                  </select>
+                  <v-select
+                    v-model="bulkData.common.paper_quality_id"
+                    :options="qualities"
+                    :get-option-label="q => q.quality + ' - ' + q.gsm_range"
+                    :reduce="q => q.id"
+                    placeholder="Search Paper Quality..."
+                    :clearable="false"
+                  ></v-select>
                 </div>
                 <div class="mb-3">
                   <label>Supplier</label>
-                  <select v-model="bulkData.common.supplier_id" class="form-control" required>
-                    <option value="">Select Supplier</option>
-                    <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.supplier_id }} - {{ s.name }}</option>
-                  </select>
+                  <v-select
+                    v-model="bulkData.common.supplier_id"
+                    :options="suppliers"
+                    :get-option-label="s => s.supplier_id + ' - ' + s.name"
+                    :reduce="s => s.id"
+                    placeholder="Search Supplier..."
+                    :clearable="false"
+                  ></v-select>
                 </div>
                 <div class="mb-3">
                   <label>Receiving Date</label>
@@ -116,18 +124,25 @@
                     </div>
                     <div class="mb-3">
                       <label>Paper Quality</label>
-                      <select v-model="receipt.paper_quality_id" class="form-control" required>
-                        <option value="">Select Quality</option>
-                        <option v-for="q in qualities" :key="q.id" :value="q.id">{{ q.quality }} - {{ q.gsm_range }}</option>
-                        <option v-if="qualities.length === 0" disabled>No qualities available</option>
-                      </select>
+                      <v-select
+                        v-model="receipt.paper_quality_id"
+                        :options="qualities"
+                        :get-option-label="q => q.quality + ' - ' + q.gsm_range"
+                        :reduce="q => q.id"
+                        placeholder="Search Paper Quality..."
+                        :clearable="false"
+                      ></v-select>
                     </div>
                     <div class="mb-3">
                       <label>Supplier</label>
-                      <select v-model="receipt.supplier_id" class="form-control" required>
-                        <option value="">Select Supplier</option>
-                        <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.supplier_id }} - {{ s.name }}</option>
-                      </select>
+                      <v-select
+                        v-model="receipt.supplier_id"
+                        :options="suppliers"
+                        :get-option-label="s => s.supplier_id + ' - ' + s.name"
+                        :reduce="s => s.id"
+                        placeholder="Search Supplier..."
+                        :clearable="false"
+                      ></v-select>
                     </div>
                     <div class="mb-3">
                       <label>Reel Size (inches)</label>

@@ -802,9 +802,12 @@ app.component('theme-selector-component', ThemeSelectorComponent);
 import ElementPlus from 'element-plus';
 import 'element-plus/dist/index.css';
 import { createPinia } from 'pinia';
+import vSelect from 'vue-select';
+import 'vue-select/dist/vue-select.css';
 
 const pinia = createPinia();
 app.use(pinia);
 app.use(ElementPlus);
+app.component('v-select', vSelect);
 
 app.mount('#app');

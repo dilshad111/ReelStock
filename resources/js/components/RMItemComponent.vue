@@ -65,10 +65,14 @@
 
             <div class="col-lg-3 col-md-6">
               <label class="form-label fw-semibold text-slate-700">Preferred Supplier</label>
-              <select v-model="form.preferred_supplier_id" class="form-control">
-                <option value="">Select Supplier</option>
-                <option v-for="supplier in suppliers" :key="supplier.id" :value="supplier.id">{{ supplier.name }}</option>
-              </select>
+              <v-select
+                v-model="form.preferred_supplier_id"
+                :options="suppliers"
+                label="name"
+                :reduce="supplier => supplier.id"
+                placeholder="Select Supplier"
+                :clearable="true"
+              ></v-select>
             </div>
 
             <div class="col-lg-3 col-md-6">
@@ -201,10 +205,17 @@
           </div>
           <div class="col-xl-2 col-md-4">
             <label class="small text-muted fw-bold">Supplier</label>
-            <select v-model="filters.preferred_supplier_id" @change="fetchItems" class="form-control form-control-sm">
-              <option value="">All Suppliers</option>
-              <option v-for="supplier in suppliers" :key="supplier.id" :value="supplier.id">{{ supplier.name }}</option>
-            </select>
+            <v-select
+              v-model="filters.preferred_supplier_id"
+              :options="suppliers"
+              label="name"
+              :reduce="supplier => supplier.id"
+              placeholder="All Suppliers"
+              :clearable="true"
+              class="v-select-sm"
+              @option:selected="fetchItems"
+              @option:deselected="fetchItems"
+            ></v-select>
           </div>
           <div class="col-xl-1 col-md-4">
             <label class="small text-muted fw-bold">Status</label>

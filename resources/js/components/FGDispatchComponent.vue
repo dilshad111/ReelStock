@@ -57,20 +57,30 @@
                 <div class="col-md-6">
                   <div class="mb-3">
                     <label class="form-label fw-bold text-muted x-small uppercase mb-1">Customer</label>
-                    <select v-model="form.customer_id" @change="onCustomerChange" class="form-select form-select-sm" :disabled="jobInfo.job_number && !isSharedDispatchJob">
-                      <option value="">Select Customer</option>
-                      <option v-for="c in dispatchCustomers" :key="c.id" :value="c.id">{{ c.name }}</option>
-                    </select>
+                    <v-select
+                      v-model="form.customer_id"
+                      :options="dispatchCustomers"
+                      label="name"
+                      :reduce="c => c.id"
+                      placeholder="Search customer..."
+                      :clearable="false"
+                      :disabled="jobInfo.job_number && !isSharedDispatchJob"
+                      @option:selected="onCustomerChange"
+                    ></v-select>
                   </div>
 
                   <div class="mb-3">
                     <label class="form-label fw-bold text-muted x-small uppercase mb-1">Dispatch Item</label>
-                    <select v-model="form.product_option_key" @change="onProductOptionChange" class="form-select form-select-sm" :disabled="!form.customer_id || (jobInfo.job_number && !isSharedDispatchJob)">
-                      <option value="">Select Product</option>
-                      <option v-for="p in productOptions" :key="p.option_key" :value="p.option_key">
-                        {{ p.display_item_code }} - {{ p.display_item_name }}{{ productPolicySuffix(p) }}
-                      </option>
-                    </select>
+                    <v-select
+                      v-model="form.product_option_key"
+                      :options="productOptions"
+                      :get-option-label="p => p.display_item_code + ' - ' + p.display_item_name + productPolicySuffix(p)"
+                      :reduce="p => p.option_key"
+                      placeholder="Search product..."
+                      :clearable="false"
+                      :disabled="!form.customer_id || (jobInfo.job_number && !isSharedDispatchJob)"
+                      @option:selected="onProductOptionChange"
+                    ></v-select>
                     <div v-if="selectedProductOption" class="x-small text-muted mt-1">
                       Rate: {{ formatRate(selectedProductOption.display_rate) }} | Stock Product: {{ selectedProductOption.item_name }}
                     </div>
@@ -172,10 +182,17 @@
         <div class="dispatch-filter-grid">
           <div>
             <label class="small text-muted fw-bold uppercase mb-1 d-block"><i class="bi bi-person"></i> Customer</label>
-            <select v-model="filters.customer_id" @change="fetchDispatches" class="form-select border-0 bg-light">
-              <option value="">All Customers</option>
-              <option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option>
-            </select>
+            <v-select
+              v-model="filters.customer_id"
+              :options="customers"
+              label="name"
+              :reduce="c => c.id"
+              placeholder="All Customers"
+              :clearable="true"
+              class="v-select-sm"
+              @option:selected="fetchDispatches"
+              @option:deselected="fetchDispatches"
+            ></v-select>
           </div>
           <div>
             <label class="small text-muted fw-bold uppercase mb-1 d-block"><i class="bi bi-hash"></i> Job #</label>

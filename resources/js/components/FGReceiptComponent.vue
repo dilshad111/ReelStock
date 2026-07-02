@@ -24,17 +24,27 @@
               </div>
               <div class="mb-3">
                 <label>Customer <span class="text-danger">*</span></label>
-                <select v-model="form.customer_id" @change="onCustomerChange" class="form-control" required>
-                  <option value="">Select Customer</option>
-                  <option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option>
-                </select>
+                <v-select
+                  v-model="form.customer_id"
+                  :options="customers"
+                  label="name"
+                  :reduce="c => c.id"
+                  placeholder="Search customer..."
+                  :clearable="false"
+                  @option:selected="onCustomerChange"
+                ></v-select>
               </div>
               <div class="mb-3">
                 <label>Product <span class="text-danger">*</span></label>
-                <select v-model="form.product_id" @change="onProductChange" class="form-control" required>
-                  <option value="">Select Product</option>
-                  <option v-for="p in filteredProducts" :key="p.id" :value="p.id">{{ p.item_code }} - {{ p.item_name }}</option>
-                </select>
+                <v-select
+                  v-model="form.product_id"
+                  :options="filteredProducts"
+                  :get-option-label="p => p.item_code + ' - ' + p.item_name"
+                  :reduce="p => p.id"
+                  placeholder="Search product..."
+                  :clearable="false"
+                  @option:selected="onProductChange"
+                ></v-select>
               </div>
             </div>
             <div class="col-md-4">
@@ -78,10 +88,17 @@
     <div class="row mb-3 g-2 align-items-end">
       <div class="col-md-2">
         <label class="small text-muted">Customer</label>
-        <select v-model="filters.customer_id" @change="fetchReceipts" class="form-control form-control-sm">
-          <option value="">All</option>
-          <option v-for="c in customers" :key="c.id" :value="c.id">{{ c.name }}</option>
-        </select>
+        <v-select
+          v-model="filters.customer_id"
+          :options="customers"
+          label="name"
+          :reduce="c => c.id"
+          placeholder="All"
+          :clearable="true"
+          class="v-select-sm"
+          @option:selected="fetchReceipts"
+          @option:deselected="fetchReceipts"
+        ></v-select>
       </div>
       <div class="col-md-2">
         <label class="small text-muted">Job #</label>

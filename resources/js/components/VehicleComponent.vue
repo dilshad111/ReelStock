@@ -70,10 +70,14 @@
                     <input v-model.number="form.mileage" type="number" min="0.01" step="0.01" class="form-control fg-like-input" placeholder="Fuel efficiency in KM/L" />
                 </el-form-item>
                 <el-form-item label="Transporter Assignment" prop="transporter_id">
-                    <select v-model="form.transporter_id" class="form-select fg-like-input">
-                        <option value="">Assign to transporter</option>
-                        <option v-for="t in transporters" :key="t.id" :value="t.id">{{ t.name }}</option>
-                    </select>
+                    <v-select
+                        v-model="form.transporter_id"
+                        :options="transporters"
+                        label="name"
+                        :reduce="t => t.id"
+                        placeholder="Assign to transporter"
+                        :clearable="true"
+                    ></v-select>
                 </el-form-item>
             </el-form>
             <template #footer>

@@ -8,7 +8,7 @@ git add .
 
 echo.
 echo Committing changes...
-git commit -m "Sample Form updated"
+git commit -m "Searchable Drop Down Implemented."
 
 echo.
 echo Pushing to origin main...
