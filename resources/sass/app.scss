@@ -2148,6 +2148,20 @@
     z-index: 9999;
 }
 
+/* Elevate layout parent containers of active vue-select dropdowns to prevent overlapping/z-index issues */
+.row:has(.v-select.vs--open),
+.col:has(.v-select.vs--open),
+[class*="col-"]:has(.v-select.vs--open),
+tr:has(.v-select.vs--open),
+td:has(.v-select.vs--open),
+.form-group:has(.v-select.vs--open),
+.mb-3:has(.v-select.vs--open),
+.input-group:has(.v-select.vs--open),
+div:has(> .v-select.vs--open) {
+    z-index: 9999 !important;
+    position: relative !important;
+}
+
 .v-select .vs__dropdown-toggle {
     border: 1px solid #ced4d6;
     border-radius: 0.375rem;
